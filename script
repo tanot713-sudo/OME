@@ -398,15 +398,15 @@ async function generateWordTemplate(){
         const b=await fetchImageBuffer(s.u);
         if(b)slotBufs.push({buf:b,cap:s.cap});
       }
-      const cellFor=(slot)=>new TableCell({borders:noBorders(),width:{size:50,type:WidthType.PERCENTAGE},children:[
+      const cellFor=(slot,wide)=>new TableCell({borders:noBorders(),width:{size:wide?100:50,type:WidthType.PERCENTAGE},children:[
         new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:slot.buf,transformation:{width:230,height:170}})]}),
         new Paragraph({alignment:AlignmentType.CENTER,children:[T(slot.cap,{size:18,color:GREY})]})
       ]});
-      const emptyCell=()=>new TableCell({borders:noBorders(),width:{size:50,type:WidthType.PERCENTAGE},children:[new Paragraph({})]});
+      // มีรูปเท่าไหร่แสดงเท่านั้น — ไม่เติมช่องว่างแทนรูปที่ไม่มี (ตามตัวอย่างจริง)
       const rows=[];
       for(let ri=0;ri<slotBufs.length;ri+=2){
         const left=slotBufs[ri],right=slotBufs[ri+1];
-        rows.push(new TableRow({children:[cellFor(left),right?cellFor(right):emptyCell()]}));
+        rows.push(new TableRow({children: right?[cellFor(left),cellFor(right)]:[cellFor(left,true)]}));
       }
       if(rows.length)bodyKids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
     }
@@ -426,7 +426,7 @@ async function generateWordTemplate(){
       const locNames=Object.keys(locGroups).sort((a,b)=>a.localeCompare(b,'th'));
       for(let li=0;li<locNames.length;li++){
         const lname=locNames[li];const litems=locGroups[lname];
-        bodyKids.push(P(T(`${ti+1}.${li+1} ${lname}`,{size:30,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_2}));
+        bodyKids.push(P(T(`${ti+1}.${li+1} ${lname}`,{size:30,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_2,align:AlignmentType.CENTER}));
         bodyKids.push(P(T(`จำนวน ${litems.length} รายการ`,{size:26,color:GREY})));
         for(let i=0;i<litems.length;i++) await pushEquipmentBlock(litems[i], i+1);
       }
