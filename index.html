@@ -782,10 +782,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function renderDashboard(){
   if(!canSeeDashboard()) return;
+  const role=(AUTH.user&&AUTH.user.role)||'';
+  const leaderProjs=(role==='leader')
+    ?(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean)
+    :[];
+  // leader เห็นเฉพาะโครงการตัวเอง
+  const baseEntries=(role==='leader'&&leaderProjs.length>0)
+    ?entries.filter(e=>leaderProjs.includes(e.project))
+    :entries;
   const dashFilter=$('#dashMainFilter');
   const selectedProject=dashFilter?dashFilter.value:'__all';
   const isAll=!selectedProject||selectedProject==='__all';
-  const filteredEntries=isAll?entries:entries.filter(e=>e.project===selectedProject);
+  const filteredEntries=isAll?baseEntries:baseEntries.filter(e=>e.project===selectedProject);
   let withImg=0, days={};
   filteredEntries.forEach(e=>{
     if(e.imgMain||e.imgSticker) withImg++;
@@ -803,7 +811,7 @@ function renderDashboard(){
     <div class="kpi"><div class="k-lbl">โครงการ</div><div class="k-num">${projCount}</div><div class="k-sub">โครงการที่มีข้อมูล</div></div>
     <div class="kpi"><div class="k-lbl">มีรูปภาพ</div><div class="k-num">${total?Math.round(withImg/total*100):0}%</div><div class="k-sub">${withImg}/${total} รายการ</div></div>`;
   renderDailyChart(filteredEntries, selectedProject, entries);
-  const allProjs=uniq(entries.map(e=>e.project)).filter(Boolean).sort();
+  const allProjs=uniq(baseEntries.map(e=>e.project)).filter(Boolean).sort();
   if(dashFilter){
     const cur=dashFilter.value;
     dashFilter.innerHTML='<option value="__all">ทุกโครงการ</option>'+allProjs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');
