@@ -134,6 +134,13 @@ function route(action, payload) {
     // Page Permissions
     case 'getPagePerms':      return actionGetPagePerms(payload);
     case 'setPagePerms':      return actionSetPagePerms(payload);
+    // Report Templates (เลือก Word/PDF template จากเว็บ)
+    case 'listReportTemplates': return actionListReportTemplates(payload);
+    case 'saveReportTemplate':  return actionSaveReportTemplate(payload);
+    case 'deleteReportTemplate':return actionDeleteReportTemplate(payload);
+    // Report Field Presets (autocomplete จากค่าที่เคยกรอก)
+    case 'listReportPresets':   return actionListReportPresets(payload);
+    case 'saveReportPreset':    return actionSaveReportPreset(payload);
      // Switch-case
     case 'saveTarget':   return actionSaveTarget(payload);
     case 'listTargets':  return actionListTargets(payload);
@@ -163,7 +170,9 @@ function actionGenerateReport(payload, _user) {
   var contractDate = payload.contractDate || '';
   var clause       = payload.clause       || '';
   var submittedTo  = payload.submittedTo  || '';
+  var logoCustomer = payload.logoCustomer || '';
   var projFilter   = payload.projectFilter|| '';
+  var templateId   = payload.templateId   || REPORT_TEMPLATE_ID;
 
   /* ── 1. Get filtered entries ── */
   var sh = getSheet(CONFIG.SHEETS.RECORDS);
@@ -177,7 +186,7 @@ function actionGenerateReport(payload, _user) {
   /* ── 2. Copy template ── */
   var today    = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd');
   var docName  = (projFilter && projFilter !== '__all' ? projFilter : 'ทุกโครงการ') + '_' + today;
-  var copyFile = DriveApp.getFileById(REPORT_TEMPLATE_ID).makeCopy(docName);
+  var copyFile = DriveApp.getFileById(templateId).makeCopy(docName);
   var docId    = copyFile.getId();
   var doc      = DocumentApp.openById(docId);
   var body     = doc.getBody();
@@ -185,6 +194,7 @@ function actionGenerateReport(payload, _user) {
   /* ── 3. Replace cover placeholders ── */
   function safe(s){ return String(s||'').replace(/\$/g,''); }
   body.replaceText('\{\{reportTitle\}\}',  safe(reportTitle));
+  body.replaceText('\{\{logocustomer\}\}', safe(logoCustomer));
   body.replaceText('\{\{contractName\}\}', safe(contractName));
   body.replaceText('\{\{contractNo\}\}',   safe(contractNo));
   body.replaceText('\{\{contractDate\}\}', safe(contractDate));
@@ -322,6 +332,15 @@ function actionGenerateReport(payload, _user) {
     var folder = getOrCreateFolder(getRootFolder(), 'AMR_PDF_Reports');
     copyFile.moveTo(folder);
   } catch(e){}
+
+  /* บันทึกค่าฟิลด์ไว้ autocomplete ครั้งหน้า — ไม่ให้ error ตรงนี้ทำให้ทั้ง report เสีย */
+  try {
+    actionSaveReportPreset({
+      fields: { reportTitle: reportTitle, contractName: contractName, contractNo: contractNo,
+                 clause: clause, submittedTo: submittedTo, logoCustomer: logoCustomer },
+      _user: _user
+    });
+  } catch (e) {}
 
   return {
     ok: true,
@@ -985,6 +1004,93 @@ function actionSetPagePerms({ perms, _user }) {
     sh.appendRow([role, Array.isArray(pages) ? pages.join(',') : pages]);
   });
   return { ok: true };
+}
+
+/* ================================================================
+   REPORT TEMPLATES — เลือก Word/PDF template (Drive file ID) จากเว็บ
+   ================================================================ */
+var REPORT_TEMPLATES_HEADERS = ['id', 'name', 'fileId', 'createdAt'];
+
+function actionListReportTemplates({ _user }) {
+  const sh = getSheet('ReportTemplates');
+  ensureHeaders(sh, REPORT_TEMPLATES_HEADERS);
+  const rows = sheetToObjects(sh);
+  return { ok: true, templates: rows };
+}
+
+function actionSaveReportTemplate({ name, fileId, _user }) {
+  if (_user.role !== 'admin' && _user.role !== 'manager') {
+    return { ok: false, message: 'เฉพาะ Admin/Manager เท่านั้น' };
+  }
+  name = String(name || '').trim();
+  fileId = String(fileId || '').trim();
+  if (!name || !fileId) return { ok: false, message: 'ต้องกรอกชื่อและ File ID' };
+  // กันซ้ำ: ตรวจสอบว่ามีไฟล์นี้อยู่จริงและเข้าถึงได้
+  try { DriveApp.getFileById(fileId).getName(); }
+  catch (e) { return { ok: false, message: 'ไม่พบไฟล์ หรือไม่มีสิทธิ์เข้าถึง File ID นี้' }; }
+
+  const sh = getSheet('ReportTemplates');
+  ensureHeaders(sh, REPORT_TEMPLATES_HEADERS);
+  const rows = sheetToObjects(sh);
+  if (rows.some(r => r.fileId === fileId)) return { ok: false, message: 'Template นี้มีอยู่แล้ว' };
+  appendRow(sh, REPORT_TEMPLATES_HEADERS, {
+    id: genId(), name, fileId, createdAt: new Date().toISOString()
+  });
+  return { ok: true };
+}
+
+function actionDeleteReportTemplate({ id, _user }) {
+  if (_user.role !== 'admin') return { ok: false, message: 'เฉพาะ admin เท่านั้น' };
+  const sh = getSheet('ReportTemplates');
+  const ok = deleteRowById(sh, id);
+  return { ok, message: ok ? 'ลบแล้ว' : 'ไม่พบรายการ' };
+}
+
+/* ================================================================
+   REPORT FIELD PRESETS — จำค่าที่เคยกรอกไว้ (autocomplete)
+   ================================================================ */
+var REPORT_PRESETS_HEADERS = ['field', 'value', 'lastUsedAt'];
+
+function actionListReportPresets({ _user }) {
+  const sh = getSheet('ReportPresets');
+  ensureHeaders(sh, REPORT_PRESETS_HEADERS);
+  const rows = sheetToObjects(sh);
+  const byField = {};
+  rows.forEach(r => {
+    if (!r.field || !r.value) return;
+    if (!byField[r.field]) byField[r.field] = [];
+    if (!byField[r.field].includes(r.value)) byField[r.field].push(r.value);
+  });
+  return { ok: true, presets: byField };
+}
+
+// บันทึกค่าที่กรอกไว้ใช้ autocomplete ครั้งหน้า — เรียกจาก frontend ทุกครั้งที่กด "สร้างรายงาน" สำเร็จ
+// fields: { contractName: '...', contractNo: '...', clause: '...', submittedTo: '...', logoCustomer: '...', reportTitle: '...' }
+function actionSaveReportPreset({ fields, _user }) {
+  if (!fields || typeof fields !== 'object') return { ok: false, message: 'ไม่มีข้อมูล' };
+  const sh = getSheet('ReportPresets');
+  ensureHeaders(sh, REPORT_PRESETS_HEADERS);
+  const rows = sheetToObjects(sh);
+  const now = new Date().toISOString();
+  Object.keys(fields).forEach(field => {
+    const value = String(fields[field] || '').trim();
+    if (!value) return;
+    const existingRow = findRowByFieldValue_(sh, rows, field, value);
+    if (existingRow > 0) {
+      sh.getRange(existingRow, REPORT_PRESETS_HEADERS.indexOf('lastUsedAt') + 1).setValue(now);
+    } else {
+      appendRow(sh, REPORT_PRESETS_HEADERS, { field, value, lastUsedAt: now });
+    }
+  });
+  return { ok: true };
+}
+
+// helper: หาแถวที่ field+value ตรงกัน (ไม่ใช้ id เพราะ key คือ field+value คู่กัน)
+function findRowByFieldValue_(sh, rows, field, value) {
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].field === field && rows[i].value === value) return i + 2; // +2: header row + 1-index
+  }
+  return -1;
 }
 
 /* ================================================================
