@@ -373,7 +373,7 @@ async function generateWordTemplate(){
   const bodyKids=[P(T(groupLabel,{size:36,bold:true,color:RED}),{heading:HeadingLevel.HEADING_1})];
   const groupNames=Object.keys(groups).sort();
   let imgDone=0,totalImgs=0;
-  entries.forEach(e=>{if(e.thumbMain||e.imgMain)totalImgs++;if(e.thumbSticker||e.imgSticker)totalImgs++;});
+  entries.forEach(e=>{[e.thumbMain||e.imgMain,e.thumbSticker||e.imgSticker,e.thumb3||e.img3,e.thumb4||e.img4].forEach(u=>{if(u)totalImgs++;});});
 
   const noBorders=()=>{const n={style:BorderStyle.NONE,size:0,color:'FFFFFF'};return{top:n,bottom:n,left:n,right:n,insideHorizontal:n,insideVertical:n};};
 
@@ -387,12 +387,31 @@ async function generateWordTemplate(){
       const bm=[e.brand?'ยี่ห้อ '+e.brand:'',e.model?'รุ่น '+e.model:''].filter(Boolean).join('  ');if(bm)bodyKids.push(P(T(bm,{size:28})));
       const meta=[e.serial?'Serial: '+e.serial:'',e.asset?'รหัส: '+e.asset:''].filter(Boolean).join('   ');if(meta)bodyKids.push(P(T(meta,{size:24,color:GREY})));
       const loc=[e.locName,e.subName].filter(Boolean).join(' ');if(loc)bodyKids.push(P(T(loc,{size:26,color:GREY})));
-      const urls=[e.thumbMain||e.imgMain,e.thumbSticker||e.imgSticker].filter(Boolean);
-      if(urls.length){
-        imgDone++;
-        setWgProgress(25+Math.round(imgDone/Math.max(totalImgs,1)*55),`กำลังโหลดรูปภาพ... ${imgDone}/${totalImgs}`);
-        const bufs=[];for(const u of urls){const b=await fetchImageBuffer(u);if(b)bufs.push(b);}
-        if(bufs.length){const cells=bufs.map(b=>new TableCell({borders:noBorders(),children:[new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:b,transformation:{width:230,height:170}})]})]}));while(cells.length<2)cells.push(new TableCell({borders:noBorders(),children:[new Paragraph({})]}));bodyKids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:cells})]}));}
+      const photoSlots=[
+        {u:e.thumbMain||e.imgMain,cap:'รูปรวมอุปกรณ์'},
+        {u:e.thumbSticker||e.imgSticker,cap:'รูปสติกเกอร์'},
+        {u:e.thumb3||e.img3,cap:'รูปเพิ่มเติมที่ 1'},
+        {u:e.thumb4||e.img4,cap:'รูปเพิ่มเติมที่ 2'}
+      ].filter(s=>s.u);
+      if(photoSlots.length){
+        const slotBufs=[];
+        for(const s of photoSlots){
+          imgDone++;
+          setWgProgress(25+Math.round(imgDone/Math.max(totalImgs,1)*55),`กำลังโหลดรูปภาพ... ${imgDone}/${totalImgs}`);
+          const b=await fetchImageBuffer(s.u);
+          if(b)slotBufs.push({buf:b,cap:s.cap});
+        }
+        const cellFor=(slot)=>new TableCell({borders:noBorders(),width:{size:50,type:WidthType.PERCENTAGE},children:[
+          new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:slot.buf,transformation:{width:230,height:170}})]}),
+          new Paragraph({alignment:AlignmentType.CENTER,children:[T(slot.cap,{size:18,color:GREY})]})
+        ]});
+        const emptyCell=()=>new TableCell({borders:noBorders(),width:{size:50,type:WidthType.PERCENTAGE},children:[new Paragraph({})]});
+        const rows=[];
+        for(let ri=0;ri<slotBufs.length;ri+=2){
+          const left=slotBufs[ri],right=slotBufs[ri+1];
+          rows.push(new TableRow({children:[cellFor(left),right?cellFor(right):emptyCell()]}));
+        }
+        if(rows.length)bodyKids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
       }
       if(e.note)bodyKids.push(P(T(`หมายเหตุ: ${e.note}`,{size:24,color:GREY})));
       bodyKids.push(new Paragraph({}));
@@ -407,9 +426,11 @@ async function generateWordTemplate(){
   const footer=new Footer({children:[new Paragraph({tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],children:[T(`ชื่อรายงาน : ${reportName}`,{size:22}),new TextRun({text:'\t',font:FONT}),new TextRun({children:['หน้าที่ ',PageNumber.CURRENT,' of ',PageNumber.TOTAL_PAGES],font:FONT,size:22})]})]});
 
   setWgProgress(92,'กำลังบีบอัดไฟล์...');
+  // ใช้ margin เดียวกันทุก section กันปัญหาหัว-ท้ายกระดาษเลื่อนไม่ตรงกันระหว่างหน้าปก/สารบัญ กับเนื้อหา
+  const PAGE_MARGIN={top:1400,bottom:1100,left:1130,right:1130};
   const doc=new Document({styles:{default:{document:{run:{font:FONT}}}},sections:[
-    {properties:{},children:[...coverKids,new Paragraph({pageBreakBefore:true}),...tocKids]},
-    {properties:{page:{margin:{top:1400,bottom:1100,left:1130,right:1130}}},headers:{default:header},footers:{default:footer},children:bodyKids}
+    {properties:{page:{margin:PAGE_MARGIN}},children:[...coverKids,new Paragraph({pageBreakBefore:true}),...tocKids]},
+    {properties:{page:{margin:PAGE_MARGIN}},headers:{default:header},footers:{default:footer},children:bodyKids}
   ]});
   const blob=await Packer.toBlob(doc);
   const fn=`รายงานอุปกรณ์_${groupLabel}_${fileStamp(Date.now())}.docx`;
