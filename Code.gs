@@ -146,6 +146,8 @@ function route(action, payload) {
     case 'listTargets':  return actionListTargets(payload);
     // PDF Report
     case 'generateReport':    return actionGenerateReport(payload, payload._user);
+    // Image proxy (สำหรับ Word export — แก้ปัญหา CORS)
+    case 'fetchImageAsBase64': return actionFetchImageAsBase64(payload);
     default:
       return { ok: false, error: 'UNKNOWN_ACTION', message: `ไม่รู้จัก action: ${action}` };
   }
@@ -477,6 +479,21 @@ function getThumbnailUrl(driveUrl) {
   return `https://drive.google.com/thumbnail?id=${m[0]}&sz=w400`;
 }
 
+// Proxy สำหรับดึงรูปจาก Drive มาเป็น base64 ฝั่ง backend — เพราะ fetch() ฝั่ง browser
+// ถูก CORS บล็อกกับ drive.google.com ทำให้ Word export (docx library) ฝัง้รูปไม่ได้
+// UrlFetchApp ฝั่ง Apps Script ไม่ติด CORS เพราะเป็น server-to-server request
+function actionFetchImageAsBase64({ url, _user }) {
+  if (!url || !/^https:\/\/drive\.google\.com\//.test(url)) return { ok: false };
+  try {
+    const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) return { ok: false };
+    const blob = resp.getBlob();
+    return { ok: true, base64: Utilities.base64Encode(blob.getBytes()), mimeType: blob.getContentType() || 'image/jpeg' };
+  } catch (e) {
+    return { ok: false };
+  }
+}
+
 /* ================================================================
    AUTH — LOGIN / TOKEN
    ✅ FIX #3 — ส่ง error/code field ชื่อเดียวกัน (ใช้ 'code') ให้ frontend อ่านได้
@@ -756,17 +773,11 @@ const SURVEY_HEADERS = [
   'createdBy','createdAt'
 ];
 
-function actionCreateSurvey({ record, images, _user }) {
-  const sh = getSheet(CONFIG.SHEETS.SURVEY);
-  ensureHeaders(sh, SURVEY_HEADERS);
-
-  let imgMain='', thumbMain='', imgSticker='', thumbSticker='';
-  const ts   = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
-  const equip = (record.equipment || 'survey').replace(/[/\\:*?"<>|]/g, '_');
-  const ser   = (record.serial   || '').replace(/[/\\:*?"<>|]/g, '_');
-  const fname = (suffix) => `${equip}_${ser}_${ts}_${suffix}.jpg`;
-   /* ================================================================
+/* ================================================================
    TARGETS — เป้าหมายวันเสร็จต่อโครงการ (Leader/Admin/Manager)
+   ✅ FIX — ย้ายออกมาเป็น top-level function (เดิมซ้อนอยู่ใน actionCreateSurvey
+      โดยไม่ได้ตั้งใจ ทำให้ route() เรียก actionSaveTarget/actionListTargets
+      ไม่ได้เลย เพราะเป็น local function ของ actionCreateSurvey)
    ================================================================ */
 const TARGET_HEADERS = ['project','username','deadline','note','updatedAt'];
 
@@ -782,7 +793,6 @@ function actionSaveTarget({ project, deadline, note, _user }) {
   const pCol = data[0].indexOf('project');
   const uCol = data[0].indexOf('username');
 
-  // อัปเดตถ้ามีอยู่แล้ว (same project + username)
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][pCol]) === project && String(data[i][uCol]) === _user.username) {
       sh.getRange(i+1, 1, 1, TARGET_HEADERS.length).setValues([[
@@ -791,7 +801,6 @@ function actionSaveTarget({ project, deadline, note, _user }) {
       return { ok: true, action: 'updated' };
     }
   }
-  // เพิ่มใหม่
   appendRow(sh, TARGET_HEADERS, {
     project, username: _user.username,
     deadline, note: note||'',
@@ -808,45 +817,39 @@ function actionListTargets({ _user }) {
   ensureHeaders(sh, TARGET_HEADERS);
   let rows = sheetToObjects(sh);
 
-  // leader เห็นเฉพาะของตัวเอง
   if (_user.role === 'leader') {
     rows = rows.filter(r => r.username === _user.username);
   }
   return { ok: true, targets: rows };
 }
-    const equipFolder = getOrCreateDynamicFolder(
-  'AMR Onsite Inspection Images',
-  record.project,
-  record.location,
-  record.sublocation,
-  record.equipment,
-  'Equipment Photos'
-);
 
-const stickerFolder = getOrCreateDynamicFolder(
-  'AMR Onsite Inspection Images',
-  record.project,
-  record.location,
-  record.sublocation,
-  record.equipment,
-  'Sticker Photos'
-);
+function actionCreateSurvey({ record, images, _user }) {
+  const sh = getSheet(CONFIG.SHEETS.SURVEY);
+  ensureHeaders(sh, SURVEY_HEADERS);
+
+  let imgMain='', thumbMain='', imgSticker='', thumbSticker='';
+  const ts   = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  const equip = (record.equipment || 'survey').replace(/[/\\:*?"<>|]/g, '_');
+  const ser   = (record.serial   || '').replace(/[/\\:*?"<>|]/g, '_');
+  const fname = (suffix) => `${equip}_${ser}_${ts}_${suffix}.jpg`;
+  const equipFolder = getOrCreateDynamicFolder(
+    'AMR Onsite Inspection Images',
+    record.project, record.location, record.sublocation, record.equipment,
+    'Equipment Photos'
+  );
+  const stickerFolder = getOrCreateDynamicFolder(
+    'AMR Onsite Inspection Images',
+    record.project, record.location, record.sublocation, record.equipment,
+    'Sticker Photos'
+  );
   if (images && images.main) {
-    const folder = getNestedFolder(CONFIG.FOLDERS.ONSITE_IMAGES, record, 'Equipment Photos');
-    imgMain = saveImageToFolder(
-  images.main,
-  fname('main'),
-  equipFolder
-);
-}
+    imgMain = saveImageToFolder(images.main, fname('main'), equipFolder);
+    thumbMain = getThumbnailUrl(imgMain);
+  }
   if (images && images.sticker) {
-    const folder = getNestedFolder(CONFIG.FOLDERS.ONSITE_IMAGES, record, 'Sticker Photos');
-    imgSticker = saveImageToFolder(
-  images.sticker,
-  fname('sticker'),
-  stickerFolder
-);
-}
+    imgSticker = saveImageToFolder(images.sticker, fname('sticker'), stickerFolder);
+    thumbSticker = getThumbnailUrl(imgSticker);
+  }
 
   appendRow(sh, SURVEY_HEADERS, { ...record, imgMain, thumbMain, imgSticker, thumbSticker, createdBy: _user.username });
   exportSurveyExcelToDrive(record.project);

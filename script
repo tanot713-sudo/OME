@@ -236,18 +236,65 @@ function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['f
 async function loadRecords(){if(!AUTH.token)return;const r=await api(ACT.listRecords,{});if(r&&r.ok&&Array.isArray(r.records)){entries=r.records.map(x=>({id:x.id,project:x.project,system:x.system,typeLocation:x.typeLocation,locName:x.location,subName:x.sublocation,equipment:x.equipment,serial:x.serial,brand:x.brand,model:x.model,asset:x.asset,inspector:x.inspector,note:x.note,imgMain:x.imgMain,imgSticker:x.imgSticker,img3:x.img3,img4:x.img4,thumbMain:x.thumbMain,thumbSticker:x.thumbSticker,thumb3:x.thumb3,thumb4:x.thumb4,createdAt:x.createdAt||Date.now(),synced:true}));entries.sort((a,b)=>b.createdAt-a.createdAt);renderSaved();updateStats();renderDashboard();}}
 
 $('#savedSearch').addEventListener('input',renderSaved);
-document.getElementById('savedFProject')?.addEventListener('change',renderSaved);
-document.getElementById('savedSort')?.addEventListener('change',renderSaved);
+['savedFProject','savedFSystem','savedFLoc','savedFSub','savedFEquip','savedSort'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',renderSaved);
+});
+
+function fillSavedFilters(){
+  const fp=$('#savedFProject'); if(!fp) return;
+  const role=AUTH.user?.role||'', userProj=AUTH.user?.project||'';
+  const isRestricted=role==='leader'||role==='inspector';
+  if(isRestricted&&userProj){
+    const userProjs=userProj.split(',').map(p=>p.trim()).filter(Boolean);
+    const cur=fp.value;
+    fp.innerHTML=userProjs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');
+    if(userProjs.includes(cur)) fp.value=cur; else if(userProjs.length===1) fp.value=userProjs[0];
+  } else {
+    const projects=uniq(entries.map(e=>e.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    const prev=fp.value;
+    fp.innerHTML='<option value="">ทุกโครงการ</option>'+projects.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');
+    if(projects.includes(prev)) fp.value=prev;
+  }
+  const fillDep=(el,src,key,defLabel)=>{
+    if(!el) return;
+    const prev=el.value;
+    const vals=uniq(src.map(e=>e[key])).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    el.innerHTML=`<option value="">${defLabel}</option>`+vals.map(v=>`<option value="${escAttr(v)}">${esc(v)}</option>`).join('');
+    if(vals.includes(prev)) el.value=prev;
+  };
+  let sc=entries; if(fp.value) sc=sc.filter(e=>e.project===fp.value);
+  fillDep($('#savedFSystem'),sc,'system','ทุกระบบ');
+  let sc2=sc; if($('#savedFSystem')&&$('#savedFSystem').value) sc2=sc2.filter(e=>e.system===$('#savedFSystem').value);
+  fillDep($('#savedFLoc'),sc2,'locName','ทุกสถานที่');
+  let sc3=sc2; if($('#savedFLoc')&&$('#savedFLoc').value) sc3=sc3.filter(e=>e.locName===$('#savedFLoc').value);
+  fillDep($('#savedFSub'),sc3,'subName','ทุกสถานที่ย่อย');
+  let sc4=sc3; if($('#savedFSub')&&$('#savedFSub').value) sc4=sc4.filter(e=>e.subName===$('#savedFSub').value);
+  fillDep($('#savedFEquip'),sc4,'equipment','ทุกอุปกรณ์');
+}
 
 function renderSaved(){
+  fillSavedFilters();
   const q=$('#savedSearch').value.trim().toLowerCase();
   const fp=$('#savedFProject')?$('#savedFProject').value:'';
+  const fs=$('#savedFSystem')?$('#savedFSystem').value:'';
+  const fl=$('#savedFLoc')?$('#savedFLoc').value:'';
+  const fsub=$('#savedFSub')?$('#savedFSub').value:'';
+  const feq=$('#savedFEquip')?$('#savedFEquip').value:'';
   const sortVal=$('#savedSort')?$('#savedSort').value:'newest';
-  const fp_projects=uniq(entries.map(e=>e.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
-  const fpEl=$('#savedFProject');if(fpEl){const cur=fpEl.value;fpEl.innerHTML='<option value="">ทุกโครงการ</option>'+fp_projects.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');if(fp_projects.includes(cur))fpEl.value=cur;}
   let list=entries.filter(e=>!q||[e.project,e.system,e.locName,e.subName,e.equipment,e.brand,e.model,e.serial,e.inspector,e.note].join(' ').toLowerCase().includes(q));
   if(fp)list=list.filter(e=>e.project===fp);
-  if(sortVal==='newest')list.sort((a,b)=>b.createdAt-a.createdAt);else if(sortVal==='oldest')list.sort((a,b)=>a.createdAt-b.createdAt);else if(sortVal==='az')list.sort((a,b)=>(a.equipment||'').localeCompare(b.equipment||''));
+  if(fs)list=list.filter(e=>e.system===fs);
+  if(fl)list=list.filter(e=>e.locName===fl);
+  if(fsub)list=list.filter(e=>e.subName===fsub);
+  if(feq)list=list.filter(e=>e.equipment===feq);
+  if(sortVal==='newest')list.sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sortVal==='oldest')list.sort((a,b)=>a.createdAt-b.createdAt);
+  else if(sortVal==='az')list.sort((a,b)=>(a.equipment||'').localeCompare(b.equipment||''));
+  else if(sortVal==='za')list.sort((a,b)=>(b.equipment||'').localeCompare(a.equipment||''));
+  else if(sortVal==='proj_th_az')list.sort((a,b)=>(a.project||'').localeCompare(b.project||'','th'));
+  else if(sortVal==='proj_th_za')list.sort((a,b)=>(b.project||'').localeCompare(a.project||'','th'));
+  else if(sortVal==='proj_en_az')list.sort((a,b)=>(a.project||'').localeCompare(b.project||'','en'));
+  else if(sortVal==='proj_en_za')list.sort((a,b)=>(b.project||'').localeCompare(a.project||'','en'));
   $('#savedPill').textContent=entries.length;
   const grid=$('#savedGrid');
   if(!list.length){grid.innerHTML=`<div class="empty"><b>${entries.length?'ไม่พบรายการตามเงื่อนไข':'ยังไม่มีรายการที่บันทึก'}</b></div>`;return;}
@@ -283,13 +330,48 @@ function openProjDetail(proj){const p=progressCache.find(x=>x.project===proj);if
 async function saveTargetForProj(proj){const deadline=$('#targetDate').value,note=$('#targetNote').value.trim(),msg=$('#targetSaveMsg');if(!deadline){msg.innerHTML='<span style="color:#EF4444">กรุณาเลือกวันที่</span>';return;}msg.innerHTML='<span style="color:var(--ink-soft)">กำลังบันทึก...</span>';const r=await api('saveTarget',{project:proj,deadline,note});if(r&&r.ok){msg.innerHTML='<span style="color:#22C55E">✅ บันทึกแล้ว</span>';await loadTargets();renderLeaderDashboard();setTimeout(()=>{$('#projDetailModal').style.display='none';},800);}else msg.innerHTML=`<span style="color:#EF4444">❌ ${esc((r&&r.message)||'เกิดข้อผิดพลาด')}</span>`;}
 
 /* ─── MASTER TABLE ──────────────────────────────────────── */
+function fillMasterFilters(){
+  const fp=$('#masterFProject'); if(!fp) return;
+  const projects=uniq(master.map(m=>m.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  const prev=fp.value;
+  fp.innerHTML='<option value="">ทุกโครงการ</option>'+projects.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');
+  if(projects.includes(prev)) fp.value=prev;
+  const fillDep=(el,src,key,defLabel)=>{
+    if(!el) return;
+    const prevV=el.value;
+    const vals=uniq(src.map(m=>m[key])).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    el.innerHTML=`<option value="">${defLabel}</option>`+vals.map(v=>`<option value="${escAttr(v)}">${esc(v)}</option>`).join('');
+    if(vals.includes(prevV)) el.value=prevV;
+  };
+  let sc=master; if(fp.value) sc=sc.filter(m=>m.project===fp.value);
+  fillDep($('#masterFSystem'),sc,'system','ทุกระบบ');
+  let sc2=sc; if($('#masterFSystem')&&$('#masterFSystem').value) sc2=sc2.filter(m=>m.system===$('#masterFSystem').value);
+  fillDep($('#masterFLoc'),sc2,'locName','ทุกสถานที่');
+  let sc3=sc2; if($('#masterFLoc')&&$('#masterFLoc').value) sc3=sc3.filter(m=>m.locName===$('#masterFLoc').value);
+  fillDep($('#masterFSub'),sc3,'subName','ทุกสถานที่ย่อย');
+  let sc4=sc3; if($('#masterFSub')&&$('#masterFSub').value) sc4=sc4.filter(m=>m.subName===$('#masterFSub').value);
+  fillDep($('#masterFEquip'),sc4,'equipment','ทุกอุปกรณ์');
+}
+
 function renderMaster(){
+  fillMasterFilters();
   const q=$('#masterSearch')?$('#masterSearch').value.trim().toLowerCase():'';
   const fp=$('#masterFProject')?$('#masterFProject').value:'';
-  const projects=uniq(master.map(m=>m.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
-  const fpEl=$('#masterFProject');if(fpEl){const cur=fpEl.value;fpEl.innerHTML='<option value="">ทุกโครงการ</option>'+projects.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');if(projects.includes(cur))fpEl.value=cur;}
+  const fs=$('#masterFSystem')?$('#masterFSystem').value:'';
+  const fl=$('#masterFLoc')?$('#masterFLoc').value:'';
+  const fsub=$('#masterFSub')?$('#masterFSub').value:'';
+  const feq=$('#masterFEquip')?$('#masterFEquip').value:'';
+  const fmiss=$('#masterFMissing')?$('#masterFMissing').value:'';
   let list=master.filter(m=>!q||[m.project,m.system,m.typeLocation,m.locName,m.subName,m.equipment,m.brand,m.model,m.asset,m.serial].join(' ').toLowerCase().includes(q));
   if(fp)list=list.filter(m=>m.project===fp);
+  if(fs)list=list.filter(m=>m.system===fs);
+  if(fl)list=list.filter(m=>m.locName===fl);
+  if(fsub)list=list.filter(m=>m.subName===fsub);
+  if(feq)list=list.filter(m=>m.equipment===feq);
+  if(fmiss==='brand') list=list.filter(m=>!m.brand);
+  else if(fmiss==='model') list=list.filter(m=>!m.model);
+  else if(fmiss==='serial') list=list.filter(m=>!m.serial);
+  else if(fmiss==='any') list=list.filter(m=>!m.brand||!m.model||!m.serial);
   const body=$('#masterBody');if($('#masterPill'))$('#masterPill').textContent=master.length;
   if(!list.length){body.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--ink-faint)">${master.length?'ไม่พบข้อมูลตามเงื่อนไข':'ยังไม่มีข้อมูล'}</td></tr>`;return;}
   body.innerHTML=list.map(m=>`<tr data-id="${m.id}"><td>${esc(m.project)}</td><td>${esc(m.system)}</td><td>${esc(m.typeLocation)}</td><td>${esc(m.locName)}</td><td>${esc(m.subName)}</td><td>${esc(m.equipment)}</td><td>${esc(m.brand)}</td><td>${esc(m.model)}</td><td class="codecell">${esc(m.asset)}</td><td class="codecell">${esc(m.serial)}</td><td>${canEdit()?`<div class="rowact"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn del" data-act="del">🗑</button></div>`:'—'}</td></tr>`).join('');
@@ -310,7 +392,19 @@ function downloadMasterTemplate(){try{const ws=XLSX.utils.aoa_to_sheet([['โค
 function downloadMasterData(){try{if(!master.length){toast('ยังไม่มีข้อมูล Master Data',false);return;}const rows=master.map(m=>[m.project||'',m.system||'',m.locName||'',m.subName||'',m.equipment||'',m.brand||'',m.model||'',m.asset||'',m.serial||'']);const ws=XLSX.utils.aoa_to_sheet([['โครงการ','ระบบ','สถานที่','สถานที่ย่อย','อุปกรณ์','ยี่ห้อ','รุ่น','รหัสอุปกรณ์','Serial Number'],...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_data.xlsx');toast('ดาวน์โหลด Master Data แล้ว',true);}catch(e){toast('โหลดข้อมูลไม่สำเร็จ',false);}}
 
 /* ─── WORD TEMPLATE GENERATION (browser-side, mirrors Colab) ── */
-async function fetchImageBuffer(url){if(!url)return null;try{const m=String(url).match(/[-\w]{25,}/);if(m)url=`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`;const r=await fetch(url);if(!r.ok)return null;return await r.arrayBuffer();}catch(e){return null;}}
+// ดึงรูปผ่าน backend (UrlFetchApp) แทน fetch() ตรงจาก browser — เลี่ยงปัญหา CORS ของ drive.google.com
+async function fetchImageBuffer(url){
+  if(!url) return null;
+  try{
+    const m=String(url).match(/[-\w]{25,}/);
+    if(m) url=`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`;
+    const r=await api('fetchImageAsBase64',{url});
+    if(!r||!r.ok||!r.base64) return null;
+    const bin=atob(r.base64); const len=bin.length; const buf=new Uint8Array(len);
+    for(let i=0;i<len;i++) buf[i]=bin.charCodeAt(i);
+    return buf.buffer;
+  }catch(e){ return null; }
+}
 
 function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=$('#wgProgress');if(box)box.classList.add('show');if(bar)bar.style.width=pct+'%';if(status)status.innerHTML=msg;}
 
@@ -471,14 +565,284 @@ $('#wgGenerate').addEventListener('click',generateWordTemplate);
 if($('#dashRefresh'))$('#dashRefresh').addEventListener('click',async()=>{await loadRecords();toast('อัปเดตข้อมูลแล้ว',true);});
 
 /* ─── SURVEY ────────────────────────────────────────────── */
-let surveyCache=[];
-async function loadSurvey(){if(!AUTH.token)return;const r=await api('listSurvey',{});if(r&&r.ok&&Array.isArray(r.records)){surveyCache=r.records;if($('#surveyPill'))$('#surveyPill').textContent=surveyCache.length;renderSurvey();}}
-function renderSurvey(){const body=$('#surveyBody');if(!body)return;if(!surveyCache.length){body.innerHTML='<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--ink-soft)">ยังไม่มีข้อมูลสำรวจ</td></tr>';return;}body.innerHTML=surveyCache.map(e=>`<tr><td>${esc(e.project||'-')}</td><td>${esc(e.system||'-')}</td><td>${esc(e.location||'-')}</td><td>${esc(e.equipment||'-')}</td><td>${esc(e.brand||'-')}</td><td>${esc(e.model||'-')}</td><td>${esc(e.serial||'-')}</td><td>${esc(e.inspector||'-')}</td><td>${esc(e.surveyDate||'-')}</td><td>${(e.thumbMain||e.thumbSticker)?'📷':'—'}</td><td></td></tr>`).join('');}
-if($('#surveyAddBtn'))$('#surveyAddBtn').addEventListener('click',()=>$('#surveyDialog').classList.add('open'));
-if($('#sdlgClose'))$('#sdlgClose').addEventListener('click',()=>$('#surveyDialog').classList.remove('open'));
-if($('#sdlgCancelBtn'))$('#sdlgCancelBtn').addEventListener('click',()=>$('#surveyDialog').classList.remove('open'));
-if($('#sdlgSaveBtn'))$('#sdlgSaveBtn').addEventListener('click',async()=>{const g=id=>{const el=$('#'+id);return el?el.value.trim():'';};const record={id:uid(),project:g('sdlgProject'),system:g('sdlgSystem'),location:g('sdlgLoc'),sublocation:'',equipment:g('sdlgEquip'),brand:g('sdlgBrand'),model:'',serial:g('sdlgSerial'),inspector:g('sdlgInspector'),surveyDate:g('sdlgDate'),note:g('sdlgNote'),createdAt:Date.now()};if(!record.project||!record.equipment||!record.inspector){toast('กรุณากรอกข้อมูลที่จำเป็น',false);return;}const r=await api('createSurvey',{record,images:{main:'',sticker:''}});if(r&&r.ok){toast('บันทึกรายการแล้ว',true);$('#surveyDialog').classList.remove('open');await loadSurvey();}else toast((r&&r.message)||'บันทึกไม่สำเร็จ',false);});
-if($('#surveyExportBtn'))$('#surveyExportBtn').addEventListener('click',()=>{if(!surveyCache.length){toast('ยังไม่มีข้อมูล',false);return;}const rows=surveyCache.map(e=>({'โครงการ':e.project,'ระบบ':e.system,'สถานที่':e.location,'อุปกรณ์':e.equipment,'ยี่ห้อ':e.brand,'Serial':e.serial,'ผู้กรอก':e.inspector}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Survey');XLSX.writeFile(wb,`Survey_${fileStamp(Date.now())}.xlsx`);toast(`ส่งออก Excel แล้ว (${surveyCache.length} รายการ)`,true);});
+let surveyCache=[],editingSurveyId=null,surveyImgMain='',surveyImgSticker='';
+const SURVEY_DRAFT_KEY='amr_survey_draft';
+
+async function loadSurvey(){
+  if(!AUTH.token)return;
+  const r=await api('listSurvey',{});
+  if(r&&r.ok&&Array.isArray(r.records)){
+    surveyCache=r.records;
+    if($('#surveyPill'))$('#surveyPill').textContent=surveyCache.length;
+    renderSurvey();
+  }
+}
+
+function fillSurveyFilters(){
+  const fp=$('#surveyFProject'),fs=$('#surveyFSystem'),fl=$('#surveyFLoc');
+  if(!fp) return;
+  const role=AUTH.user?.role||'', userProj=AUTH.user?.project||'';
+  const isRestricted=role==='leader'||role==='inspector';
+  if(isRestricted&&userProj){
+    fp.innerHTML=`<option value="${escAttr(userProj)}">${esc(userProj)}</option>`;
+    fp.value=userProj; fp.disabled=true; fp.style.background='#EEF1F4';
+  } else {
+    const projects=uniq(surveyCache.map(e=>e.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    const prev=fp.value;
+    fp.innerHTML='<option value="">ทุกโครงการ</option>'+projects.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('');
+    if(projects.includes(prev)) fp.value=prev; fp.disabled=false; fp.style.background='';
+  }
+  const fillDep=(el,src,key,defLabel)=>{
+    if(!el) return;
+    const prev=el.value;
+    const vals=uniq(src.map(e=>e[key])).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    el.innerHTML=`<option value="">${defLabel}</option>`+vals.map(v=>`<option value="${escAttr(v)}">${esc(v)}</option>`).join('');
+    if(vals.includes(prev)) el.value=prev;
+  };
+  let sc=surveyCache; if(fp.value) sc=sc.filter(e=>e.project===fp.value);
+  fillDep(fs,sc,'system','ทุกระบบ');
+  let sc2=sc; if(fs&&fs.value) sc2=sc2.filter(e=>e.system===fs.value);
+  fillDep(fl,sc2,'location','ทุกสถานที่');
+  let sc3=sc2; if(fl&&fl.value) sc3=sc3.filter(e=>e.location===fl.value);
+  fillDep($('#surveyFSub'),sc3,'sublocation','ทุกสถานที่ย่อย');
+  let sc4=sc3; if($('#surveyFSub')&&$('#surveyFSub').value) sc4=sc4.filter(e=>e.sublocation===$('#surveyFSub').value);
+  fillDep($('#surveyFEquip'),sc4,'equipment','ทุกอุปกรณ์');
+}
+
+function renderSurvey(){
+  fillSurveyFilters();
+  const q=($('#surveySearch')?$('#surveySearch').value:'').trim().toLowerCase();
+  const fp=$('#surveyFProject')?$('#surveyFProject').value:'';
+  const fs=$('#surveyFSystem')?$('#surveyFSystem').value:'';
+  const fl=$('#surveyFLoc')?$('#surveyFLoc').value:'';
+  const fsub=$('#surveyFSub')?$('#surveyFSub').value:'';
+  const feq=$('#surveyFEquip')?$('#surveyFEquip').value:'';
+  const sortV=$('#surveySort')?$('#surveySort').value:'newest';
+
+  let list=surveyCache.filter(e=>!q||[e.project,e.system,e.location,e.sublocation,e.equipment,e.brand,e.model,e.serial,e.inspector,e.note].join(' ').toLowerCase().includes(q));
+  if(fp)list=list.filter(e=>e.project===fp);
+  if(fs)list=list.filter(e=>e.system===fs);
+  if(fl)list=list.filter(e=>e.location===fl);
+  if(fsub)list=list.filter(e=>e.sublocation===fsub);
+  if(feq)list=list.filter(e=>e.equipment===feq);
+  if(sortV==='newest') list.sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sortV==='oldest') list.sort((a,b)=>a.createdAt-b.createdAt);
+  else if(sortV==='az') list.sort((a,b)=>(a.equipment||'').localeCompare(b.equipment||''));
+  else if(sortV==='za') list.sort((a,b)=>(b.equipment||'').localeCompare(a.equipment||''));
+  else if(sortV==='proj_th_az') list.sort((a,b)=>(a.project||'').localeCompare(b.project||'','th'));
+  else if(sortV==='proj_th_za') list.sort((a,b)=>(b.project||'').localeCompare(a.project||'','th'));
+  else if(sortV==='proj_en_az') list.sort((a,b)=>(a.project||'').localeCompare(b.project||'','en'));
+  else if(sortV==='proj_en_za') list.sort((a,b)=>(b.project||'').localeCompare(a.project||'','en'));
+
+  const body=$('#surveyBody'); if(!body)return;
+  if(!list.length){body.innerHTML='<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--ink-soft)">ยังไม่มีข้อมูลสำรวจ — กด ＋ เพื่อเพิ่มรายการ</td></tr>';return;}
+  body.innerHTML=list.map(e=>{
+    const hasImg=!!(e.thumbMain||e.thumbSticker);
+    const displayDate=e.surveyDate?e.surveyDate:fmtDate(e.createdAt||Date.now(),false);
+    return `<tr data-id="${e.id}">
+      <td>${esc(e.project||'-')}</td><td>${esc(e.system||'-')}</td><td>${esc(e.location||'-')}</td>
+      <td>${esc(e.sublocation||'-')}</td><td>${esc(e.equipment||'-')}</td><td>${esc(e.brand||'-')}</td>
+      <td>${esc(e.model||'-')}</td><td class="codecell">${esc(e.serial||'-')}</td>
+      <td>${esc(e.inspector||'-')}</td><td class="codecell" style="font-size:11px">${displayDate}</td>
+      <td>${hasImg?`<span class="img-badge" data-act="img">🖼 รูป</span>`:'<span style="color:var(--ink-faint);font-size:11px">—</span>'}</td>
+      <td><div class="rowact">
+        ${canEdit()?`<button class="icon-btn" data-act="edit">✎</button>`:''}
+        ${canDelete()?`<button class="icon-btn del" data-act="del">🗑</button>`:''}
+      </div></td></tr>`;
+  }).join('');
+  body.querySelectorAll('tr').forEach(tr=>{
+    const id=tr.dataset.id;
+    const bi=tr.querySelector('[data-act="img"]'); if(bi)bi.onclick=()=>viewSurveyImgs(id);
+    const be=tr.querySelector('[data-act="edit"]'); if(be)be.onclick=()=>openSurveyDialog(id);
+    const bd=tr.querySelector('[data-act="del"]'); if(bd)bd.onclick=()=>deleteSurveyEntry(id);
+  });
+}
+
+function saveSurveyDraft(){
+  const g=id=>{const el=$('#'+id);return el?el.value.trim():'';};
+  try{localStorage.setItem(SURVEY_DRAFT_KEY,JSON.stringify({
+    project:g('sdlgProject'),system:g('sdlgSystem'),location:g('sdlgLoc'),sublocation:g('sdlgSub'),
+    equipment:g('sdlgEquip'),brand:g('sdlgBrand'),model:g('sdlgModel'),serial:g('sdlgSerial'),
+    inspector:g('sdlgInspector'),surveyDate:g('sdlgDate'),note:g('sdlgNote')
+  }));}catch(e){}
+}
+function clearSurveyDraft(){ try{localStorage.removeItem(SURVEY_DRAFT_KEY);}catch(e){} }
+
+function openSurveyDialog(editId){
+  editingSurveyId=editId||null; surveyImgMain=''; surveyImgSticker='';
+  if($('#sdlgTitle'))$('#sdlgTitle').textContent=editId?'แก้ไขรายการสำรวจ':'เพิ่มรายการสำรวจ';
+  ['sdlgProject','sdlgSystem','sdlgLoc','sdlgSub','sdlgEquip','sdlgBrand','sdlgModel','sdlgSerial','sdlgInspector','sdlgDate','sdlgNote'].forEach(id=>{const el=$('#'+id);if(el)el.value='';});
+  const dm=$('#sdlgDropMain'),ds=$('#sdlgDropSticker');
+  if(dm){dm.classList.remove('has-img');dm.style.backgroundImage='';}
+  if(ds){ds.classList.remove('has-img');ds.style.backgroundImage='';}
+
+  if(editId){
+    const e=surveyCache.find(x=>x.id===editId);
+    if(e){
+      if($('#sdlgProject'))$('#sdlgProject').value=e.project||'';
+      if($('#sdlgSystem'))$('#sdlgSystem').value=e.system||'';
+      if($('#sdlgLoc'))$('#sdlgLoc').value=e.location||'';
+      if($('#sdlgSub'))$('#sdlgSub').value=e.sublocation||'';
+      if($('#sdlgEquip'))$('#sdlgEquip').value=e.equipment||'';
+      if($('#sdlgBrand'))$('#sdlgBrand').value=e.brand||'';
+      if($('#sdlgModel'))$('#sdlgModel').value=e.model||'';
+      if($('#sdlgSerial'))$('#sdlgSerial').value=e.serial||'';
+      if($('#sdlgInspector'))$('#sdlgInspector').value=e.inspector||'';
+      if($('#sdlgDate'))$('#sdlgDate').value=e.surveyDate||'';
+      if($('#sdlgNote'))$('#sdlgNote').value=e.note||'';
+      const pvM=e.thumbMain||e.imgMain||'', pvS=e.thumbSticker||e.imgSticker||'';
+      if(pvM&&dm){dm.classList.add('has-img');dm.style.backgroundImage=`url(${pvM})`;surveyImgMain=pvM;}
+      if(pvS&&ds){ds.classList.add('has-img');ds.style.backgroundImage=`url(${pvS})`;surveyImgSticker=pvS;}
+    }
+  } else {
+    try{
+      const saved=localStorage.getItem(SURVEY_DRAFT_KEY);
+      if(saved){
+        const draft=JSON.parse(saved);
+        if($('#sdlgProject'))$('#sdlgProject').value=draft.project||'';
+        if($('#sdlgSystem'))$('#sdlgSystem').value=draft.system||'';
+        if($('#sdlgLoc'))$('#sdlgLoc').value=draft.location||'';
+        if($('#sdlgSub'))$('#sdlgSub').value=draft.sublocation||'';
+        if($('#sdlgEquip'))$('#sdlgEquip').value=draft.equipment||'';
+        if($('#sdlgBrand'))$('#sdlgBrand').value=draft.brand||'';
+        if($('#sdlgModel'))$('#sdlgModel').value=draft.model||'';
+        if($('#sdlgSerial'))$('#sdlgSerial').value=draft.serial||'';
+        if($('#sdlgInspector'))$('#sdlgInspector').value=draft.inspector||'';
+        if($('#sdlgDate'))$('#sdlgDate').value=draft.surveyDate||'';
+        if($('#sdlgNote'))$('#sdlgNote').value=draft.note||'';
+        toast('📋 กู้คืนข้อมูลที่กรอกค้างไว้แล้ว',true);
+      } else {
+        const d=new Date();
+        if($('#sdlgDate'))$('#sdlgDate').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        if($('#sdlgInspector')&&AUTH.user)$('#sdlgInspector').value=AUTH.user.name||AUTH.user.username||'';
+      }
+    }catch(e){}
+    ['sdlgProject','sdlgSystem','sdlgLoc','sdlgSub','sdlgEquip','sdlgBrand','sdlgModel','sdlgSerial','sdlgInspector','sdlgDate','sdlgNote'].forEach(id=>{
+      const el=$('#'+id); if(el) el.addEventListener('input',saveSurveyDraft);
+    });
+  }
+
+  const fillDL=(id,values)=>{
+    let dl=document.getElementById('dl_'+id);
+    if(!dl){dl=document.createElement('datalist');dl.id='dl_'+id;document.body.appendChild(dl);}
+    dl.innerHTML=uniq(values).filter(Boolean).map(v=>`<option value="${escAttr(v)}">`).join('');
+    const inp=$('#'+id); if(inp) inp.setAttribute('list','dl_'+id);
+  };
+  const updateSurveyCascade=()=>{
+    let scope=master;
+    const role=AUTH.user?.role||'';
+    const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    if((role==='leader'||role==='inspector')&&userProjs.length>0) scope=scope.filter(m=>userProjs.includes(m.project));
+    const p=$('#sdlgProject').value; if(p) scope=scope.filter(m=>m.project===p);
+    const s=$('#sdlgSystem').value; if(s) scope=scope.filter(m=>m.system===s);
+    const l=$('#sdlgLoc').value; if(l) scope=scope.filter(m=>m.locName===l);
+    const sl=$('#sdlgSub').value; if(sl) scope=scope.filter(m=>m.subName===sl);
+    const eq=$('#sdlgEquip').value; if(eq) scope=scope.filter(m=>m.equipment===eq);
+    if(!p) fillDL('sdlgProject', master.map(m=>m.project).filter(x=>userProjs.length===0||userProjs.includes(x)));
+    fillDL('sdlgSystem', scope.map(m=>m.system));
+    fillDL('sdlgLoc', scope.map(m=>m.locName));
+    fillDL('sdlgSub', scope.map(m=>m.subName));
+    fillDL('sdlgEquip', scope.map(m=>m.equipment));
+    fillDL('sdlgBrand', scope.map(m=>m.brand));
+    fillDL('sdlgModel', scope.map(m=>m.model));
+    let inspScope=surveyCache; if(p) inspScope=inspScope.filter(e=>e.project===p);
+    fillDL('sdlgInspector', uniq([...INSP_SEED,...inspScope.map(e=>e.inspector)]));
+  };
+  ['sdlgProject','sdlgSystem','sdlgLoc','sdlgSub','sdlgEquip'].forEach(id=>{
+    const el=$('#'+id); if(el){ el.removeEventListener('input',updateSurveyCascade); el.addEventListener('input',updateSurveyCascade); }
+  });
+  updateSurveyCascade();
+
+  const role=AUTH.user?.role||'';
+  const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+  const isRestricted=(role==='leader'||role==='inspector');
+  if(isRestricted){
+    if(!editId){
+      if(userProjs.length===1) $('#sdlgProject').value=userProjs[0];
+      $('#sdlgInspector').value=AUTH.user?.name||AUTH.user?.username||'';
+    }
+    $('#sdlgInspector').disabled=true; $('#sdlgInspector').style.background='#EEF1F4';
+    if(userProjs.length===1){ $('#sdlgProject').disabled=true; $('#sdlgProject').style.background='#EEF1F4'; }
+    else { $('#sdlgProject').disabled=false; $('#sdlgProject').style.background=''; }
+  } else {
+    $('#sdlgProject').disabled=false; $('#sdlgProject').style.background='';
+    $('#sdlgInspector').disabled=false; $('#sdlgInspector').style.background='';
+  }
+  updateSurveyCascade();
+  $('#surveyDialog').classList.add('open');
+}
+function closeSurveyDialog(){
+  if(!editingSurveyId) saveSurveyDraft();
+  $('#surveyDialog').classList.remove('open');
+  editingSurveyId=null; surveyImgMain=''; surveyImgSticker='';
+}
+
+async function saveSurvey(){
+  const g=id=>{const el=$('#'+id);return el?el.value.trim():'';};
+  const project=g('sdlgProject'),equipment=g('sdlgEquip'),inspector=g('sdlgInspector');
+  if(!project){toast('กรุณากรอกโครงการ',false);return;}
+  if(!equipment){toast('กรุณากรอกอุปกรณ์',false);return;}
+  if(!inspector){toast('กรุณากรอกชื่อผู้กรอก',false);return;}
+  const btn=$('#sdlgSaveBtn'); btn.disabled=true; btn.textContent='กำลังบันทึก…';
+  const record={
+    id:editingSurveyId||uid(), project, system:g('sdlgSystem'),
+    location:g('sdlgLoc'), sublocation:g('sdlgSub'), equipment,
+    brand:g('sdlgBrand'), model:g('sdlgModel'), serial:g('sdlgSerial'),
+    inspector, surveyDate:g('sdlgDate'), note:g('sdlgNote'),
+    createdAt:editingSurveyId?(surveyCache.find(x=>x.id===editingSurveyId)?.createdAt||Date.now()):Date.now()
+  };
+  const images={
+    main:surveyImgMain&&surveyImgMain.startsWith('data:')?surveyImgMain:'',
+    sticker:surveyImgSticker&&surveyImgSticker.startsWith('data:')?surveyImgSticker:''
+  };
+  const action=editingSurveyId?'updateSurvey':'createSurvey';
+  const r=await api(action,{record,images});
+  btn.disabled=false; btn.textContent='💾 บันทึก';
+  if(r&&r.ok){
+    clearSurveyDraft();
+    closeSurveyDialog();
+    toast(editingSurveyId?'แก้ไขรายการแล้ว':'บันทึกรายการแล้ว',true);
+    await loadSurvey();
+  } else {
+    saveSurveyDraft();
+    toast((r&&r.message)||'บันทึกไม่สำเร็จ กรุณาลองใหม่',false);
+  }
+}
+
+async function deleteSurveyEntry(id){
+  if(!confirm('ลบรายการสำรวจนี้?'))return;
+  const r=await api('deleteSurvey',{id});
+  if(r&&r.ok){toast('ลบแล้ว',true);await loadSurvey();}
+  else toast((r&&r.message)||'ลบไม่สำเร็จ',false);
+}
+
+function viewSurveyImgs(id){
+  const e=surveyCache.find(x=>x.id===id); if(!e)return;
+  const urls=[e.thumbMain||e.imgMain,e.thumbSticker||e.imgSticker].filter(Boolean);
+  if(!urls.length){toast('ไม่มีรูปภาพ',false);return;}
+  urls.forEach((u,i)=>setTimeout(()=>window.open(u,'_blank'),i*300));
+}
+
+wireImg('sdlgFileMain','sdlgDropMain',d=>surveyImgMain=d);
+wireImg('sdlgFileSticker','sdlgDropSticker',d=>surveyImgSticker=d);
+
+if($('#surveyAddBtn'))$('#surveyAddBtn').addEventListener('click',()=>openSurveyDialog(null));
+if($('#sdlgClose'))$('#sdlgClose').addEventListener('click',closeSurveyDialog);
+if($('#sdlgCancelBtn'))$('#sdlgCancelBtn').addEventListener('click',closeSurveyDialog);
+if($('#sdlgSaveBtn'))$('#sdlgSaveBtn').addEventListener('click',saveSurvey);
+
+if($('#surveySearch'))$('#surveySearch').addEventListener('input',renderSurvey);
+['surveyFProject','surveyFSystem','surveyFLoc','surveyFSub','surveyFEquip','surveySort'].forEach(id=>{
+  const el=document.getElementById(id); if(el) el.addEventListener('change',renderSurvey);
+});
+
+if($('#surveyExportBtn'))$('#surveyExportBtn').addEventListener('click',()=>{
+  if(!surveyCache.length){toast('ยังไม่มีข้อมูล',false);return;}
+  const rows=surveyCache.map(e=>({'โครงการ':e.project,'ระบบ':e.system,'สถานที่':e.location,'สถานที่ย่อย':e.sublocation,'อุปกรณ์':e.equipment,'ยี่ห้อ':e.brand,'รุ่น':e.model,'Serial':e.serial,'ผู้กรอก':e.inspector,'วันที่สำรวจ':e.surveyDate,'หมายเหตุ':e.note}));
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Survey');
+  XLSX.writeFile(wb,`Survey_${fileStamp(Date.now())}.xlsx`);
+  toast(`ส่งออก Excel แล้ว (${surveyCache.length} รายการ)`,true);
+});
 
 /* ─── PDF REPORT (print) ─────────────────────────────────  */
 if($('#makeReport'))$('#makeReport').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}buildReport();});
@@ -499,7 +863,9 @@ function downloadUsersData(){try{if(!usersCache.length){toast('ยังไม�
 
 /* ─── MASTER SEARCH ─────────────────────────────────────── */
 document.getElementById('masterSearch')?.addEventListener('input',renderMaster);
-document.getElementById('masterFProject')?.addEventListener('change',renderMaster);
+['masterFProject','masterFSystem','masterFLoc','masterFSub','masterFEquip','masterFMissing'].forEach(id=>{
+  document.getElementById(id)?.addEventListener('change',renderMaster);
+});
 
 /* ─── INIT AUTH ─────────────────────────────────────────── */
 async function initAuth(){

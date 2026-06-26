@@ -200,9 +200,15 @@
   <div class="saved-tools" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
     <input type="text" id="savedSearch" placeholder="ค้นหารายการ…" style="flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
     <select id="savedFProject" class="tin" style="width:auto;min-width:130px"><option value="">ทุกโครงการ</option></select>
+    <select id="savedFSystem" class="tin" style="width:auto;min-width:110px"><option value="">ทุกระบบ</option></select>
+    <select id="savedFLoc" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่</option></select>
+    <select id="savedFSub" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่ย่อย</option></select>
+    <select id="savedFEquip" class="tin" style="width:auto;min-width:150px"><option value="">ทุกอุปกรณ์</option></select>
     <select id="savedSort" class="tin" style="width:auto;min-width:160px">
       <option value="newest">ใหม่สุด→เก่าสุด</option><option value="oldest">เก่าสุด→ใหม่สุด</option>
       <option value="az">อุปกรณ์ A→Z</option><option value="za">อุปกรณ์ Z→A</option>
+      <option value="proj_th_az">โครง ก→ฮ</option><option value="proj_th_za">โครง ฮ→ก</option>
+      <option value="proj_en_az">โครง A→Z</option><option value="proj_en_za">โครง Z→A</option>
     </select>
     <button class="ghost-btn" id="exportXlsx">⬇ ส่งออก Excel</button>
     <button class="ghost-btn pdf-only" id="makeReport">📄 สร้างรายงาน PDF</button>
@@ -217,12 +223,27 @@
   <div class="panel-desc">บันทึกข้อมูลอุปกรณ์ที่พบในหน้างาน</div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
     <input type="text" id="surveySearch" placeholder="ค้นหา…" style="flex:1;min-width:160px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
+    <select id="surveyFProject" class="tin" style="width:auto;min-width:130px"><option value="">ทุกโครงการ</option></select>
+    <select id="surveyFSystem" class="tin" style="width:auto;min-width:110px"><option value="">ทุกระบบ</option></select>
+    <select id="surveyFLoc" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่</option></select>
+    <select id="surveyFSub" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่ย่อย</option></select>
+    <select id="surveyFEquip" class="tin" style="width:auto;min-width:150px"><option value="">ทุกอุปกรณ์</option></select>
+    <select id="surveySort" class="tin" style="width:auto;min-width:160px">
+      <option value="newest">ใหม่สุด→เก่าสุด</option>
+      <option value="oldest">เก่าสุด→ใหม่สุด</option>
+      <option value="az">อุปกรณ์ A→Z</option>
+      <option value="za">อุปกรณ์ Z→A</option>
+      <option value="proj_th_az">โครง ก→ฮ</option>
+      <option value="proj_th_za">โครง ฮ→ก</option>
+      <option value="proj_en_az">โครง A→Z</option>
+      <option value="proj_en_za">โครง Z→A</option>
+    </select>
     <button class="ghost-btn" id="surveyExportBtn">⬇ Export Excel</button>
     <button class="btn btn-primary edit-only" id="surveyAddBtn" style="border-radius:50px;padding:10px 22px;font-size:18px">＋</button>
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>โครงการ</th><th>ระบบ</th><th>สถานที่</th><th>อุปกรณ์</th><th>ยี่ห้อ</th><th>รุ่น</th><th>Serial</th><th>ผู้กรอก</th><th>วันที่</th><th>รูป</th><th></th></tr></thead>
+      <thead><tr><th>โครงการ</th><th>ระบบ</th><th>สถานที่</th><th>สถานที่ย่อย</th><th>อุปกรณ์</th><th>ยี่ห้อ</th><th>รุ่น</th><th>Serial</th><th>ผู้กรอก</th><th>วันที่</th><th>รูป</th><th></th></tr></thead>
       <tbody id="surveyBody"></tbody>
     </table>
   </div>
@@ -375,6 +396,17 @@
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
     <input type="text" id="masterSearch" placeholder="ค้นหาในข้อมูลหลัก…" style="flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
     <select id="masterFProject" class="tin" style="width:auto;min-width:130px"><option value="">ทุกโครงการ</option></select>
+    <select id="masterFSystem" class="tin" style="width:auto;min-width:110px"><option value="">ทุกระบบ</option></select>
+    <select id="masterFLoc" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่</option></select>
+    <select id="masterFSub" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่ย่อย</option></select>
+    <select id="masterFEquip" class="tin" style="width:auto;min-width:150px"><option value="">ทุกอุปกรณ์</option></select>
+    <select id="masterFMissing" class="tin" style="width:auto;min-width:160px">
+      <option value="">แสดงทั้งหมด</option>
+      <option value="brand">ขาดยี่ห้อ</option>
+      <option value="model">ขาดรุ่น</option>
+      <option value="serial">ขาด Serial</option>
+      <option value="any">ขาดข้อมูลใดก็ตาม</option>
+    </select>
     <button class="btn btn-primary edit-only" id="addMasterBtn">＋ เพิ่มอุปกรณ์</button>
   </div>
   <div class="table-wrap">
@@ -450,7 +482,7 @@
 <div id="surveyDialog">
   <div class="sdlg">
     <div style="padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between">
-      <h3>เพิ่มรายการสำรวจ</h3>
+      <h3 id="sdlgTitle">เพิ่มรายการสำรวจ</h3>
       <div id="sdlgClose" style="cursor:pointer;font-size:18px">&times;</div>
     </div>
     <div style="padding:18px 24px 24px;display:flex;flex-direction:column;gap:14px">
@@ -460,13 +492,36 @@
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">โครงการ *</label><input class="tin" id="sdlgProject" placeholder="โครงการ" autocomplete="off"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ระบบ</label><input class="tin" id="sdlgSystem" placeholder="ระบบ" autocomplete="off"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">สถานที่</label><input class="tin" id="sdlgLoc" placeholder="สถานที่" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">สถานที่ย่อย</label><input class="tin" id="sdlgSub" placeholder="สถานที่ย่อย" autocomplete="off"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">อุปกรณ์ *</label><input class="tin" id="sdlgEquip" placeholder="ชื่ออุปกรณ์" autocomplete="off"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">Serial Number</label><input class="tin" id="sdlgSerial" placeholder="S/N" autocomplete="off"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ยี่ห้อ</label><input class="tin" id="sdlgBrand" placeholder="ยี่ห้อ" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">รุ่น</label><input class="tin" id="sdlgModel" placeholder="รุ่น" autocomplete="off"></div>
         </div>
       </div>
       <div style="background:#F7F9FB;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px">
-        <h4 style="font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px">2. ข้อมูลการสำรวจ</h4>
+        <h4 style="font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px">2. รูปภาพ</h4>
+        <div class="sdlg-imgs">
+          <div class="sdlg-imgslot">
+            <div class="scap"><span class="tagn">รูป 1</span> รูปรวมอุปกรณ์</div>
+            <label class="sdlg-drop" id="sdlgDropMain" for="sdlgFileMain">
+              <div class="dh"><b>แตะเพื่อเลือกรูป</b>ภาพอุปกรณ์ทั้งตัว</div>
+              <div class="sdlg-replace">แตะเพื่อเปลี่ยน</div>
+            </label>
+            <input type="file" id="sdlgFileMain" accept="image/*" hidden>
+          </div>
+          <div class="sdlg-imgslot">
+            <div class="scap"><span class="tagn">รูป 2</span> รูปสติกเกอร์</div>
+            <label class="sdlg-drop" id="sdlgDropSticker" for="sdlgFileSticker">
+              <div class="dh"><b>แตะเพื่อเลือกรูป</b>ป้าย/ฉลากอุปกรณ์</div>
+              <div class="sdlg-replace">แตะเพื่อเปลี่ยน</div>
+            </label>
+            <input type="file" id="sdlgFileSticker" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>
+      <div style="background:#F7F9FB;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px">
+        <h4 style="font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px">3. ข้อมูลการสำรวจ</h4>
         <div class="sdlg-grid">
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ผู้กรอก *</label><input class="tin" id="sdlgInspector" placeholder="ชื่อผู้กรอก" autocomplete="off"></div>
           <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">วันที่สำรวจ</label><input class="tin" type="date" id="sdlgDate"></div>
