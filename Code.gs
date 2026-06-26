@@ -149,7 +149,7 @@ function route(action, payload) {
    PDF / GOOGLE DOC REPORT GENERATION
    ================================================================ */
 
-var REPORT_TEMPLATE_ID = '1CGdOuFr3SXlQpzsB5JXsUYudXEEho1-B';
+var REPORT_TEMPLATE_ID = '1EZyibVq33y3Xzt82bXtD5DUKp_zIciDf';
 
 function actionGenerateReport(payload, _user) {
   try {
