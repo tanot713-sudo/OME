@@ -376,14 +376,23 @@ function sheetToObjects(sh) {
   });
 }
 
+// เพิ่ม header ที่ขาดไปต่อท้ายคอลัมน์ที่มีอยู่แล้วเสมอ (ไม่เขียนทับ/สลับตำแหน่งคอลัมน์เดิม)
+// กันข้อมูลเพี้ยนเวลาเพิ่มฟิลด์ใหม่ใน sheet ที่มีข้อมูลอยู่แล้ว (เช่น Records)
 function ensureHeaders(sh, headers) {
-  const existing = sh.getRange(1, 1, 1, headers.length).getValues()[0];
-  if (!existing[0]) sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  const lastCol = sh.getLastColumn();
+  if (lastCol === 0) { sh.getRange(1, 1, 1, headers.length).setValues([headers]); return; }
+  const existing = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  if (!existing[0]) { sh.getRange(1, 1, 1, headers.length).setValues([headers]); return; }
+  const missing = headers.filter(h => existing.indexOf(h) === -1);
+  if (missing.length) sh.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
 }
 
+// เขียนค่าตามตำแหน่งคอลัมน์จริงของ sheet (อ่านชื่อ header แถวแรกจริง) ไม่ใช่ตามลำดับใน array headers
+// เพื่อไม่ให้ข้อมูลเลื่อนคอลัมน์ผิดถ้ามีการเพิ่ม/เรียง headers array ใหม่ในอนาคต
 function appendRow(sh, headers, obj) {
   ensureHeaders(sh, headers);
-  const row = headers.map(h => obj[h] !== undefined ? obj[h] : '');
+  const physicalHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const row = physicalHeaders.map(h => obj[h] !== undefined ? obj[h] : '');
   sh.appendRow(row);
 }
 
@@ -401,7 +410,9 @@ function findRowById(sh, id) {
 function updateRowById(sh, headers, id, obj) {
   const row = findRowById(sh, id);
   if (row < 0) return false;
-  const vals = headers.map(h => obj[h] !== undefined ? obj[h] : '');
+  ensureHeaders(sh, headers);
+  const physicalHeaders = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const vals = physicalHeaders.map(h => obj[h] !== undefined ? obj[h] : '');
   sh.getRange(row, 1, 1, vals.length).setValues([vals]);
   return true;
 }
@@ -587,7 +598,7 @@ function actionAcceptPdpa({ version, ctx, _user }) {
    RECORDS
    ================================================================ */
 const REC_HEADERS = [
-  'id','project','system','location','sublocation','equipment',
+  'id','project','system','typeLocation','location','sublocation','equipment',
   'serial','brand','model','asset','inspector','note',
   'imgMain','thumbMain','imgSticker','thumbSticker',
   'img3','thumb3','img4','thumb4',
@@ -656,7 +667,7 @@ function actionListRecords({ _user }) {
   return {
     ok: true,
     records: rows.map(r => ({
-      id: r.id, project: r.project, system: r.system,
+      id: r.id, project: r.project, system: r.system, typeLocation: r.typeLocation,
       location: r.location, sublocation: r.sublocation,
       equipment: r.equipment, serial: r.serial,
       brand: r.brand, model: r.model, asset: r.asset,
@@ -682,7 +693,7 @@ function actionDeleteRecord({ id, _user }) {
    MASTER DATA
    ================================================================ */
 const MASTER_HEADERS = [
-  'id','project','system','location','sublocation',
+  'id','project','system','typeLocation','location','sublocation',
   'equipment','brand','model','asset','serial'
 ];
 
