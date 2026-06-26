@@ -1129,7 +1129,10 @@ function writeLog(action, username, ctx) {
   } catch(e) { /* ไม่ให้ log crash งาน */ }
 }
 
-
+function testDocumentAccess() {
+  var doc = DocumentApp.openById('1cs3aZNeU-TTJegfyQH9nyY5fVFlNfanBYNXoPCCe028');
+  Logger.log('OK: ' + doc.getName());
+}
 
 /* ================================================================
    FIX TOOLS — รันจาก GAS Editor เมื่อมีปัญหา
@@ -1218,4 +1221,28 @@ function getOrCreateFolderObj(parentFolder, folderName) {
   const folders = parentFolder.getFoldersByName(folderName);
   if (folders.hasNext()) return folders.next();
   return parentFolder.createFolder(folderName);
+}
+function checkFunctions() {
+  const required = [
+    'login','verifyToken','createRecord','listRecords','deleteRecord',
+    'createUser','listUsers','saveMaster','listMaster','getProgress',
+    'createSurvey','listSurvey','listTargets','saveTarget',
+    'getPdpaStatus','acceptPdpa','bulkCreateUsers','updateUser','deleteUser'
+  ];
+
+  // GAS ใช้ globalThis แทน this
+  required.forEach(fn => {
+    const exists = typeof globalThis[fn] === 'function';
+    Logger.log((exists ? '✅' : '❌') + ' ' + fn);
+  });
+}
+function testAllActions() {
+  // ทดสอบ login จริงๆ
+  const r = actionLogin({ username: 'admin', password: 'admin1234' });
+  Logger.log('Login: ' + JSON.stringify(r));
+
+  // ถ้า login ได้ → แสดงว่า GAS backend พร้อมใช้งานจริง
+}
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
