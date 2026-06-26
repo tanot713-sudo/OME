@@ -628,8 +628,11 @@ function actionListRecords({ _user }) {
   let rows = sheetToObjects(sh);
 
   const role = _user.role;
+  const leaderProjs = (role==='leader')
+    ? (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean)
+    : [];
   if      (role === 'inspector') rows = rows.filter(r => r.createdBy === _user.username);
-  else if (role === 'leader')    rows = rows.filter(r => r.project   === _user.project);
+  else if (role === 'leader' && leaderProjs.length>0) rows = rows.filter(r => leaderProjs.includes(r.project));
 
   return {
     ok: true,
@@ -826,8 +829,11 @@ function actionListSurvey({ _user }) {
   let rows = sheetToObjects(sh);
 
   const role = _user.role;
+  const leaderProjs = (role==='leader')
+    ? (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean)
+    : [];
   if      (role === 'inspector') rows = rows.filter(r => r.createdBy === _user.username);
-  else if (role === 'leader')    rows = rows.filter(r => r.project   === _user.project);
+  else if (role === 'leader' && leaderProjs.length>0) rows = rows.filter(r => leaderProjs.includes(r.project));
 
   return {
     ok: true,
