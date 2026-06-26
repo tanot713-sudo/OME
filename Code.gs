@@ -53,7 +53,7 @@ const CONFIG = {
 
 // doGet → แสดงหน้าเว็บ (HTML จากไฟล์ index.html ใน GAS)
 function doGet(e) {
-  return HtmlService.createHtmlOutputFromFile('index')
+  return HtmlService.createTemplateFromFile('index').evaluate()
     .setTitle('AMR Inspection System')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no') 
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
