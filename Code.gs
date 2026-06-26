@@ -134,6 +134,9 @@ function route(action, payload) {
     // Page Permissions
     case 'getPagePerms':      return actionGetPagePerms(payload);
     case 'setPagePerms':      return actionSetPagePerms(payload);
+     // Switch-case
+    case 'saveTarget':   return actionSaveTarget(payload);
+    case 'listTargets':  return actionListTargets(payload);
     // PDF Report
     case 'generateReport':    return actionGenerateReport(payload, payload._user);
     default:
@@ -681,23 +684,33 @@ function actionGetProgress({ _user }) {
   const records = sheetToObjects(getSheet(CONFIG.SHEETS.RECORDS));
   const role    = _user.role;
 
+  const leaderProjs = (role==='leader'||role==='inspector')
+    ? (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean)
+    : [];
+
   const projectMap = {};
   master.forEach(m => {
-    if ((role === 'inspector' || role === 'leader') && m.project !== _user.project) return;
-    if (!projectMap[m.project]) projectMap[m.project] = { total: 0, serials: new Set() };
+    if(leaderProjs.length>0 && !leaderProjs.includes(m.project)) return;
+    if(!projectMap[m.project]) projectMap[m.project]={total:0,serials:new Set()};
     projectMap[m.project].total++;
-    if (m.serial) projectMap[m.project].serials.add(m.serial);
+    if(m.serial) projectMap[m.project].serials.add(m.serial);
   });
 
-  const doneSerials = new Set(records.map(r => r.serial).filter(Boolean));
+  let filteredRecords = records;
+  if(role==='leader' && leaderProjs.length>0)
+    filteredRecords = records.filter(r=>leaderProjs.includes(r.project));
+  else if(role==='inspector')
+    filteredRecords = records.filter(r=>r.createdBy===_user.username);
 
-  const progress = Object.entries(projectMap).map(([project, info]) => ({
+  const doneSerials = new Set(filteredRecords.map(r=>r.serial).filter(Boolean));
+
+  const progress = Object.entries(projectMap).map(([project,info])=>({
     project,
     total: info.total,
-    done:  [...info.serials].filter(s => doneSerials.has(s)).length
-  })).sort((a, b) => a.project.localeCompare(b.project, 'th'));
+    done:  [...info.serials].filter(s=>doneSerials.has(s)).length
+  })).sort((a,b)=>a.project.localeCompare(b.project,'th'));
 
-  return { ok: true, progress };
+  return { ok:true, progress };
 }
 
 /* ================================================================
@@ -719,7 +732,55 @@ function actionCreateSurvey({ record, images, _user }) {
   const equip = (record.equipment || 'survey').replace(/[/\\:*?"<>|]/g, '_');
   const ser   = (record.serial   || '').replace(/[/\\:*?"<>|]/g, '_');
   const fname = (suffix) => `${equip}_${ser}_${ts}_${suffix}.jpg`;
-   
+   /* ================================================================
+   TARGETS — เป้าหมายวันเสร็จต่อโครงการ (Leader/Admin/Manager)
+   ================================================================ */
+const TARGET_HEADERS = ['project','username','deadline','note','updatedAt'];
+
+function actionSaveTarget({ project, deadline, note, _user }) {
+  if (!['admin','manager','leader'].includes(_user.role))
+    return { ok: false, message: 'ไม่มีสิทธิ์' };
+  if (!project || !deadline)
+    return { ok: false, message: 'ต้องมีโครงการและวันเสร็จ' };
+
+  const sh   = getSheet('Targets');
+  ensureHeaders(sh, TARGET_HEADERS);
+  const data = sh.getDataRange().getValues();
+  const pCol = data[0].indexOf('project');
+  const uCol = data[0].indexOf('username');
+
+  // อัปเดตถ้ามีอยู่แล้ว (same project + username)
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][pCol]) === project && String(data[i][uCol]) === _user.username) {
+      sh.getRange(i+1, 1, 1, TARGET_HEADERS.length).setValues([[
+        project, _user.username, deadline, note||'', new Date().toISOString()
+      ]]);
+      return { ok: true, action: 'updated' };
+    }
+  }
+  // เพิ่มใหม่
+  appendRow(sh, TARGET_HEADERS, {
+    project, username: _user.username,
+    deadline, note: note||'',
+    updatedAt: new Date().toISOString()
+  });
+  return { ok: true, action: 'created' };
+}
+
+function actionListTargets({ _user }) {
+  if (!['admin','manager','leader'].includes(_user.role))
+    return { ok: false, message: 'ไม่มีสิทธิ์' };
+
+  const sh   = getSheet('Targets');
+  ensureHeaders(sh, TARGET_HEADERS);
+  let rows = sheetToObjects(sh);
+
+  // leader เห็นเฉพาะของตัวเอง
+  if (_user.role === 'leader') {
+    rows = rows.filter(r => r.username === _user.username);
+  }
+  return { ok: true, targets: rows };
+}
     const equipFolder = getOrCreateDynamicFolder(
   'AMR Onsite Inspection Images',
   record.project,
