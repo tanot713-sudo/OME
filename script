@@ -1201,7 +1201,7 @@ async function generatePdfFile(list,fields){
     const fn=`รายงานอุปกรณ์_${fileStamp(Date.now())}.pdf`;
     try{
       await html2pdf().set({
-        margin:[10,10,10,10],
+        margin:0,
         filename:fn,
         image:{type:'jpeg',quality:0.92},
         html2canvas:{scale:2,useCORS:true},
