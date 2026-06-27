@@ -37,7 +37,8 @@ const CONFIG = {
     ONSITE_IMG_EQUIP: 'Equipment Photos',
     ONSITE_IMG_STICK: 'Sticker Photos',
     ONSITE_MASTER:    'Onsite master data',
-    ONSITE_EXCEL:     'Excel'
+    ONSITE_EXCEL:     'Excel',
+    CUSTOMER_LOGOS:   'Customer Logos'
   },
 
   TOKEN_TTL:    8 * 60 * 60 * 1000,
@@ -145,6 +146,7 @@ function route(action, payload) {
     case 'listReportInfo':      return actionListReportInfo(payload);
     case 'saveReportInfo':      return actionSaveReportInfo(payload);
     case 'bulkSaveReportInfo':  return actionBulkSaveReportInfo(payload);
+    case 'getCustomerLogoFolderUrl': return actionGetCustomerLogoFolderUrl(payload);
      // Switch-case
     case 'saveTarget':   return actionSaveTarget(payload);
     case 'listTargets':  return actionListTargets(payload);
@@ -1174,6 +1176,13 @@ function actionBulkSaveReportInfo({ rows, _user }) {
   return { ok: true, count };
 }
 
+// คืน URL ของโฟลเดอร์เก็บรูปโลโก้บริษัทลูกค้า (สร้างให้ถ้ายังไม่มี) — ให้ admin อัปโหลดรูปแล้ว Share เป็นลิงก์
+// เอาไปใส่ในคอลัมน์ logoCustomer ของ Excel (ต้อง share เป็น "Anyone with link" ถึงจะดึงรูปไปฝัง Word ได้)
+function actionGetCustomerLogoFolderUrl({ _user }) {
+  const folder = getFolder([CONFIG.FOLDERS.AMR_IMAGES, CONFIG.FOLDERS.CUSTOMER_LOGOS]);
+  return { ok: true, url: folder.getUrl() };
+}
+
 /* ================================================================
    USER MANAGEMENT
    ✅ FIX #4 — เพิ่ม actionSetUserActive + แก้ actionDeleteUser
@@ -1378,7 +1387,8 @@ function setupFolders() {
     [CONFIG.FOLDERS.AMR_IMAGES,    CONFIG.FOLDERS.AMR_IMG_STICKER],
     [CONFIG.FOLDERS.ONSITE_IMAGES, CONFIG.FOLDERS.ONSITE_IMG_EQUIP],
     [CONFIG.FOLDERS.ONSITE_IMAGES, CONFIG.FOLDERS.ONSITE_IMG_STICK],
-    [CONFIG.FOLDERS.ONSITE_MASTER, CONFIG.FOLDERS.ONSITE_EXCEL]
+    [CONFIG.FOLDERS.ONSITE_MASTER, CONFIG.FOLDERS.ONSITE_EXCEL],
+    [CONFIG.FOLDERS.AMR_IMAGES,    CONFIG.FOLDERS.CUSTOMER_LOGOS]
   ];
   paths.forEach(p => getFolder(p));
   Logger.log('✅ สร้าง folder structure ใน Drive เรียบร้อย');

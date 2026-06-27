@@ -333,13 +333,10 @@
                 <datalist id="dl_wgSubmittedTo"></datalist>
               </div>
             </div>
-            <div class="wg-row" style="margin-top:10px">
-              <div class="wg-field">
-                <label>ชื่อหน่วยงานลูกค้า (logocustomer)</label>
-                <input class="tin" id="wgLogoCustomer" list="dl_wgLogoCustomer" placeholder="ชื่อที่จะแสดงคู่โลโก้ลูกค้า">
-                <datalist id="dl_wgLogoCustomer"></datalist>
-              </div>
-            </div>
+            <!-- logocustomer คือลิงก์ Google Drive ของรูปโลโก้บริษัทลูกค้า ไม่ใช่ข้อความ — ไม่ให้พิมพ์เอง
+                 ค่าจะถูกเติมอัตโนมัติจากข้อมูลสัญญาของโครงการ (ดูปุ่ม + ด้านบนสำหรับอัปโหลด Excel) -->
+            <input type="hidden" id="wgLogoCustomer">
+            <datalist id="dl_wgLogoCustomer"></datalist>
           </div>
         </div>
 

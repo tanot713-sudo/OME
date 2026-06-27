@@ -619,7 +619,12 @@ async function generateWordTemplate(){
   coverKids.push(P(T('นำส่ง'+(submittedTo?' '+submittedTo:''),{size:32}),{align:AlignmentType.RIGHT}));
   for(let i=0;i<6;i++)coverKids.push(new Paragraph({}));
   if(client)coverKids.push(P(T(client,{size:36,bold:true,color:DARK}),{align:AlignmentType.CENTER}));
-  if(logoCustomer)coverKids.push(P(T(logoCustomer,{size:28,color:GREY}),{align:AlignmentType.CENTER}));
+  if(logoCustomer){
+    // logocustomer คือลิงก์ Google Drive ของรูปโลโก้บริษัทลูกค้า ไม่ใช่ชื่อหน่วยงาน — ดึงมาฝังเป็นรูปในหน้าปก
+    setWgProgress(20,'กำลังโหลดโลโก้ลูกค้า...');
+    const custLogoBuf=await fetchImageBuffer(logoCustomer);
+    if(custLogoBuf)coverKids.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:custLogoBuf,transformation:{width:130,height:80}})]}));
+  }
 
   const tocKids=[P(T('สารบัญ',{size:44,bold:true,color:DARK}),{align:AlignmentType.CENTER}),new TableOfContents('สารบัญ',{hyperlink:true,headingStyleRange:'1-3'})];
 
@@ -1391,7 +1396,7 @@ if($('#wgContract'))$('#wgContract').addEventListener('change',()=>{
   toast(`เติมข้อมูลสัญญาของ "${v}" ให้แล้ว`,true);
 });
 
-const REPORT_INFO_COLS=[['project','โครงการ'],['contractName','ชื่อสัญญา'],['contractNo','เลขที่สัญญา'],['contractDate','ลงวันที่'],['client','หน่วยงานลูกค้า'],['clause','ข้อกำหนด'],['submittedTo','นำส่ง'],['logoCustomer','logocustomer']];
+const REPORT_INFO_COLS=[['project','โครงการ'],['contractName','ชื่อสัญญา'],['contractNo','เลขที่สัญญา'],['contractDate','ลงวันที่'],['client','หน่วยงานลูกค้า'],['clause','ข้อกำหนด'],['submittedTo','นำส่ง'],['logoCustomer','ลิงก์รูปโลโก้ลูกค้า (Google Drive)']];
 function openReportInfoBulkDialog(){
   let dlg=$('#reportInfoBulkDlg');
   if(!dlg){
@@ -1400,7 +1405,8 @@ function openReportInfoBulkDialog(){
     dlg.style.cssText='position:fixed;inset:0;z-index:500;background:rgba(20,26,34,.55);display:flex;align-items:center;justify-content:center;padding:20px';
     dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:440px;width:100%;padding:24px;box-shadow:var(--shadow-lift)">
       <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">จัดการข้อมูลสัญญาเป็นชุด</h3>
-      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">อัปโหลด Excel เพื่อเพิ่ม/แก้ไขข้อมูลสัญญาของหลายโครงการพร้อมกัน — ถ้าชื่อโครงการซ้ำกับที่มีอยู่ จะเขียนทับข้อมูลเดิม (เช่น ต่อสัญญาใหม่ เลขที่เก่าจะหายไป)</div>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">อัปโหลด Excel เพื่อเพิ่ม/แก้ไขข้อมูลสัญญาของหลายโครงการพร้อมกัน — ถ้าชื่อโครงการซ้ำกับที่มีอยู่ จะเขียนทับข้อมูลเดิม (เช่น ต่อสัญญาใหม่ เลขที่เก่าจะหายไป) · คอลัมน์โลโก้ลูกค้าต้องเป็น<b>ลิงก์ Google Drive ของรูปภาพ</b> (Share เป็น "Anyone with link" ก่อน)</div>
+      <button class="btn btn-soft" id="riOpenLogoFolder" style="width:100%;margin-bottom:10px">📁 เปิดโฟลเดอร์เก็บรูปโลโก้ลูกค้า</button>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <button class="btn btn-soft" id="riBlankBtn" style="flex:1">↓ โหลดฟอร์มเปล่า</button>
         <button class="btn btn-soft" id="riCurrentBtn" style="flex:1">↓ โหลดข้อมูลปัจจุบัน</button>
@@ -1411,6 +1417,11 @@ function openReportInfoBulkDialog(){
     document.body.appendChild(dlg);
     dlg.querySelector('#riCancel').onclick=()=>dlg.style.display='none';
     dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.style.display='none';});
+    dlg.querySelector('#riOpenLogoFolder').onclick=async()=>{
+      const r=await api('getCustomerLogoFolderUrl',{});
+      if(r&&r.ok&&r.url)window.open(r.url,'_blank');
+      else toast('เปิดโฟลเดอร์ไม่สำเร็จ',false);
+    };
     dlg.querySelector('#riBlankBtn').onclick=()=>{
       const ws=XLSX.utils.aoa_to_sheet([REPORT_INFO_COLS.map(c=>c[1])]);
       const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ReportInfo');
