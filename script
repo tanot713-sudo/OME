@@ -586,6 +586,20 @@ async function fetchImageBuffer(url){
   }catch(e){ return null; }
 }
 
+// เหมือน fetchImageBuffer แต่คืนเป็น data: URL string ตรงๆ ใช้กับ <img src> ในรายงาน PDF (html2canvas)
+// ต้องแปลงเป็น data URI ก่อนเสมอ ไม่ใส่ลิงก์ Drive ตรงๆ เพราะ html2canvas วาดรูป cross-origin ที่ไม่มี CORS header ลงบน canvas ไม่ได้ (ภาพจะหายไปเงียบๆ)
+async function fetchImageDataUrl(url){
+  if(!url) return '';
+  if(String(url).startsWith('data:')) return url;
+  try{
+    const m=String(url).match(/[-\w]{25,}/);
+    let u=url; if(m) u=`https://drive.google.com/thumbnail?id=${m[0]}&sz=w800`;
+    const r=await api('fetchImageAsBase64',{url:u});
+    if(!r||!r.ok||!r.base64) return '';
+    return `data:${r.mimeType||'image/jpeg'};base64,${r.base64}`;
+  }catch(e){ return ''; }
+}
+
 function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=$('#wgProgress');if(box)box.classList.add('show');if(bar)bar.style.width=pct+'%';if(status)status.innerHTML=msg;}
 
 async function generateWordTemplate(){
@@ -1130,8 +1144,9 @@ function openPdfReportDialog(list){
 /* สร้างไฟล์ PDF จริง — แบ่งเป็น "หน้า" เอง (1 อุปกรณ์ = 1 หน้า) พร้อม header/footer ซ้ำทุกหน้า
    เพราะ html2pdf/html2canvas capture เป็นภาพยาวภาพเดียวแล้วค่อยตัด ไม่ใช่การพิมพ์แบ่งหน้าจริง
    ต้องกำหนดจุดตัดหน้า (page-break-after) เองให้ตรงทุกครั้ง */
-function generatePdfFile(list,fields){
+async function generatePdfFile(list,fields){
   if(typeof html2pdf==='undefined'){toast('ไลบรารี PDF ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
+  showPdfGenOverlay(true,'กำลังโหลดรูปภาพ...');
   const logo=LOGO_SRC||'';
   const reportName=fields.reportName,contract=fields.contract,contractNo=fields.contractNo;
   const headerHtml=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">${esc(contract||reportName)}<br>สัญญาเลขที่ ${esc(contractNo)}</div></div>`;
@@ -1159,15 +1174,22 @@ function generatePdfFile(list,fields){
     });
   }
   const totalPages=seq.length;
-  const pagesHtml=seq.map((item,i)=>{
-    const n=i+1,e=item.e;
-    const slots=[[e.thumbMain||e.imgMain,'รูปรวมอุปกรณ์'],[e.thumbSticker||e.imgSticker,'รูปสติกเกอร์'],[e.thumb3||e.img3,'รูปเพิ่มเติมที่ 1'],[e.thumb4||e.img4,'รูปเพิ่มเติมที่ 2']].filter(s=>s[0]);
+  // ต้องดึงรูปเป็น data URI ก่อนใส่ <img src> เสมอ (html2canvas วาดรูป cross-origin ที่ไม่มี CORS ลง canvas ไม่ได้)
+  const pageHtmls=[];
+  for(let i=0;i<seq.length;i++){
+    const item=seq[i],n=i+1,e=item.e;
+    showPdfGenOverlay(true,`กำลังโหลดรูปภาพ... ${n}/${totalPages}`);
+    const rawSlots=[[e.thumbMain||e.imgMain,'รูปรวมอุปกรณ์'],[e.thumbSticker||e.imgSticker,'รูปสติกเกอร์'],[e.thumb3||e.img3,'รูปเพิ่มเติมที่ 1'],[e.thumb4||e.img4,'รูปเพิ่มเติมที่ 2']].filter(s=>s[0]);
+    const slots=[];
+    for(const s of rawSlots){const dataUrl=await fetchImageDataUrl(s[0]); if(dataUrl)slots.push([dataUrl,s[1]]);}
     const hasImg=!!slots.length;
     const body=`<div class="rpt-equip${hasImg?'':' noimg'}"><div class="rpt-equip-title">${n}. ${esc(e.equipment||'(ไม่ระบุ)')}</div>${e.brand?`<div class="rpt-equip-line">ยี่ห้อ ${esc(e.brand)} รุ่น ${esc(e.model||'-')}</div>`:''}${e.serial?`<div class="rpt-equip-meta">Serial: ${esc(e.serial)}</div>`:''}<div class="rpt-equip-loc">${esc(e.locName||'')}${e.subName?' '+esc(e.subName):''}</div>${hasImg?`<div class="rpt-imgs">${slots.map(s=>cell(s[0],s[1])).join('')}</div>`:''}${e.note?`<div class="rpt-note">หมายเหตุ: ${esc(e.note)}</div>`:''}</div>`;
-    const footerHtml=`<div class="rpt-runfoot">ชื่อรายงาน : ${esc(reportName)}<span style="float:right">หน้าที่ ${n} of ${totalPages}</span></div>`;
-    return `<div class="pdf-page">${headerHtml}${item.heading}${body}${footerHtml}</div>`;
-  }).join('');
+    const footerHtml=`<div class="rpt-runfoot"><span>ชื่อรายงาน : ${esc(reportName)}</span><span>หน้าที่ ${n} of ${totalPages}</span></div>`;
+    pageHtmls.push(`<div class="pdf-page">${headerHtml}${item.heading}${body}${footerHtml}</div>`);
+  }
+  const pagesHtml=pageHtmls.join('');
 
+  showPdfGenOverlay(true,'กำลังสร้าง PDF...');
   const area=$('#reportArea');
   area.innerHTML=pagesHtml;
   const imgs=Array.from(area.querySelectorAll('img'));
@@ -1202,15 +1224,15 @@ function generatePdfFile(list,fields){
   imgs.forEach(im=>{if(im.complete){tick();}else{im.addEventListener('load',tick);im.addEventListener('error',tick);}});
   setTimeout(tryExport,8000);
 }
-function showPdfGenOverlay(show){
+function showPdfGenOverlay(show,msg){
   let ov=$('#pdfGenOverlay');
   if(!ov){
     ov=document.createElement('div');
     ov.id='pdfGenOverlay';
     ov.style.cssText='position:fixed;inset:0;z-index:10000;background:#fff;display:none;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--ink-soft)';
-    ov.textContent='กำลังสร้าง PDF...';
     document.body.appendChild(ov);
   }
+  if(msg)ov.textContent=msg;
   ov.style.display=show?'flex':'none';
 }
 
