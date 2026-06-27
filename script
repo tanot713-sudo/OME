@@ -1010,7 +1010,47 @@ if($('#surveyExportBtn'))$('#surveyExportBtn').addEventListener('click',()=>{
 
 /* ─── PDF REPORT (print) ─────────────────────────────────  */
 if($('#makeReport'))$('#makeReport').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}buildReport();});
-function buildReport(){const logo=LOGO_SRC||'';let html=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">รายงานอุปกรณ์</div></div><div class="rpt-runfoot">รายงานผลการติดฉลากระบุรายละเอียดอุปกรณ์</div><div class="rpt-h1">รายงานอุปกรณ์</div>`;const projMap={};entries.forEach(e=>{const proj=e.project||'(ไม่ระบุ)';const loc=e.locName||'(ไม่ระบุ)';if(!projMap[proj])projMap[proj]={};(projMap[proj][loc]=projMap[proj][loc]||[]).push(e);});let n=0;Object.keys(projMap).sort().forEach((proj,pi)=>{html+=`<div class="rpt-proj-heading">${pi+1}. ${esc(proj)}</div>`;const locMap=projMap[proj];Object.keys(locMap).sort().forEach(loc=>{locMap[loc].forEach(e=>{n++;const main=e.thumbMain||e.imgMain||'',stk=e.thumbSticker||e.imgSticker||'';const hasImg=!!(main||stk);const cell=(url,cap)=>url?`<div class="cell"><img src="${url}"><div class="cap">${cap}</div></div>`:`<div class="cell empty"></div>`;html+=`<div class="rpt-equip${hasImg?'':' noimg'}"><div class="rpt-equip-title">${n}. ${esc(e.equipment||'(ไม่ระบุ)')}</div>${e.brand?`<div class="rpt-equip-line">ยี่ห้อ ${esc(e.brand)} รุ่น ${esc(e.model||'-')}</div>`:''}${e.serial?`<div class="rpt-equip-meta">Serial: ${esc(e.serial)}</div>`:''}<div class="rpt-equip-loc">${esc(loc)}${e.subName?' '+esc(e.subName):''}</div>${hasImg?`<div class="rpt-imgs">${cell(main,'รูปรวมอุปกรณ์')}${cell(stk,'รูปสติกเกอร์')}</div>`:''}${e.note?`<div class="rpt-note">หมายเหตุ: ${esc(e.note)}</div>`:''}</div>`;});});});$('#reportArea').innerHTML=html;const imgs=Array.from($('#reportArea').querySelectorAll('img'));if(!imgs.length){window.print();return;}let done=0,printed=false;const tryPrint=()=>{if(printed)return;printed=true;window.print();};const tick=()=>{done++;if(done>=imgs.length)tryPrint();};imgs.forEach(im=>{if(im.complete){tick();}else{im.addEventListener('load',tick);im.addEventListener('error',tick);}});setTimeout(tryPrint,8000);}
+function buildReport(){
+  // เนื้อหา/โครงสร้างให้ตรงกับ gen Word (header สัญญา + footer ชื่อรายงาน + รูปครบ 4 ช่อง + จัดกลุ่มตาม typeLocation ถ้ามี)
+  // แต่ไม่มีหน้าปก/สารบัญ — พิมพ์ตรงเป็น PDF ผ่าน browser print เลย
+  const logo=LOGO_SRC||'';
+  const reportName=$('#wgReportName')?.value.trim()||'รายงานอุปกรณ์';
+  const contract=$('#wgContract')?.value.trim()||'';
+  const contractNo=$('#wgContractNo')?.value.trim()||'-';
+  let html=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">${esc(contract||reportName)}<br>สัญญาเลขที่ ${esc(contractNo)}</div></div><div class="rpt-runfoot">ชื่อรายงาน : ${esc(reportName)}</div><div class="rpt-h1">${esc(reportName)}</div>`;
+  const cell=(url,cap)=>url?`<div class="cell"><img src="${url}"><div class="cap">${cap}</div></div>`:`<div class="cell empty"></div>`;
+  const equipBlock=(e,n)=>{
+    const slots=[[e.thumbMain||e.imgMain,'รูปรวมอุปกรณ์'],[e.thumbSticker||e.imgSticker,'รูปสติกเกอร์'],[e.thumb3||e.img3,'รูปเพิ่มเติมที่ 1'],[e.thumb4||e.img4,'รูปเพิ่มเติมที่ 2']].filter(s=>s[0]);
+    const hasImg=!!slots.length;
+    return `<div class="rpt-equip${hasImg?'':' noimg'}"><div class="rpt-equip-title">${n}. ${esc(e.equipment||'(ไม่ระบุ)')}</div>${e.brand?`<div class="rpt-equip-line">ยี่ห้อ ${esc(e.brand)} รุ่น ${esc(e.model||'-')}</div>`:''}${e.serial?`<div class="rpt-equip-meta">Serial: ${esc(e.serial)}</div>`:''}<div class="rpt-equip-loc">${esc(e.locName||'')}${e.subName?' '+esc(e.subName):''}</div>${hasImg?`<div class="rpt-imgs">${slots.map(s=>cell(s[0],s[1])).join('')}</div>`:''}${e.note?`<div class="rpt-note">หมายเหตุ: ${esc(e.note)}</div>`:''}</div>`;
+  };
+  const useTypeLoc=entries.some(e=>e.typeLocation);
+  let n=0;
+  if(useTypeLoc){
+    const typeGroups={};entries.forEach(e=>{const tk=e.typeLocation||'(ไม่ระบุประเภทสถานที่)';(typeGroups[tk]=typeGroups[tk]||[]).push(e);});
+    Object.keys(typeGroups).sort((a,b)=>a.localeCompare(b,'th')).forEach((tname,ti)=>{
+      html+=`<div class="rpt-proj-heading">${ti+1}. ${esc(tname)}</div>`;
+      const locGroups={};typeGroups[tname].forEach(e=>{const lk=e.locName||'(ไม่ระบุสถานที่)';(locGroups[lk]=locGroups[lk]||[]).push(e);});
+      Object.keys(locGroups).sort((a,b)=>a.localeCompare(b,'th')).forEach(lname=>{
+        locGroups[lname].forEach(e=>{n++;html+=equipBlock(e,n);});
+      });
+    });
+  }else{
+    const projMap={};entries.forEach(e=>{const proj=e.project||'(ไม่ระบุ)';(projMap[proj]=projMap[proj]||[]).push(e);});
+    Object.keys(projMap).sort().forEach((proj,pi)=>{
+      html+=`<div class="rpt-proj-heading">${pi+1}. ${esc(proj)}</div>`;
+      projMap[proj].forEach(e=>{n++;html+=equipBlock(e,n);});
+    });
+  }
+  $('#reportArea').innerHTML=html;
+  const imgs=Array.from($('#reportArea').querySelectorAll('img'));
+  if(!imgs.length){window.print();return;}
+  let done=0,printed=false;
+  const tryPrint=()=>{if(printed)return;printed=true;window.print();};
+  const tick=()=>{done++;if(done>=imgs.length)tryPrint();};
+  imgs.forEach(im=>{if(im.complete){tick();}else{im.addEventListener('load',tick);im.addEventListener('error',tick);}});
+  setTimeout(tryPrint,8000);
+}
 
 /* ─── USERS ─────────────────────────────────────────────── */
 let usersCache=[];
