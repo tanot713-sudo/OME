@@ -127,6 +127,7 @@ function route(action, payload) {
     case 'deleteSurvey':      return actionDeleteSurvey(payload);
     // Users
     case 'createUser':        return actionCreateUser(payload);
+    case 'bulkCreateUsers':    return actionBulkCreateUsers(payload);
     case 'updateUser':        return actionUpdateUser(payload);
     case 'deleteUser':        return actionDeleteUser(payload);
     case 'setUserActive':     return actionSetUserActive(payload);   // ✅ เพิ่มใหม่
@@ -1187,6 +1188,30 @@ function actionGetCustomerLogoFolderUrl({ _user }) {
    USER MANAGEMENT
    ✅ FIX #4 — เพิ่ม actionSetUserActive + แก้ actionDeleteUser
    ================================================================ */
+// นำเข้าผู้ใช้หลายคนพร้อมกันจาก Excel — username ซ้ำของเดิมจะข้ามไป (ไม่ทับ เพื่อกันรหัสผ่านเดิมหาย)
+function actionBulkCreateUsers({ rows, _user }) {
+  if (_user.role !== 'admin') return { ok: false, message: 'เฉพาะ admin เท่านั้น' };
+  if (!Array.isArray(rows)) return { ok: false, message: 'ข้อมูลไม่ถูกต้อง' };
+  const sh = getSheet(CONFIG.SHEETS.USERS);
+  ensureHeaders(sh, USER_HEADERS);
+  const existing = sheetToObjects(sh).map(r => r.username);
+  let created = 0, skipped = 0;
+  rows.forEach(r => {
+    const username = String(r.username || '').trim();
+    const password = String(r.password || '').trim();
+    if (!username || !password || existing.includes(username)) { skipped++; return; }
+    appendRow(sh, USER_HEADERS, {
+      id: genId(), username, password: hashPw(password), plainPwd: password,
+      name: r.name || username, role: r.role || 'inspector',
+      project: r.project || '', active: 'true',
+      createdAt: new Date().toISOString()
+    });
+    existing.push(username);
+    created++;
+  });
+  return { ok: true, created, skipped };
+}
+
 function actionCreateUser({ username, password, name, role, project, _user }) {
   if (_user.role !== 'admin') return { ok: false, message: 'เฉพาะ admin เท่านั้น' };
   if (!username || !password)  return { ok: false, message: 'ต้องมี username และ password' };

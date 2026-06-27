@@ -541,8 +541,35 @@ function updateStats(){$('#statCount').textContent=entries.length;$('#savedPill'
 
 /* ─── EXPORT EXCEL ──────────────────────────────────────── */
 $('#exportXlsx').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูลให้ส่งออก',false);return;}const rows=entries.map(e=>({'วันที่บันทึก':fmtDate(e.createdAt,true),'โครงการ':e.project,'ระบบ':e.system,'สถานที่':e.locName,'สถานที่ย่อย':e.subName,'อุปกรณ์':e.equipment,'ยี่ห้อ':e.brand,'รุ่น':e.model,'รหัสอุปกรณ์':e.asset,'Serial Number':e.serial,'ชื่อผู้ตรวจ':e.inspector,'หมายเหตุ':e.note}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'รายการ');XLSX.writeFile(wb,`records_${fileStamp(Date.now())}.xlsx`);toast(`ส่งออก Excel แล้ว (${entries.length} รายการ)`,true);});
-function downloadMasterTemplate(){try{const ws=XLSX.utils.aoa_to_sheet([['โครงการ','ระบบ','สถานที่','สถานที่ย่อย','อุปกรณ์','ยี่ห้อ','รุ่น','รหัสอุปกรณ์','Serial Number']]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_template.xlsx');}catch(e){toast('โหลดฟอร์มไม่สำเร็จ',false);}}
-function downloadMasterData(){try{if(!master.length){toast('ยังไม่มีข้อมูล Master Data',false);return;}const rows=master.map(m=>[m.project||'',m.system||'',m.locName||'',m.subName||'',m.equipment||'',m.brand||'',m.model||'',m.asset||'',m.serial||'']);const ws=XLSX.utils.aoa_to_sheet([['โครงการ','ระบบ','สถานที่','สถานที่ย่อย','อุปกรณ์','ยี่ห้อ','รุ่น','รหัสอุปกรณ์','Serial Number'],...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_data.xlsx');toast('ดาวน์โหลด Master Data แล้ว',true);}catch(e){toast('โหลดข้อมูลไม่สำเร็จ',false);}}
+const MASTER_IMPORT_COLS=[['project','โครงการ'],['system','ระบบ'],['typeLocation','ประเภทสถานที่'],['locName','สถานที่'],['subName','สถานที่ย่อย'],['equipment','อุปกรณ์'],['brand','ยี่ห้อ'],['model','รุ่น'],['asset','รหัสอุปกรณ์'],['serial','Serial Number']];
+function downloadMasterTemplate(){try{const ws=XLSX.utils.aoa_to_sheet([MASTER_IMPORT_COLS.map(c=>c[1])]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_template.xlsx');}catch(e){toast('โหลดฟอร์มไม่สำเร็จ',false);}}
+function downloadMasterData(){try{if(!master.length){toast('ยังไม่มีข้อมูล Master Data',false);return;}const rows=master.map(m=>MASTER_IMPORT_COLS.map(c=>m[c[0]]||''));const ws=XLSX.utils.aoa_to_sheet([MASTER_IMPORT_COLS.map(c=>c[1]),...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_data.xlsx');toast('ดาวน์โหลด Master Data แล้ว',true);}catch(e){toast('โหลดข้อมูลไม่สำเร็จ',false);}}
+// นำเข้าข้อมูลอุปกรณ์จาก Excel — เพิ่มเข้า Master Data ที่มีอยู่ (ไม่ลบของเดิม)
+if($('#fileXlsx'))$('#fileXlsx').addEventListener('change',async(ev)=>{
+  const file=ev.target.files[0]; if(!file)return;
+  const prev=$('#importPreview');
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rowsAoa=XLSX.utils.sheet_to_json(ws,{header:1});
+    const header=rowsAoa[0]||[];
+    const colIdx={};MASTER_IMPORT_COLS.forEach(([key,label])=>{const idx=header.findIndex(h=>String(h).trim()===label);if(idx>=0)colIdx[key]=idx;});
+    const rows=rowsAoa.slice(1).filter(r=>r&&r.length).map(r=>{
+      const obj={};Object.keys(colIdx).forEach(key=>{obj[key]=String(r[colIdx[key]]||'').trim();});
+      return obj;
+    }).filter(o=>o.project&&o.equipment);
+    if(!rows.length){if(prev)prev.innerHTML=`<div class="empty">ไม่พบข้อมูลที่นำเข้าได้ (ต้องมีคอลัมน์ "โครงการ" และ "อุปกรณ์" อย่างน้อย)</div>`;return;}
+    rows.forEach(r=>master.push({id:uid(),project:r.project||'',system:r.system||'',typeLocation:r.typeLocation||'',locName:r.locName||'',subName:r.subName||'',equipment:r.equipment||'',brand:r.brand||'',model:r.model||'',asset:r.asset||'',serial:r.serial||''}));
+    await persistMaster();
+    if(prev)prev.innerHTML=`<div class="empty" style="color:var(--ok)">นำเข้า Master Data แล้ว ${rows.length} รายการ</div>`;
+    toast(`นำเข้า Master Data แล้ว ${rows.length} รายการ`,true);
+  }catch(e){
+    if(prev)prev.innerHTML=`<div class="empty">อ่านไฟล์ไม่สำเร็จ</div>`;
+    toast('อ่านไฟล์ไม่สำเร็จ',false);
+  }
+  ev.target.value='';
+});
 
 /* ─── WORD TEMPLATE GENERATION (browser-side, mirrors Colab) ── */
 // ดึงรูปผ่าน backend (UrlFetchApp) แทน fetch() ตรงจาก browser — เลี่ยงปัญหา CORS ของ drive.google.com
@@ -1300,6 +1327,38 @@ if($('#nuAdd'))$('#nuAdd').addEventListener('click',async()=>{const username=$('
 if($('#usersRefresh'))$('#usersRefresh').addEventListener('click',loadUsers);
 function downloadUsersTemplate(){try{const ws=XLSX.utils.aoa_to_sheet([['username','password','name','role','project']]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Users');XLSX.writeFile(wb,'users_template.xlsx');}catch(e){toast('โหลดฟอร์มไม่สำเร็จ',false);}}
 function downloadUsersData(){try{if(!usersCache.length){toast('ยังไม่มีข้อมูลผู้ใช้',false);return;}const rows=usersCache.filter(u=>u.username!=='admin').map(u=>[u.username,u.plainPwd||'',u.name||'',u.role||'',u.project||'']);const ws=XLSX.utils.aoa_to_sheet([['username','password','name','role','project'],...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Users');XLSX.writeFile(wb,'users_data.xlsx');toast('ดาวน์โหลดข้อมูลผู้ใช้แล้ว',true);}catch(e){toast('โหลดข้อมูลไม่สำเร็จ',false);}}
+// นำเข้าผู้ใช้หลายคนจาก Excel — username ซ้ำของเดิมจะข้ามไปอัตโนมัติ (ไม่ทับรหัสผ่านเดิม)
+if($('#fileUsers'))$('#fileUsers').addEventListener('change',async(ev)=>{
+  const file=ev.target.files[0]; if(!file)return;
+  const msg=$('#usersImportMsg');
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rowsAoa=XLSX.utils.sheet_to_json(ws,{header:1});
+    const header=rowsAoa[0]||[];
+    const cols=['username','password','name','role','project'];
+    const colIdx={};cols.forEach(key=>{const idx=header.findIndex(h=>String(h).trim()===key);if(idx>=0)colIdx[key]=idx;});
+    const rows=rowsAoa.slice(1).filter(r=>r&&r.length).map(r=>{
+      const obj={};cols.forEach(key=>{if(colIdx[key]!==undefined)obj[key]=String(r[colIdx[key]]||'').trim();});
+      return obj;
+    }).filter(o=>o.username&&o.password);
+    if(!rows.length){if(msg)msg.innerHTML=`<div class="empty">ไม่พบข้อมูลที่นำเข้าได้ (ต้องมีคอลัมน์ username และ password)</div>`;return;}
+    const r=await api('bulkCreateUsers',{rows});
+    if(r&&r.ok){
+      if(msg)msg.innerHTML=`<div class="empty" style="color:var(--ok)">เพิ่มผู้ใช้แล้ว ${r.created} คน${r.skipped?` (ข้าม ${r.skipped} คนที่ username ซ้ำ)`:''}</div>`;
+      toast(`เพิ่มผู้ใช้แล้ว ${r.created} คน`,true);
+      await loadUsers();
+    }else{
+      if(msg)msg.innerHTML=`<div class="empty">นำเข้าไม่สำเร็จ</div>`;
+      toast((r&&r.message)||'นำเข้าไม่สำเร็จ',false);
+    }
+  }catch(e){
+    if(msg)msg.innerHTML=`<div class="empty">อ่านไฟล์ไม่สำเร็จ</div>`;
+    toast('อ่านไฟล์ไม่สำเร็จ',false);
+  }
+  ev.target.value='';
+});
 
 /* ─── MASTER SEARCH ─────────────────────────────────────── */
 document.getElementById('masterSearch')?.addEventListener('input',renderMaster);
