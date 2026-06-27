@@ -140,7 +140,7 @@ function doLogout(){clearSession();$('#userChip').style.display='none';$('#authU
 async function afterLogin(){
   await checkPdpa();await loadAll();await loadMasterFromBackend();
   await Promise.all([
-    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),
+    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),
     ...(AUTH.user?.role==='admin' ? [loadPagePerms()] : [])
   ]);
 }
@@ -370,9 +370,9 @@ function fillSavedFilters(){
   fillDep($('#savedFEquip'),sc4,'equipment','ทุกอุปกรณ์');
 }
 
-function renderSaved(){
-  fillSavedFilters();
-  const q=$('#savedSearch').value.trim().toLowerCase();
+// แยกตรรกะ filter/sort ของหน้ารายการที่บันทึกออกมา ให้ปุ่ม "สร้างรายงาน PDF" เรียกใช้รายการชุดเดียวกับที่เห็นบนตารางได้
+function getSavedFilteredList(){
+  const q=$('#savedSearch')?$('#savedSearch').value.trim().toLowerCase():'';
   const fp=$('#savedFProject')?$('#savedFProject').value:'';
   const fs=$('#savedFSystem')?$('#savedFSystem').value:'';
   const fl=$('#savedFLoc')?$('#savedFLoc').value:'';
@@ -393,6 +393,11 @@ function renderSaved(){
   else if(sortVal==='proj_th_za')list.sort((a,b)=>(b.project||'').localeCompare(a.project||'','th'));
   else if(sortVal==='proj_en_az')list.sort((a,b)=>(a.project||'').localeCompare(b.project||'','en'));
   else if(sortVal==='proj_en_za')list.sort((a,b)=>(b.project||'').localeCompare(a.project||'','en'));
+  return list;
+}
+function renderSaved(){
+  fillSavedFilters();
+  const list=getSavedFilteredList();
   $('#savedPill').textContent=entries.length;
   const grid=$('#savedGrid');
   if(!list.length){grid.innerHTML=`<div class="empty"><b>${entries.length?'ไม่พบรายการตามเงื่อนไข':'ยังไม่มีรายการที่บันทึก'}</b></div>`;return;}
@@ -1008,60 +1013,145 @@ if($('#surveyExportBtn'))$('#surveyExportBtn').addEventListener('click',()=>{
   toast(`ส่งออก Excel แล้ว (${surveyCache.length} รายการ)`,true);
 });
 
-/* ─── PDF REPORT (print) ─────────────────────────────────  */
-if($('#makeReport'))$('#makeReport').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}buildReport();});
-function buildReport(){
-  // เนื้อหา/โครงสร้างให้ตรงกับ gen Word (header สัญญา + footer ชื่อรายงาน + รูปครบ 4 ช่อง + จัดกลุ่มตาม typeLocation ถ้ามี)
-  // แต่ไม่มีหน้าปก/สารบัญ — สร้างเป็นไฟล์ .pdf ดาวน์โหลดตรงผ่าน html2pdf (ไม่ผ่านหน้าพิมพ์ของ browser)
+/* ─── PDF REPORT (html2pdf, ตามรายการที่ filter อยู่ในตารางตอนกดปุ่ม) ──── */
+if($('#makeReport'))$('#makeReport').addEventListener('click',()=>{
+  const list=getSavedFilteredList();
+  if(!list.length){toast('ไม่มีข้อมูลตาม filter ปัจจุบัน',false);return;}
+  openPdfReportDialog(list);
+});
+
+/* popup กรอกข้อมูลก่อนสร้าง PDF — ใช้ฟิลด์ชุดเดียวกับหน้า Word และ autocomplete จาก preset เดียวกัน */
+function openPdfReportDialog(list){
+  let dlg=$('#pdfReportDlg');
+  if(!dlg){
+    dlg=document.createElement('div');
+    dlg.id='pdfReportDlg';
+    dlg.style.cssText='position:fixed;inset:0;z-index:500;background:rgba(20,26,34,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+    dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">สร้างรายงาน PDF</h3>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">ใช้รายการที่กรองอยู่ในตารางตอนนี้ (<span id="pdfDlgCount">0</span> รายการ) · พิมพ์แล้วเลือกจากค่าที่เคยกรอกไว้ได้เลย</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">ชื่อรายงาน</label>
+          <input class="tin" id="pdlgReportName" style="width:100%"></div>
+        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">ชื่อสัญญา/โครงการ</label>
+          <input class="tin" id="pdlgContract" list="dl_wgContract" style="width:100%"></div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">เลขที่สัญญา</label>
+            <input class="tin" id="pdlgContractNo" list="dl_wgContractNo" style="width:100%"></div>
+          <div style="flex:1"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">วันที่</label>
+            <input class="tin" id="pdlgDate" style="width:100%"></div>
+        </div>
+        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">หน่วยงานลูกค้า</label>
+          <input class="tin" id="pdlgClient" list="dl_wgClient" style="width:100%"></div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">ข้อกำหนด (clause)</label>
+            <input class="tin" id="pdlgClause" list="dl_wgClause" style="width:100%"></div>
+          <div style="flex:1"><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">นำส่ง (submittedTo)</label>
+            <input class="tin" id="pdlgSubmittedTo" list="dl_wgSubmittedTo" style="width:100%"></div>
+        </div>
+        <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">ชื่อหน่วยงานลูกค้า (logocustomer)</label>
+          <input class="tin" id="pdlgLogoCustomer" list="dl_wgLogoCustomer" style="width:100%"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:18px">
+        <button class="btn btn-soft" id="pdlgCancel" style="flex:1">ยกเลิก</button>
+        <button class="btn btn-primary" id="pdlgGo" style="flex:1">🧾 สร้าง PDF</button>
+      </div>
+    </div>`;
+    document.body.appendChild(dlg);
+    dlg.querySelector('#pdlgCancel').onclick=()=>dlg.style.display='none';
+    dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.style.display='none';});
+  }
+  loadReportPresets();
+  $('#pdfDlgCount').textContent=list.length;
+  // ตั้งค่าเริ่มต้นจากฟอร์ม Word ถ้าเคยกรอกไว้ในเซสชันนี้ (สะดวกกรณีเพิ่ง gen word มาก่อน)
+  $('#pdlgReportName').value=$('#wgReportName')?.value.trim()||'รายงานอุปกรณ์';
+  $('#pdlgContract').value=$('#wgContract')?.value.trim()||'';
+  $('#pdlgContractNo').value=$('#wgContractNo')?.value.trim()||'';
+  $('#pdlgDate').value=$('#wgDate')?.value.trim()||'';
+  $('#pdlgClient').value=$('#wgClient')?.value.trim()||'';
+  $('#pdlgClause').value=$('#wgClause')?.value.trim()||'';
+  $('#pdlgSubmittedTo').value=$('#wgSubmittedTo')?.value.trim()||'';
+  $('#pdlgLogoCustomer').value=$('#wgLogoCustomer')?.value.trim()||'';
+  dlg.style.display='flex';
+  dlg.querySelector('#pdlgGo').onclick=()=>{
+    const fields={
+      reportName:$('#pdlgReportName').value.trim()||'รายงานอุปกรณ์',
+      contract:$('#pdlgContract').value.trim(),
+      contractNo:$('#pdlgContractNo').value.trim()||'-',
+      date:$('#pdlgDate').value.trim(),
+      client:$('#pdlgClient').value.trim(),
+      clause:$('#pdlgClause').value.trim(),
+      submittedTo:$('#pdlgSubmittedTo').value.trim(),
+      logoCustomer:$('#pdlgLogoCustomer').value.trim()
+    };
+    dlg.style.display='none';
+    api('saveReportPreset',{fields:{contractName:fields.contract,contractNo:fields.contractNo,clause:fields.clause,submittedTo:fields.submittedTo,logoCustomer:fields.logoCustomer}}).then(()=>loadReportPresets());
+    generatePdfFile(list,fields);
+  };
+}
+
+/* สร้างไฟล์ PDF จริง — แบ่งเป็น "หน้า" เอง (1 อุปกรณ์ = 1 หน้า) พร้อม header/footer ซ้ำทุกหน้า
+   เพราะ html2pdf/html2canvas capture เป็นภาพยาวภาพเดียวแล้วค่อยตัด ไม่ใช่การพิมพ์แบ่งหน้าจริง
+   ต้องกำหนดจุดตัดหน้า (page-break-after) เองให้ตรงทุกครั้ง */
+function generatePdfFile(list,fields){
   if(typeof html2pdf==='undefined'){toast('ไลบรารี PDF ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
   const logo=LOGO_SRC||'';
-  const reportName=$('#wgReportName')?.value.trim()||'รายงานอุปกรณ์';
-  const contract=$('#wgContract')?.value.trim()||'';
-  const contractNo=$('#wgContractNo')?.value.trim()||'-';
-  let html=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">${esc(contract||reportName)}<br>สัญญาเลขที่ ${esc(contractNo)}</div></div><div class="rpt-runfoot">ชื่อรายงาน : ${esc(reportName)}</div><div class="rpt-h1">${esc(reportName)}</div>`;
-  const cell=(url,cap)=>url?`<div class="cell"><img src="${url}"><div class="cap">${cap}</div></div>`:`<div class="cell empty"></div>`;
-  const equipBlock=(e,n)=>{
-    const slots=[[e.thumbMain||e.imgMain,'รูปรวมอุปกรณ์'],[e.thumbSticker||e.imgSticker,'รูปสติกเกอร์'],[e.thumb3||e.img3,'รูปเพิ่มเติมที่ 1'],[e.thumb4||e.img4,'รูปเพิ่มเติมที่ 2']].filter(s=>s[0]);
-    const hasImg=!!slots.length;
-    return `<div class="rpt-equip${hasImg?'':' noimg'}"><div class="rpt-equip-title">${n}. ${esc(e.equipment||'(ไม่ระบุ)')}</div>${e.brand?`<div class="rpt-equip-line">ยี่ห้อ ${esc(e.brand)} รุ่น ${esc(e.model||'-')}</div>`:''}${e.serial?`<div class="rpt-equip-meta">Serial: ${esc(e.serial)}</div>`:''}<div class="rpt-equip-loc">${esc(e.locName||'')}${e.subName?' '+esc(e.subName):''}</div>${hasImg?`<div class="rpt-imgs">${slots.map(s=>cell(s[0],s[1])).join('')}</div>`:''}${e.note?`<div class="rpt-note">หมายเหตุ: ${esc(e.note)}</div>`:''}</div>`;
-  };
-  const useTypeLoc=entries.some(e=>e.typeLocation);
-  let n=0;
+  const reportName=fields.reportName,contract=fields.contract,contractNo=fields.contractNo;
+  const headerHtml=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">${esc(contract||reportName)}<br>สัญญาเลขที่ ${esc(contractNo)}</div></div>`;
+  const cell=(url,cap)=>url?`<div class="cell"><img src="${url}"><div class="cap">${cap}</div></div>`:'';
+  const useTypeLoc=list.some(e=>e.typeLocation);
+  const seq=[]; // [{heading, e}] — heading จะมีค่าแค่รายการแรกของกลุ่มนั้น
   if(useTypeLoc){
-    const typeGroups={};entries.forEach(e=>{const tk=e.typeLocation||'(ไม่ระบุประเภทสถานที่)';(typeGroups[tk]=typeGroups[tk]||[]).push(e);});
+    const typeGroups={};list.forEach(e=>{const tk=e.typeLocation||'(ไม่ระบุประเภทสถานที่)';(typeGroups[tk]=typeGroups[tk]||[]).push(e);});
     Object.keys(typeGroups).sort((a,b)=>a.localeCompare(b,'th')).forEach((tname,ti)=>{
-      html+=`<div class="rpt-proj-heading">${ti+1}. ${esc(tname)}</div>`;
+      let first=true;
       const locGroups={};typeGroups[tname].forEach(e=>{const lk=e.locName||'(ไม่ระบุสถานที่)';(locGroups[lk]=locGroups[lk]||[]).push(e);});
       Object.keys(locGroups).sort((a,b)=>a.localeCompare(b,'th')).forEach(lname=>{
-        locGroups[lname].forEach(e=>{n++;html+=equipBlock(e,n);});
+        locGroups[lname].forEach(e=>{
+          seq.push({heading:first?`<div class="rpt-proj-heading">${ti+1}. ${esc(tname)}</div>`:'',e});
+          first=false;
+        });
       });
     });
   }else{
-    const projMap={};entries.forEach(e=>{const proj=e.project||'(ไม่ระบุ)';(projMap[proj]=projMap[proj]||[]).push(e);});
+    const projMap={};list.forEach(e=>{const proj=e.project||'(ไม่ระบุ)';(projMap[proj]=projMap[proj]||[]).push(e);});
     Object.keys(projMap).sort().forEach((proj,pi)=>{
-      html+=`<div class="rpt-proj-heading">${pi+1}. ${esc(proj)}</div>`;
-      projMap[proj].forEach(e=>{n++;html+=equipBlock(e,n);});
+      projMap[proj].forEach((e,idx)=>{
+        seq.push({heading:idx===0?`<div class="rpt-proj-heading">${pi+1}. ${esc(proj)}</div>`:'',e});
+      });
     });
   }
+  const totalPages=seq.length;
+  const pagesHtml=seq.map((item,i)=>{
+    const n=i+1,e=item.e;
+    const slots=[[e.thumbMain||e.imgMain,'รูปรวมอุปกรณ์'],[e.thumbSticker||e.imgSticker,'รูปสติกเกอร์'],[e.thumb3||e.img3,'รูปเพิ่มเติมที่ 1'],[e.thumb4||e.img4,'รูปเพิ่มเติมที่ 2']].filter(s=>s[0]);
+    const hasImg=!!slots.length;
+    const body=`<div class="rpt-equip${hasImg?'':' noimg'}"><div class="rpt-equip-title">${n}. ${esc(e.equipment||'(ไม่ระบุ)')}</div>${e.brand?`<div class="rpt-equip-line">ยี่ห้อ ${esc(e.brand)} รุ่น ${esc(e.model||'-')}</div>`:''}${e.serial?`<div class="rpt-equip-meta">Serial: ${esc(e.serial)}</div>`:''}<div class="rpt-equip-loc">${esc(e.locName||'')}${e.subName?' '+esc(e.subName):''}</div>${hasImg?`<div class="rpt-imgs">${slots.map(s=>cell(s[0],s[1])).join('')}</div>`:''}${e.note?`<div class="rpt-note">หมายเหตุ: ${esc(e.note)}</div>`:''}</div>`;
+    const footerHtml=`<div class="rpt-runfoot">ชื่อรายงาน : ${esc(reportName)}<span style="float:right">หน้าที่ ${n} of ${totalPages}</span></div>`;
+    return `<div class="pdf-page">${headerHtml}${item.heading}${body}${footerHtml}</div>`;
+  }).join('');
+
   const area=$('#reportArea');
-  area.innerHTML=html;
+  area.innerHTML=pagesHtml;
   const imgs=Array.from(area.querySelectorAll('img'));
   const exportPdf=()=>{
-    // render off-screen (ไม่ใช่ display:none) เพราะ html2pdf/html2canvas ต้องใช้ layout จริงถึงจะ capture ได้
+    showPdfGenOverlay(true);
     area.classList.add('pdf-render');
     const fn=`รายงานอุปกรณ์_${fileStamp(Date.now())}.pdf`;
     html2pdf().set({
-      margin:[10,10,12,10],
+      margin:[10,10,10,10],
       filename:fn,
       image:{type:'jpeg',quality:0.92},
       html2canvas:{scale:2,useCORS:true,windowWidth:area.scrollWidth},
       jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['css','avoid-all']}
+      pagebreak:{mode:['css']}
     }).from(area).save().then(()=>{
       area.classList.remove('pdf-render');
+      showPdfGenOverlay(false);
       toast('สร้าง PDF แล้ว',true);
     }).catch(()=>{
       area.classList.remove('pdf-render');
+      showPdfGenOverlay(false);
       toast('สร้าง PDF ไม่สำเร็จ',false);
     });
   };
@@ -1071,6 +1161,17 @@ function buildReport(){
   const tick=()=>{done++;if(done>=imgs.length)tryExport();};
   imgs.forEach(im=>{if(im.complete){tick();}else{im.addEventListener('load',tick);im.addEventListener('error',tick);}});
   setTimeout(tryExport,8000);
+}
+function showPdfGenOverlay(show){
+  let ov=$('#pdfGenOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='pdfGenOverlay';
+    ov.style.cssText='position:fixed;inset:0;z-index:10000;background:#fff;display:none;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--ink-soft)';
+    ov.textContent='กำลังสร้าง PDF...';
+    document.body.appendChild(ov);
+  }
+  ov.style.display=show?'flex':'none';
 }
 
 /* ─── USERS ─────────────────────────────────────────────── */
