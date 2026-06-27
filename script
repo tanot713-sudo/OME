@@ -13,7 +13,7 @@
 //   4) เอา XXXX มาใส่ใน LOGO_DRIVE_ID ด้านล่าง
 const LOGO_DRIVE_ID = '1UiYHVecqMs5DaoIT3z-aIOjweIJ8FP5q'; // ← ไม่ได้ใช้แล้ว
 // โลก้โหลดผ่าน GitHub CDN (jsDelivr) — ไฟล์ logo.png อยู่ใน repo tanot713-sudo/OME
-const LOGO_SRC = 'https://cdn.jsdelivr.net/gh/tanot713-sudo/OME@master/logo.png';
+const LOGO_SRC = 'data:image/png;base64,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';
 
 function applyLogo(src) {
   // Header brandmark
@@ -513,7 +513,7 @@ function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=
 async function generateWordTemplate(){
   if(typeof docx==='undefined'){toast('ไลบรารี Word ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
   if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}
-  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,PageNumber,Header,Footer,TableOfContents,TabStopType,TabStopPosition}=docx;
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents}=docx;
   const groupBy=$('#wgGroupBy').value;
   const fieldKey={project:'project',system:'system',location:'locName'}[groupBy];
   const groupLabel={project:'โครงการ',system:'ระบบ',location:'สถานที่'}[groupBy];
@@ -594,8 +594,9 @@ async function generateWordTemplate(){
         const b=await fetchImageBuffer(s.u);
         if(b)slotBufs.push({buf:b,cap:s.cap});
       }
-      const cellFor=(slot,wide)=>new TableCell({borders:noBorders(),width:{size:wide?100:50,type:WidthType.PERCENTAGE},children:[
-        new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:slot.buf,transformation:{width:230,height:170}})]}),
+      const CELL_DXA_HALF=5300, CELL_DXA_FULL=10600; // ครึ่งหน้า/เต็มหน้า เป็น twips (1/20pt) — ระบุตรงๆ กันคอลัมน์บีบแคบเวลาเปิดผ่าน Google Docs
+      const cellFor=(slot,wide)=>new TableCell({borders:noBorders(),width:{size:wide?CELL_DXA_FULL:CELL_DXA_HALF,type:WidthType.DXA},children:[
+        new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:slot.buf,transformation:{width:wide?420:300,height:wide?315:225}})]}),
         new Paragraph({alignment:AlignmentType.CENTER,children:[T(slot.cap,{size:18,color:GREY})]})
       ]});
       // มีรูปเท่าไหร่แสดงเท่านั้น — ไม่เติมช่องว่างแทนรูปที่ไม่มี (ตามตัวอย่างจริง)
@@ -604,7 +605,7 @@ async function generateWordTemplate(){
         const left=slotBufs[ri],right=slotBufs[ri+1];
         rows.push(new TableRow({children: right?[cellFor(left),cellFor(right)]:[cellFor(left,true)]}));
       }
-      if(rows.length)bodyKids.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
+      if(rows.length)bodyKids.push(new Table({width:{size:CELL_DXA_FULL,type:WidthType.DXA},rows}));
     }
     if(e.note)bodyKids.push(P(T(`หมายเหตุ: ${e.note}`,{size:24,color:GREY})));
     bodyKids.push(new Paragraph({}));
@@ -639,19 +640,12 @@ async function generateWordTemplate(){
     }
   }
 
-  /* Header / Footer */
-  setWgProgress(85,'กำลังสร้างส่วนหัว-ท้าย...');
-  const hdrLeft=new TableCell({borders:noBorders(),width:{size:25,type:WidthType.PERCENTAGE},children:[logoBuf?new Paragraph({children:[new ImageRun({data:logoBuf,transformation:{width:90,height:56}})]}):P(T('AMR ASIA',{bold:true,color:RED}))]});
-  const hdrRight=new TableCell({borders:noBorders(),width:{size:75,type:WidthType.PERCENTAGE},children:[P(T(contract||reportName,{size:24}),{align:AlignmentType.RIGHT}),P(T(`สัญญาเลขที่ ${contractNo}`,{size:24}),{align:AlignmentType.RIGHT})]});
-  const header=new Header({children:[new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]})]});
-  const footer=new Footer({children:[new Paragraph({tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],children:[T(`ชื่อรายงาน : ${reportName}`,{size:22}),new TextRun({text:'\t',font:FONT}),new TextRun({children:['หน้าที่ ',PageNumber.CURRENT,' of ',PageNumber.TOTAL_PAGES],font:FONT,size:22})]})]});
-
   setWgProgress(92,'กำลังบีบอัดไฟล์...');
-  // ใช้ margin เดียวกันทุก section กันปัญหาหัว-ท้ายกระดาษเลื่อนไม่ตรงกันระหว่างหน้าปก/สารบัญ กับเนื้อหา
+  // ไม่ใส่ header/footer ในเอกสาร (ตามที่ผู้ใช้แจ้งว่าทำให้รูปแบบเพี้ยนไม่ตรงตัวอย่าง) — ใช้ margin เดียวกันทุก section
   const PAGE_MARGIN={top:1400,bottom:1100,left:1130,right:1130};
   const doc=new Document({styles:{default:{document:{run:{font:FONT}}}},sections:[
     {properties:{page:{margin:PAGE_MARGIN}},children:[...coverKids,new Paragraph({pageBreakBefore:true}),...tocKids]},
-    {properties:{page:{margin:PAGE_MARGIN}},headers:{default:header},footers:{default:footer},children:bodyKids}
+    {properties:{page:{margin:PAGE_MARGIN}},children:bodyKids}
   ]});
   const blob=await Packer.toBlob(doc);
   const fn=`รายงานอุปกรณ์_${groupLabel}_${fileStamp(Date.now())}.docx`;
