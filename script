@@ -180,6 +180,22 @@ function applyRoleVisibility(){
   document.body.classList.toggle('readonly',!edit);
   document.body.classList.toggle('is-admin',(AUTH.user&&AUTH.user.role)==='admin');
   document.body.classList.toggle('can-pdf',canPdf());
+  // ถ้าหน้า (panel) ที่กำลังเปิดอยู่ไม่อยู่ในสิทธิ์ที่อนุญาตแล้ว (เช่น เคยเปิดไว้ตอนเป็นคนละ role ในแท็บเดิม
+  // โดยไม่ได้รีโหลดหน้า) ให้ดีดไปหน้าที่อนุญาตหน้าแรกทันที — กันไม่ให้เนื้อหาที่ไม่มีสิทธิ์โผล่ค้างอยู่
+  const allowedTabs=[];
+  if(dash)allowedTabs.push('dash');
+  if(edit&&hasPagePerm('add'))allowedTabs.push('add');
+  if(hasPagePerm('records'))allowedTabs.push('saved');
+  if(hasPagePerm('survey'))allowedTabs.push('survey');
+  if(master)allowedTabs.push('master');
+  if(users)allowedTabs.push('users');
+  if(AUTH.user&&AUTH.user.role==='admin')allowedTabs.push('import');
+  const activeTabEl=document.querySelector('.tab.active');
+  const activeName=activeTabEl?activeTabEl.dataset.tab:null;
+  if(allowedTabs.length&&(!activeName||!allowedTabs.includes(activeName))){
+    const t=document.querySelector(`.tab[data-tab="${allowedTabs[0]}"]`);
+    if(t)t.click();
+  }
   if(users)loadUsers();
   renderSaved();
   if(master)renderMaster();
