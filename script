@@ -554,7 +554,7 @@ if($('#fileXlsx'))$('#fileXlsx').addEventListener('change',async(ev)=>{
     const ws=wb.Sheets[wb.SheetNames[0]];
     const rowsAoa=XLSX.utils.sheet_to_json(ws,{header:1});
     const header=rowsAoa[0]||[];
-    const colIdx={};MASTER_IMPORT_COLS.forEach(([key,label])=>{const idx=header.findIndex(h=>String(h).trim()===label);if(idx>=0)colIdx[key]=idx;});
+    const colIdx={};MASTER_IMPORT_COLS.forEach(([key,label])=>{const idx=header.findIndex(h=>String(h).replace(/^﻿/,'').trim()===label);if(idx>=0)colIdx[key]=idx;});
     const rows=rowsAoa.slice(1).filter(r=>r&&r.length).map(r=>{
       const obj={};Object.keys(colIdx).forEach(key=>{obj[key]=String(r[colIdx[key]]||'').trim();});
       return obj;
@@ -1338,7 +1338,7 @@ if($('#fileUsers'))$('#fileUsers').addEventListener('change',async(ev)=>{
     const rowsAoa=XLSX.utils.sheet_to_json(ws,{header:1});
     const header=rowsAoa[0]||[];
     const cols=['username','password','name','role','project'];
-    const colIdx={};cols.forEach(key=>{const idx=header.findIndex(h=>String(h).trim()===key);if(idx>=0)colIdx[key]=idx;});
+    const colIdx={};cols.forEach(key=>{const idx=header.findIndex(h=>String(h).replace(/^﻿/,'').trim()===key);if(idx>=0)colIdx[key]=idx;});
     const rows=rowsAoa.slice(1).filter(r=>r&&r.length).map(r=>{
       const obj={};cols.forEach(key=>{if(colIdx[key]!==undefined)obj[key]=String(r[colIdx[key]]||'').trim();});
       return obj;
@@ -1501,7 +1501,7 @@ function openReportInfoBulkDialog(){
         const ws=wb.Sheets[wb.SheetNames[0]];
         const rowsAoa=XLSX.utils.sheet_to_json(ws,{header:1});
         const header=rowsAoa[0]||[];
-        const colIdx={};REPORT_INFO_COLS.forEach(([key,label])=>{const idx=header.findIndex(h=>String(h).trim()===label);if(idx>=0)colIdx[key]=idx;});
+        const colIdx={};REPORT_INFO_COLS.forEach(([key,label])=>{const idx=header.findIndex(h=>String(h).replace(/^﻿/,'').trim()===label);if(idx>=0)colIdx[key]=idx;});
         const rows=rowsAoa.slice(1).filter(r=>r&&r.length).map(r=>{
           const obj={};Object.keys(colIdx).forEach(key=>{obj[key]=String(r[colIdx[key]]||'').trim();});
           return obj;
