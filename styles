@@ -359,9 +359,17 @@ td.codecell{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--accent-deep
 .target-form{background:#F7F9FB;border-radius:10px;padding:14px;margin-top:14px;border:1px solid var(--line-soft)}
 
 /* ─── ROLE VISIBILITY ─────────────────────────────────────  */
+/* ซ่อนไว้เป็นค่าเริ่มต้นเสมอ — JS แค่ "เปิดให้เห็น" ด้วย class บน body เมื่อมีสิทธิ์จริง
+   กันไม่ให้แท็บที่ไม่มีสิทธิ์โผล่ให้เห็นแว้บหนึ่งก่อนถูกซ่อนทีหลัง (flash of unauthorized content) */
 body:not(.is-admin) .admin-only{display:none !important}
 body:not(.can-pdf) .pdf-only{display:none !important}
 body.readonly .edit-only{display:none !important}
+body:not(.can-dash) #tabDash{display:none !important}
+body:not(.can-master) #tabMaster{display:none !important}
+body:not(.can-users) #tabUsers{display:none !important}
+body:not(.can-add) #tabAdd{display:none !important}
+body:not(.can-records) [data-tab="saved"]{display:none !important}
+body:not(.can-survey) [data-tab="survey"]{display:none !important}
 .ro-banner{display:none;background:#EEF2F6;border:1px solid var(--line);border-radius:9px;padding:9px 14px;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px}
 body.readonly .ro-banner{display:block}
 

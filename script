@@ -169,12 +169,13 @@ function canPdf(){return hasPagePerm('pdfReport');}
 
 function applyRoleVisibility(){
   const dash=canSeeDashboard(),master=canSeeMaster(),users=canSeeUsers(),edit=canEdit();
-  if($('#tabDash'))$('#tabDash').style.display=dash?'':'none';
-  if($('#tabMaster'))$('#tabMaster').style.display=master?'':'none';
-  if($('#tabUsers'))$('#tabUsers').style.display=users?'':'none';
-  if($('#tabAdd'))$('#tabAdd').style.display=(edit&&hasPagePerm('add'))?'':'none';
-  document.querySelectorAll('.tab[data-tab="saved"]').forEach(t=>t.style.display=hasPagePerm('records')?'':'none');
-  document.querySelectorAll('.tab[data-tab="survey"]').forEach(t=>t.style.display=hasPagePerm('survey')?'':'none');
+  // ใช้ class บน body เพื่อ "เปิดให้เห็น" เท่านั้น — ค่าเริ่มต้นคือซ่อนไว้ตั้งแต่ CSS (กัน flash ก่อนสิทธิ์ถูกคำนวณ)
+  document.body.classList.toggle('can-dash',dash);
+  document.body.classList.toggle('can-master',master);
+  document.body.classList.toggle('can-users',users);
+  document.body.classList.toggle('can-add',edit&&hasPagePerm('add'));
+  document.body.classList.toggle('can-records',hasPagePerm('records'));
+  document.body.classList.toggle('can-survey',hasPagePerm('survey'));
   document.querySelectorAll('.tab[data-tab="import"]').forEach(t=>t.style.display=hasPagePerm('import')?'':'none');
   document.body.classList.toggle('readonly',!edit);
   document.body.classList.toggle('is-admin',(AUTH.user&&AUTH.user.role)==='admin');
@@ -542,7 +543,7 @@ function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=
 async function generateWordTemplate(){
   if(typeof docx==='undefined'){toast('ไลบรารี Word ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
   if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}
-  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition}=docx;
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition,TableLayoutType}=docx;
   const groupBy=$('#wgGroupBy').value;
   const fieldKey={project:'project',system:'system',location:'locName'}[groupBy];
   const groupLabel={project:'โครงการ',system:'ระบบ',location:'สถานที่'}[groupBy];
@@ -629,7 +630,7 @@ async function generateWordTemplate(){
         if(b)slotBufs.push({buf:b,cap:s.cap});
       }
       const CELL_DXA_HALF=CONTENT_DXA/2, CELL_DXA_FULL=CONTENT_DXA; // ครึ่งหน้า/เต็มหน้า เป็น twips (1/20pt) พอดีความกว้างเนื้อหาจริง (A4 - margin) — เกินแล้ว Google Docs จะเลื่อนตารางออกนอกจอ
-      const cellFor=(slot,wide)=>new TableCell({borders:noBorders(),width:{size:wide?CELL_DXA_FULL:CELL_DXA_HALF,type:WidthType.DXA},children:[
+      const cellFor=(slot,wide)=>new TableCell({borders:noBorders(),columnSpan:wide?2:1,width:{size:wide?CELL_DXA_FULL:CELL_DXA_HALF,type:WidthType.DXA},children:[
         new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:slot.buf,transformation:{width:wide?420:300,height:wide?315:225}})]}),
         new Paragraph({alignment:AlignmentType.CENTER,children:[T(slot.cap,{size:18,color:GREY})]})
       ]});
@@ -639,7 +640,7 @@ async function generateWordTemplate(){
         const left=slotBufs[ri],right=slotBufs[ri+1];
         rows.push(new TableRow({children: right?[cellFor(left),cellFor(right)]:[cellFor(left,true)]}));
       }
-      if(rows.length)bodyKids.push(new Table({width:{size:CELL_DXA_FULL,type:WidthType.DXA},rows}));
+      if(rows.length)bodyKids.push(new Table({width:{size:CELL_DXA_FULL,type:WidthType.DXA},columnWidths:[CELL_DXA_HALF,CELL_DXA_HALF],layout:TableLayoutType.FIXED,rows}));
     }
     if(e.note)bodyKids.push(P(T(`หมายเหตุ: ${e.note}`,{size:24,color:GREY})));
     bodyKids.push(new Paragraph({}));
@@ -685,7 +686,7 @@ async function generateWordTemplate(){
     P(T(contract||reportName,{size:24,bold:true}),{align:AlignmentType.RIGHT}),
     P([T('สัญญาเลขที่ ',{size:24}),T(contractNo,{size:24,bold:true})],{align:AlignmentType.RIGHT})
   ]});
-  const header=new Header({children:[new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]})]});
+  const header=new Header({children:[new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[HDR_DXA_LOGO,HDR_DXA_TEXT],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]})]});
   const footer=new Footer({children:[new Paragraph({tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],children:[
     T(`ชื่อรายงาน : ${reportName}`,{size:22}),
     new TextRun({text:'\t',font:FONT}),
@@ -1096,7 +1097,11 @@ async function initAuth(){
   if(loadSession()){
     paintUser();hideGate();
     const v=await api(ACT.verifyToken,{});
-    if(v&&v.ok){await afterLogin();}else doLogout();
+    if(v&&v.ok){
+      // อัปเดตสิทธิ์ผู้ใช้ให้เป็นปัจจุบันเสมอ (เผื่อ admin เปลี่ยนสิทธิ์ระหว่างที่ session ยังไม่หมดอายุ)
+      if(v.user){ saveSession(AUTH.token,v.user); paintUser(); }
+      await afterLogin();
+    }else doLogout();
   }else showGate();
 }
 /* ─── TEMPLATE CONFIG — ค่าตั้งต้น (ใช้ถ้ายังไม่เคยบันทึก template ไว้ใน Sheet) ──── */
