@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Project Equipment Report — AMR Asia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ══════════════════════ AUTH GATE ══════════════════════ -->
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-logo-box" id="authLogoBox">
+        <!-- Logo injected by JS after it loads successfully -->
+        <span class="auth-logo-fallback" id="authLogoFallback">AMR ASIA</span>
+      </div>
+      <div class="info">
+        <h2>เข้าสู่ระบบ</h2>
+        <div class="sub">AMR Inspection · OMD</div>
+      </div>
+    </div>
+    <label for="authUser">ชื่อผู้ใช้</label>
+    <input type="text" class="tin" id="authUser" autocomplete="username" placeholder="username">
+    <label for="authPass">รหัสผ่าน</label>
+    <div class="auth-pw">
+      <input type="password" class="tin" id="authPass" autocomplete="current-password" placeholder="••••••••">
+      <span class="eye" id="authEye">แสดง</span>
+    </div>
+    <div class="auth-err" id="authErr"></div>
+    <button class="auth-btn" id="authBtn">เข้าสู่ระบบ</button>
+    <div class="auth-foot">AMR ASIA CO., LTD. · ระบบตรวจสอบอุปกรณ์</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PDPA ════════════════════════════ -->
+<div id="pdpaBanner">
+  <div class="pd-head"><div class="pd-ic">🛡</div><b>ความเป็นส่วนตัวและข้อมูลส่วนบุคคล</b></div>
+  <div class="pd-body">
+    ระบบนี้เก็บข้อมูลการใช้งานของคุณเพื่อการตรวจสอบและบำรุงรักษา
+    <a id="pdpaToggle">ดูรายละเอียด</a>
+    <div class="pd-extra" id="pdpaExtra">ข้อมูลที่เก็บ: ชื่อผู้ใช้ บทบาท เวลาเข้าใช้งาน รายการตรวจและรูปภาพอุปกรณ์ ตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562</div>
+  </div>
+  <div class="pd-actions">
+    <button class="pd-btn pd-detail" id="pdpaDetailBtn">รายละเอียด</button>
+    <button class="pd-btn pd-accept" id="pdpaAccept">ยินยอม</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ HEADER ══════════════════════════ -->
+<header class="app">
+  <div class="brandmark" id="headerBrandmark">
+    <!-- Logo injected by JS -->
+    <span style="font-family:'IBM Plex Mono';font-size:13px;font-weight:700;color:var(--accent-deep)" id="headerLogoFallback">AMR ASIA</span>
+  </div>
+  <div class="brand-text">
+    <h1>Project Equipment Report</h1>
+    <div class="sub">รายงานอุปกรณ์โครงการ</div>
+  </div>
+  <div class="header-stat"><div class="num" id="statCount">0</div><div class="lbl">บันทึกแล้ว</div></div>
+  <div class="user-chip" id="userChip" style="display:none">
+    <div class="av" id="uAvatar">?</div>
+    <div><div class="un" id="uName">—</div><div class="ur" id="uRole">—</div></div>
+    <span class="logout" id="logoutBtn" title="ออกจากระบบ">🚪 ออกจากระบบ</span>
+  </div>
+</header>
+
+<!-- ══════════════════════ TABS ════════════════════════════ -->
+<nav class="tabs">
+  <button class="tab active" data-tab="dash" id="tabDash">📊 ภาพรวม</button>
+  <button class="tab" data-tab="add" id="tabAdd">＋ เพิ่มรายการ</button>
+  <button class="tab" data-tab="saved">รายการที่บันทึก <span class="pill" id="savedPill">0</span></button>
+  <button class="tab" data-tab="survey">🔍 สำรวจภาคสนาม <span class="pill" id="surveyPill">0</span></button>
+  <button class="tab admin-only" data-tab="import">Import / Export</button>
+  <button class="tab" data-tab="master" id="tabMaster">จัดการข้อมูลหลัก <span class="pill" id="masterPill">0</span></button>
+  <button class="tab" data-tab="users" id="tabUsers">จัดการผู้ใช้ <span class="pill" id="usersPill">0</span></button>
+</nav>
+
+<main>
+
+<!-- ══════ PANEL: DASHBOARD ══════ -->
+<section class="panel active" id="panel-dash">
+  <div class="eyebrow">Overview</div>
+  <div class="panel-title">ภาพรวมอุปกรณ์โครงการ</div>
+  <div class="panel-desc">สรุปจำนวนรายการที่บันทึก แยกตามโครงการ และแนวโน้มการอัปโหลดรายวัน</div>
+
+  <div id="leaderDashSection" style="display:none;margin-bottom:18px">
+    <div class="dash-card">
+      <div class="dc-head"><b>📊 ภาพรวมโครงการของฉัน</b><span id="leaderDonutLegend" style="font-size:12px;color:var(--ink-soft)"></span></div>
+      <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <div style="position:relative;flex:none">
+          <svg id="leaderDonutSvg" width="200" height="200" viewBox="0 0 200 200" style="cursor:pointer"></svg>
+          <div id="leaderDonutCenter" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+            <div style="font-size:28px;font-weight:700;font-family:'IBM Plex Mono';color:var(--accent)" id="leaderDonutPct">0%</div>
+            <div style="font-size:11px;color:var(--ink-soft)">รวมทั้งหมด</div>
+          </div>
+        </div>
+        <div id="leaderDonutList" style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="projDetailModal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(20,26,34,.6);align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:18px;max-width:480px;width:100%;padding:28px;box-shadow:var(--shadow-lift);position:relative">
+      <button onclick="document.getElementById('projDetailModal').style.display='none'" style="position:absolute;top:14px;right:16px;font-size:20px;color:var(--ink-faint);cursor:pointer;background:none;border:none">&times;</button>
+      <div id="projDetailContent"></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <label style="font-size:13px;font-weight:600;color:var(--ink-soft)">แสดงข้อมูล:</label>
+    <select id="dashMainFilter" class="tin" style="width:auto;min-width:180px;font-size:13px;padding:8px 12px"><option value="__all">ทุกโครงการ</option></select>
+  </div>
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="dash-card" style="margin-bottom:14px">
+    <div class="dc-head"><b>ความคืบหน้าการบันทึกอุปกรณ์</b><span id="progTotalPct" style="font-size:20px;font-weight:700;color:var(--accent)"></span></div>
+    <div id="progSummary"></div>
+    <div id="progChart" style="margin-top:14px"></div>
+  </div>
+  <div class="dash-card" style="margin-bottom:14px">
+    <div class="dc-head"><b>อุปกรณ์ที่อัปโหลดรายวัน</b><span id="dayRangeLbl" style="font-size:12px;color:var(--ink-soft)">14 วันล่าสุด</span></div>
+    <div id="chartDaily"></div>
+  </div>
+  <div style="text-align:center;margin-top:6px"><button class="btn btn-soft" id="dashRefresh">↻ รีเฟรชข้อมูล</button></div>
+</section>
+
+<!-- ══════ PANEL: ADD ══════ -->
+<section class="panel" id="panel-add">
+  <div class="eyebrow" id="addEyebrow">New Record</div>
+  <div class="panel-title" id="addTitle">เพิ่มรายการใหม่</div>
+  <div class="panel-desc">เลือกข้อมูลแบบลำดับขั้น เลือกอุปกรณ์แล้วยี่ห้อ/รุ่นจะแสดงอัตโนมัติ</div>
+  <div class="card">
+    <div class="card-h"><span class="step">1</span><h3>เลือกอุปกรณ์</h3></div>
+    <div class="card-b">
+      <div class="cascade">
+        <div class="field"><label>โครงการ <span class="req">*</span></label><div class="combo" data-level="project"></div></div>
+        <div class="field"><label>ระบบ</label><div class="combo disabled" data-level="system"></div></div>
+        <div class="field"><label>ประเภทสถานที่</label><div class="combo disabled" data-level="typeloc"></div></div>
+        <div class="field"><label>สถานที่ <span class="req">*</span></label><div class="combo disabled" data-level="loc"></div></div>
+        <div class="field"><label>สถานที่ย่อย</label><div class="combo disabled" data-level="sub"></div></div>
+        <div class="field"><label>อุปกรณ์ <span class="req">*</span></label><div class="combo disabled" data-level="equip"></div></div>
+        <div class="field"><label>Serial Number</label><div class="combo disabled" data-level="serial"></div></div>
+      </div>
+      <div class="bm-row">
+        <div class="bm-box"><div class="k">ยี่ห้อ AUTO</div><div class="v empty" id="bmBrand" data-empty="— เลือกอุปกรณ์ —"><input id="inpBrand" placeholder="—" style="display:none"></div></div>
+        <div class="bm-box"><div class="k">รุ่น AUTO</div><div class="v empty" id="bmModel" data-empty="— เลือกอุปกรณ์ —"><input id="inpModel" placeholder="—" style="display:none"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><span class="step">2</span><h3>แนบรูปภาพ</h3></div>
+    <div class="card-b">
+      <div class="imgs">
+        <div class="imgslot"><div class="cap"><span class="tagn">รูป 1</span> รูปรวมอุปกรณ์</div>
+          <label class="drop" id="dropMain" for="fileMain"><div class="ph-content"><div class="drop-hint"><b>เลือกรูปรวม</b>ภาพอุปกรณ์ทั้งตัว</div></div><div class="replace-badge">แตะเพื่อเปลี่ยน</div></label>
+          <input type="file" id="fileMain" accept="image/*" hidden></div>
+        <div class="imgslot"><div class="cap"><span class="tagn">รูป 2</span> รูปสติกเกอร์</div>
+          <label class="drop" id="dropSticker" for="fileSticker"><div class="ph-content"><div class="drop-hint"><b>เลือกรูปสติกเกอร์</b>ป้าย/ฉลากอุปกรณ์</div></div><div class="replace-badge">แตะเพื่อเปลี่ยน</div></label>
+          <input type="file" id="fileSticker" accept="image/*" hidden></div>
+        <div class="imgslot"><div class="cap"><span class="tagn">รูป 3</span> รูปเพิ่มเติม 1</div>
+          <label class="drop" id="dropImg3" for="fileImg3"><div class="ph-content"><div class="drop-hint"><b>เลือกรูปเพิ่มเติม</b></div></div><div class="replace-badge">แตะเพื่อเปลี่ยน</div></label>
+          <input type="file" id="fileImg3" accept="image/*" hidden></div>
+        <div class="imgslot"><div class="cap"><span class="tagn">รูป 4</span> รูปเพิ่มเติม 2</div>
+          <label class="drop" id="dropImg4" for="fileImg4"><div class="ph-content"><div class="drop-hint"><b>เลือกรูปเพิ่มเติม</b></div></div><div class="replace-badge">แตะเพื่อเปลี่ยน</div></label>
+          <input type="file" id="fileImg4" accept="image/*" hidden></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><span class="step">3</span><h3>ข้อมูลการตรวจ</h3></div>
+    <div class="card-b">
+      <div class="cascade">
+        <div class="field"><label>ชื่อผู้ตรวจ <span class="req">*</span></label><div class="combo" id="inspCombo"></div></div>
+        <div class="field"><label>รหัสอุปกรณ์ (Asset Code)</label><input type="text" class="tin" id="inpAsset" placeholder="แสดงอัตโนมัติ / กรอกเองได้"></div>
+      </div>
+      <div class="field" style="margin-top:14px"><label>หมายเหตุ</label><textarea class="tin" id="inpNote" placeholder="รายละเอียดเพิ่มเติม"></textarea></div>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-soft" id="resetBtn">ล้างฟอร์ม</button>
+    <button class="btn btn-primary" id="saveBtn">บันทึกรายการ</button>
+  </div>
+</section>
+
+<!-- ══════ PANEL: SAVED ══════ -->
+<section class="panel" id="panel-saved">
+  <div class="eyebrow">Records</div>
+  <div class="panel-title">รายการที่บันทึก</div>
+  <div class="ro-banner">บัญชีของคุณ (observer) ดูข้อมูลได้อย่างเดียว</div>
+  <div id="savedProgress" class="dash-card" style="margin-bottom:14px;display:none">
+    <div class="dc-head"><b>ความคืบหน้าการบันทึกอุปกรณ์</b><select id="savedProgFilter" class="tin" style="width:auto;min-width:160px;font-size:12.5px;padding:6px 10px;display:none"></select></div>
+    <div id="savedProgBody"></div>
+  </div>
+  <div class="saved-tools" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+    <input type="text" id="savedSearch" placeholder="ค้นหารายการ…" style="flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
+    <select id="savedFProject" class="tin" style="width:auto;min-width:130px"><option value="">ทุกโครงการ</option></select>
+    <select id="savedFSystem" class="tin" style="width:auto;min-width:110px"><option value="">ทุกระบบ</option></select>
+    <select id="savedFLoc" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่</option></select>
+    <select id="savedFSub" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่ย่อย</option></select>
+    <select id="savedFEquip" class="tin" style="width:auto;min-width:150px"><option value="">ทุกอุปกรณ์</option></select>
+    <select id="savedSort" class="tin" style="width:auto;min-width:160px">
+      <option value="newest">ใหม่สุด→เก่าสุด</option><option value="oldest">เก่าสุด→ใหม่สุด</option>
+      <option value="az">อุปกรณ์ A→Z</option><option value="za">อุปกรณ์ Z→A</option>
+      <option value="proj_th_az">โครง ก→ฮ</option><option value="proj_th_za">โครง ฮ→ก</option>
+      <option value="proj_en_az">โครง A→Z</option><option value="proj_en_za">โครง Z→A</option>
+    </select>
+    <button class="ghost-btn" id="exportXlsx">⬇ ส่งออก Excel</button>
+    <button class="ghost-btn pdf-only" id="makeReport">📄 สร้างรายงาน PDF</button>
+  </div>
+  <div class="rlist" id="savedGrid"></div>
+</section>
+
+<!-- ══════ PANEL: SURVEY ══════ -->
+<section class="panel" id="panel-survey">
+  <div class="eyebrow">Onsite Survey</div>
+  <div class="panel-title">สำรวจข้อมูลภาคสนาม</div>
+  <div class="panel-desc">บันทึกข้อมูลอุปกรณ์ที่พบในหน้างาน</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+    <input type="text" id="surveySearch" placeholder="ค้นหา…" style="flex:1;min-width:160px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
+    <select id="surveyFProject" class="tin" style="width:auto;min-width:130px"><option value="">ทุกโครงการ</option></select>
+    <select id="surveyFSystem" class="tin" style="width:auto;min-width:110px"><option value="">ทุกระบบ</option></select>
+    <select id="surveyFLoc" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่</option></select>
+    <select id="surveyFSub" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่ย่อย</option></select>
+    <select id="surveyFEquip" class="tin" style="width:auto;min-width:150px"><option value="">ทุกอุปกรณ์</option></select>
+    <select id="surveySort" class="tin" style="width:auto;min-width:160px">
+      <option value="newest">ใหม่สุด→เก่าสุด</option>
+      <option value="oldest">เก่าสุด→ใหม่สุด</option>
+      <option value="az">อุปกรณ์ A→Z</option>
+      <option value="za">อุปกรณ์ Z→A</option>
+      <option value="proj_th_az">โครง ก→ฮ</option>
+      <option value="proj_th_za">โครง ฮ→ก</option>
+      <option value="proj_en_az">โครง A→Z</option>
+      <option value="proj_en_za">โครง Z→A</option>
+    </select>
+    <button class="ghost-btn" id="surveyExportBtn">⬇ Export Excel</button>
+    <button class="btn btn-primary edit-only" id="surveyAddBtn" style="border-radius:50px;padding:10px 22px;font-size:18px">＋</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>โครงการ</th><th>ระบบ</th><th>สถานที่</th><th>สถานที่ย่อย</th><th>อุปกรณ์</th><th>ยี่ห้อ</th><th>รุ่น</th><th>Serial</th><th>ผู้กรอก</th><th>วันที่</th><th>รูป</th><th></th></tr></thead>
+      <tbody id="surveyBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════ PANEL: IMPORT / EXPORT ══════ -->
+<section class="panel" id="panel-import">
+  <div class="eyebrow">Import / Export</div>
+  <div class="panel-title">นำเข้าข้อมูล & สร้างรายงาน Word</div>
+  <div class="panel-desc">นำเข้าข้อมูลอุปกรณ์จาก Excel และสร้างรายงาน Word ด้วย Template ที่เชื่อมกับ Google Colab</div>
+
+  <div class="io-cols">
+    <!-- LEFT: Import Excel -->
+    <div class="io-card">
+      <div class="io-head"><span class="io-ic imp">⬆</span><b>นำเข้าข้อมูลอุปกรณ์ (Excel)</b></div>
+      <label class="import-drop" for="fileXlsx">
+        <div class="id-ic">📁</div>
+        <b>เลือกหรือลากไฟล์ Excel มาวาง</b>
+        <span>รองรับ .xlsx · .xls · .csv</span>
+        <span class="id-btn">เลือกไฟล์</span>
+      </label>
+      <input type="file" id="fileXlsx" accept=".xlsx,.xls,.csv" hidden>
+      <div class="import-cols" style="margin-top:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:6px">คอลัมน์ที่รองรับ</div>
+        <div class="ic-grid"><span>โครงการ</span><span>ระบบ</span><span>สถานที่</span><span>สถานที่ย่อย</span><span>อุปกรณ์</span><span>ยี่ห้อ</span><span>รุ่น</span><span>รหัสอุปกรณ์</span><span>Serial Number</span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="ghost-btn" onclick="downloadMasterTemplate()" style="flex:1;min-width:140px">⬇ โหลดฟอร์มเปล่า</button>
+        <button class="ghost-btn" onclick="downloadMasterData()" style="flex:1;min-width:140px">⬇ โหลดข้อมูลปัจจุบัน</button>
+      </div>
+      <div id="importPreview" style="margin-top:12px"></div>
+    </div>
+
+    <!-- RIGHT: Word Template (connected to Colab pipeline) -->
+    <div class="io-card admin-only">
+      <div class="io-head"><span class="io-ic exp">📝</span><b>สร้างรายงาน Word Template</b></div>
+
+      <div class="wg-steps">
+        <!-- Step 1: Group & Report Info -->
+        <div class="wg-step">
+          <div class="wg-num">1</div>
+          <div class="wg-body">
+            <h4>ข้อมูลรายงาน <button type="button" class="icon-btn" id="reportInfoBulkBtn" title="อัปโหลด/จัดการข้อมูลสัญญาเป็นชุด (Excel)" style="margin-left:6px">＋</button></h4>
+            <div class="wg-row">
+              <div class="wg-field">
+                <label>จัดกลุ่มตาม</label>
+                <select class="tin" id="wgGroupBy"><option value="location">สถานที่</option><option value="project">โครงการ</option><option value="system">ระบบ</option></select>
+              </div>
+              <div class="wg-field">
+                <label>ชื่อรายงาน</label>
+                <input class="tin" id="wgReportName" value="รายงานผลการติดฉลากระบุรายละเอียดอุปกรณ์">
+              </div>
+            </div>
+            <div class="wg-row" style="margin-top:10px">
+              <div class="wg-field">
+                <label>ชื่อสัญญา/โครงการ</label>
+                <input class="tin" id="wgContract" list="dl_wgContract" placeholder="เช่น งานบำรุงรักษา...">
+                <datalist id="dl_wgContract"></datalist>
+              </div>
+              <div class="wg-field">
+                <label>เลขที่สัญญา</label>
+                <input class="tin" id="wgContractNo" list="dl_wgContractNo" placeholder="เช่น 22-22-2569">
+                <datalist id="dl_wgContractNo"></datalist>
+              </div>
+            </div>
+            <div class="wg-row" style="margin-top:10px">
+              <div class="wg-field">
+                <label>ลงวันที่</label>
+                <input class="tin" id="wgDate" placeholder="วันที่">
+              </div>
+              <div class="wg-field">
+                <label>หน่วยงานลูกค้า</label>
+                <input class="tin" id="wgClient" list="dl_wgClient" placeholder="หน่วยงานลูกค้า">
+                <datalist id="dl_wgClient"></datalist>
+              </div>
+            </div>
+            <div class="wg-row" style="margin-top:10px">
+              <div class="wg-field">
+                <label>ข้อกำหนด (clause)</label>
+                <input class="tin" id="wgClause" list="dl_wgClause" placeholder="เช่น 5.2">
+                <datalist id="dl_wgClause"></datalist>
+              </div>
+              <div class="wg-field">
+                <label>นำส่ง (submittedTo)</label>
+                <input class="tin" id="wgSubmittedTo" list="dl_wgSubmittedTo" placeholder="เช่น สำนักดิจิทัล กทม.">
+                <datalist id="dl_wgSubmittedTo"></datalist>
+              </div>
+            </div>
+            <!-- logocustomer คือลิงก์ Google Drive ของรูปโลโก้บริษัทลูกค้า ไม่ใช่ข้อความ — ไม่ให้พิมพ์เอง
+                 ค่าจะถูกเติมอัตโนมัติจากข้อมูลสัญญาของโครงการ (ดูปุ่ม + ด้านบนสำหรับอัปโหลด Excel) -->
+            <input type="hidden" id="wgLogoCustomer">
+            <datalist id="dl_wgLogoCustomer"></datalist>
+          </div>
+        </div>
+
+        <!-- Step 2: Template Source — เลือกจากรายการที่บันทึกไว้ หรือเพิ่ม Template ใหม่ -->
+        <div class="wg-step">
+          <div class="wg-num">2</div>
+          <div class="wg-body">
+            <h4>Template ที่ใช้</h4>
+            <select class="tin" id="tmplPicker" style="margin-bottom:8px"></select>
+            <div class="admin-only" style="display:flex;gap:6px;margin-bottom:8px">
+              <button class="ghost-btn" id="tmplAddBtn" type="button" style="font-size:12px">＋ เพิ่ม Template ใหม่</button>
+            </div>
+            <input type="hidden" id="wgTemplateId">
+            <div id="tmplInfoBox" style="background:#F0FFF4;border:1px solid #86EFAC;border-radius:8px;padding:10px 14px;font-size:12.5px;color:#15803D;line-height:1.7">
+              ✅ <b id="tmplFileName">—</b><br>
+              <span style="font-family:'IBM Plex Mono';font-size:11px;color:#166534">ID: <span id="tmplFileId">—</span></span><br>
+              <span style="color:var(--ink-soft);font-size:11.5px">Template ที่แก้ tag แล้ว พร้อมใช้งาน</span>
+            </div>
+            <div style="margin-top:8px;background:#F0F7FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 12px;font-size:12px;color:#1D4ED8;line-height:1.6">
+              <b>📌 Colab Pipeline:</b> Template นี้ผูกกับ Google Colab ที่ดึงข้อมูลจาก Google Sheet
+              และ Render ผ่าน <code>docxtpl</code> — กระบวนการเดียวกับโค้ด Colab ที่ใช้อยู่
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Generate -->
+        <div class="wg-step">
+          <div class="wg-num">3</div>
+          <div class="wg-body">
+            <h4>สร้างรายงาน</h4>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" id="wgGenerate" style="flex:1" disabled>⏳ กำลังโหลดไลบรารี...</button>
+            </div>
+            <div style="margin-top:8px">
+              <a id="wgColabLink" href="#" target="_blank" style="display:none">
+                <button class="ghost-btn" style="width:100%;justify-content:center;margin-top:4px">🔗 เปิด Google Colab Pipeline</button>
+              </a>
+            </div>
+            <!-- Progress -->
+            <div class="wg-progress" id="wgProgress">
+              <div id="wgStatus" style="font-size:12.5px;color:var(--ink-soft)">กำลังเตรียมข้อมูล...</div>
+              <div class="wg-bar-wrap"><div class="wg-bar" id="wgBar"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ PANEL: MASTER ══════ -->
+<section class="panel" id="panel-master">
+  <div class="eyebrow">Master Data</div>
+  <div class="panel-title">จัดการข้อมูลหลัก</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+    <input type="text" id="masterSearch" placeholder="ค้นหาในข้อมูลหลัก…" style="flex:1;min-width:180px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
+    <select id="masterFProject" class="tin" style="width:auto;min-width:130px"><option value="">ทุกโครงการ</option></select>
+    <select id="masterFSystem" class="tin" style="width:auto;min-width:110px"><option value="">ทุกระบบ</option></select>
+    <select id="masterFLoc" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่</option></select>
+    <select id="masterFSub" class="tin" style="width:auto;min-width:130px"><option value="">ทุกสถานที่ย่อย</option></select>
+    <select id="masterFEquip" class="tin" style="width:auto;min-width:150px"><option value="">ทุกอุปกรณ์</option></select>
+    <select id="masterFMissing" class="tin" style="width:auto;min-width:160px">
+      <option value="">แสดงทั้งหมด</option>
+      <option value="brand">ขาดยี่ห้อ</option>
+      <option value="model">ขาดรุ่น</option>
+      <option value="serial">ขาด Serial</option>
+      <option value="any">ขาดข้อมูลใดก็ตาม</option>
+    </select>
+    <button class="btn btn-primary edit-only" id="addMasterBtn">＋ เพิ่มอุปกรณ์</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>โครงการ</th><th>ระบบ</th><th>ประเภทสถานที่</th><th>สถานที่</th><th>สถานที่ย่อย</th><th>อุปกรณ์</th><th>ยี่ห้อ</th><th>รุ่น</th><th>รหัส</th><th>Serial</th><th></th></tr></thead>
+      <tbody id="masterBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════ PANEL: USERS ══════ -->
+<section class="panel" id="panel-users">
+  <div class="admin-only" style="margin-bottom:22px">
+    <div class="eyebrow">Page Permissions</div>
+    <div class="panel-title" style="font-size:16px">กำหนดสิทธิ์การเข้าถึงแต่ละ Role</div>
+    <div class="panel-desc">เลือกได้ว่าแต่ละสิทธิ์ (role) จะเห็นหน้าไหน หรือใช้ปุ่ม "สร้างรายงาน PDF"/"ลบ" ได้หรือไม่</div>
+    <div id="pagePermContainer" style="background:#fff;border:1px solid var(--line-soft);border-radius:14px;padding:16px;box-shadow:var(--shadow)"></div>
+  </div>
+  <div class="eyebrow">User Management</div>
+  <div class="panel-title">จัดการผู้ใช้</div>
+  <div class="user-cols">
+    <div class="card"><div class="card-b">
+      <div class="card-h"><span class="step">＋</span><h3>เพิ่มผู้ใช้</h3></div>
+      <div class="field"><label>ชื่อผู้ใช้ (username) <span class="req">*</span></label><input type="text" class="tin" id="nuUser" placeholder="เช่น somchai.j" autocomplete="off"></div>
+      <div class="field" style="margin-top:12px"><label>รหัสผ่าน <span class="req">*</span></label><input type="text" class="tin" id="nuPass" placeholder="ตั้งรหัสผ่านเริ่มต้น" autocomplete="off"></div>
+      <div class="field" style="margin-top:12px"><label>ชื่อ-สกุล</label><input type="text" class="tin" id="nuName" placeholder="ชื่อที่แสดง"></div>
+      <div class="field" style="margin-top:12px"><label>สิทธิ์ (role) <span class="req">*</span></label>
+        <select class="tin" id="nuRole">
+          <option value="inspector">inspector — ผู้ตรวจ</option>
+          <option value="observer">observer — ผู้สังเกตการณ์</option>
+          <option value="leader">leader — หัวหน้างาน</option>
+          <option value="manager">manager — ผู้จัดการ</option>
+          <option value="admin">admin — ผู้ดูแลระบบ</option>
+        </select>
+      </div>
+      <div id="nuProjectChips" class="chips-box" style="margin-top:12px"></div>
+      <div class="field" style="margin-top:12px"><label>โครงการ (project)</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="tin" id="nuProject" list="nuProjectList" placeholder="เลือกโครงการแล้วกด +" style="flex:1">
+          <button type="button" class="btn btn-soft" id="nuProjectAdd" style="flex:none">+</button>
+        </div>
+        <datalist id="nuProjectList"></datalist>
+      </div>
+      <button class="btn btn-primary" id="nuAdd" style="margin-top:16px;width:100%">เพิ่มผู้ใช้</button>
+    </div></div>
+    <div class="card"><div class="card-b">
+      <div class="card-h"><span class="step">⬆</span><h3>นำเข้าจาก Excel</h3></div>
+      <label class="import-drop" for="fileUsers" style="padding:26px 18px">
+        <div class="id-ic" style="width:52px;height:52px;font-size:22px">📁</div>
+        <b>เลือกหรือลากไฟล์ Excel</b><span>.xlsx · .xls · .csv</span>
+        <span class="id-btn">เลือกไฟล์</span>
+      </label>
+      <input type="file" id="fileUsers" accept=".xlsx,.xls,.csv" hidden>
+      <div class="import-cols" style="margin-top:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:6px">คอลัมน์ที่รองรับ</div>
+        <div class="ic-grid"><span>username</span><span>password</span><span>name</span><span>role</span><span>project</span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="ghost-btn" onclick="downloadUsersTemplate()" style="flex:1;min-width:140px">⬇ โหลดฟอร์มเปล่า</button>
+        <button class="ghost-btn" onclick="downloadUsersData()" style="flex:1;min-width:140px">⬇ โหลดข้อมูลผู้ใช้</button>
+      </div>
+      <div id="usersImportMsg" style="margin-top:12px"></div>
+    </div></div>
+  </div>
+  <div style="margin-top:20px;display:flex;gap:10px">
+    <input type="text" id="usersSearch" placeholder="ค้นหาผู้ใช้…" style="flex:1;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;outline:none">
+    <button class="btn btn-soft" id="usersRefresh">↻ รีเฟรช</button>
+  </div>
+  <div class="table-wrap" style="margin-top:14px">
+    <table>
+      <thead><tr><th>ชื่อผู้ใช้</th><th>รหัสผ่าน</th><th>ชื่อ-สกุล</th><th>สิทธิ์</th><th>โครงการ</th><th>สถานะ</th><th></th></tr></thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<div id="reportArea"></div>
+<div class="toast" id="toast"><span class="tdot"></span><span id="toastMsg"></span></div>
+
+<!-- ══════ SURVEY DIALOG ══════ -->
+<div id="surveyDialog">
+  <div class="sdlg">
+    <div style="padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between">
+      <h3 id="sdlgTitle">เพิ่มรายการสำรวจ</h3>
+      <div id="sdlgClose" style="cursor:pointer;font-size:18px">&times;</div>
+    </div>
+    <div style="padding:18px 24px 24px;display:flex;flex-direction:column;gap:14px">
+      <div style="background:#F7F9FB;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px">
+        <h4 style="font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px">1. ข้อมูลอุปกรณ์</h4>
+        <div class="sdlg-grid">
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">โครงการ *</label><input class="tin" id="sdlgProject" placeholder="โครงการ" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ระบบ</label><input class="tin" id="sdlgSystem" placeholder="ระบบ" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">สถานที่</label><input class="tin" id="sdlgLoc" placeholder="สถานที่" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">สถานที่ย่อย</label><input class="tin" id="sdlgSub" placeholder="สถานที่ย่อย" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">อุปกรณ์ *</label><input class="tin" id="sdlgEquip" placeholder="ชื่ออุปกรณ์" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">Serial Number</label><input class="tin" id="sdlgSerial" placeholder="S/N" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ยี่ห้อ</label><input class="tin" id="sdlgBrand" placeholder="ยี่ห้อ" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">รุ่น</label><input class="tin" id="sdlgModel" placeholder="รุ่น" autocomplete="off"></div>
+        </div>
+      </div>
+      <div style="background:#F7F9FB;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px">
+        <h4 style="font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px">2. รูปภาพ</h4>
+        <div class="sdlg-imgs">
+          <div class="sdlg-imgslot">
+            <div class="scap"><span class="tagn">รูป 1</span> รูปรวมอุปกรณ์</div>
+            <label class="sdlg-drop" id="sdlgDropMain" for="sdlgFileMain">
+              <div class="dh"><b>แตะเพื่อเลือกรูป</b>ภาพอุปกรณ์ทั้งตัว</div>
+              <div class="sdlg-replace">แตะเพื่อเปลี่ยน</div>
+            </label>
+            <input type="file" id="sdlgFileMain" accept="image/*" hidden>
+          </div>
+          <div class="sdlg-imgslot">
+            <div class="scap"><span class="tagn">รูป 2</span> รูปสติกเกอร์</div>
+            <label class="sdlg-drop" id="sdlgDropSticker" for="sdlgFileSticker">
+              <div class="dh"><b>แตะเพื่อเลือกรูป</b>ป้าย/ฉลากอุปกรณ์</div>
+              <div class="sdlg-replace">แตะเพื่อเปลี่ยน</div>
+            </label>
+            <input type="file" id="sdlgFileSticker" accept="image/*" hidden>
+          </div>
+        </div>
+      </div>
+      <div style="background:#F7F9FB;border:1px solid var(--line-soft);border-radius:12px;padding:14px 16px">
+        <h4 style="font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:10px">3. ข้อมูลการสำรวจ</h4>
+        <div class="sdlg-grid">
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ผู้กรอก *</label><input class="tin" id="sdlgInspector" placeholder="ชื่อผู้กรอก" autocomplete="off"></div>
+          <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">วันที่สำรวจ</label><input class="tin" type="date" id="sdlgDate"></div>
+        </div>
+        <div style="margin-top:10px"><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">หมายเหตุ</label><textarea class="tin" id="sdlgNote" placeholder="สภาพอุปกรณ์ หมายเหตุ ฯลฯ" style="min-height:56px;width:100%;resize:vertical"></textarea></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;padding:0 24px 20px">
+      <button class="btn btn-soft" id="sdlgCancelBtn" style="flex:1">ยกเลิก</button>
+      <button class="btn btn-primary" id="sdlgSaveBtn" style="flex:1">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
