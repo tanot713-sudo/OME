@@ -287,7 +287,7 @@
         <div class="wg-step">
           <div class="wg-num">1</div>
           <div class="wg-body">
-            <h4>ข้อมูลรายงาน</h4>
+            <h4>ข้อมูลรายงาน <button type="button" class="icon-btn" id="reportInfoBulkBtn" title="อัปโหลด/จัดการข้อมูลสัญญาเป็นชุด (Excel)" style="margin-left:6px">＋</button></h4>
             <div class="wg-row">
               <div class="wg-field">
                 <label>จัดกลุ่มตาม</label>
@@ -443,8 +443,12 @@
           <option value="admin">admin — ผู้ดูแลระบบ</option>
         </select>
       </div>
+      <div id="nuProjectChips" class="chips-box" style="margin-top:12px"></div>
       <div class="field" style="margin-top:12px"><label>โครงการ (project)</label>
-        <input type="text" class="tin" id="nuProject" list="nuProjectList" placeholder="เช่น รถไฟฟ้าสายสีทอง">
+        <div style="display:flex;gap:8px">
+          <input type="text" class="tin" id="nuProject" list="nuProjectList" placeholder="เลือกโครงการแล้วกด +" style="flex:1">
+          <button type="button" class="btn btn-soft" id="nuProjectAdd" style="flex:none">+</button>
+        </div>
         <datalist id="nuProjectList"></datalist>
       </div>
       <button class="btn btn-primary" id="nuAdd" style="margin-top:16px;width:100%">เพิ่มผู้ใช้</button>

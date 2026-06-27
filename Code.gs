@@ -141,6 +141,10 @@ function route(action, payload) {
     // Report Field Presets (autocomplete จากค่าที่เคยกรอก)
     case 'listReportPresets':   return actionListReportPresets(payload);
     case 'saveReportPreset':    return actionSaveReportPreset(payload);
+    // Report Info (ข้อมูลสัญญาผูกกับโครงการ — upsert ทับของเดิม)
+    case 'listReportInfo':      return actionListReportInfo(payload);
+    case 'saveReportInfo':      return actionSaveReportInfo(payload);
+    case 'bulkSaveReportInfo':  return actionBulkSaveReportInfo(payload);
      // Switch-case
     case 'saveTarget':   return actionSaveTarget(payload);
     case 'listTargets':  return actionListTargets(payload);
@@ -513,7 +517,7 @@ function actionFetchImageAsBase64({ url, _user }) {
    AUTH — LOGIN / TOKEN
    ✅ FIX #3 — ส่ง error/code field ชื่อเดียวกัน (ใช้ 'code') ให้ frontend อ่านได้
    ================================================================ */
-const USER_HEADERS = ['id','username','password','name','role','project','active','createdAt'];
+const USER_HEADERS = ['id','username','password','plainPwd','name','role','project','active','createdAt'];
 
 function actionLogin({ username, password }) {
   if (!username || !password) return { ok: false, message: 'กรุณากรอก username และ password' };
@@ -1131,6 +1135,46 @@ function findRowByFieldValue_(sh, rows, field, value) {
 }
 
 /* ================================================================
+   REPORT INFO — ข้อมูลสัญญาผูกกับชื่อโครงการ (key เดียวต่อโครงการ)
+   ต่อสัญญาใหม่ = เขียนทับของเดิม ไม่ใช่สะสมเป็น list เหมือน ReportPresets
+   ================================================================ */
+const REPORT_INFO_HEADERS = ['project','contractName','contractNo','contractDate','client','clause','submittedTo','logoCustomer','updatedAt'];
+
+function actionListReportInfo({ _user }) {
+  const sh = getSheet('ReportInfo');
+  ensureHeaders(sh, REPORT_INFO_HEADERS);
+  return { ok: true, info: sheetToObjects(sh) };
+}
+
+// upsert ตาม project — โครงการเดิมจะถูกเขียนทับทั้งแถว ไม่สะสมของเก่าไว้
+function actionSaveReportInfo({ row, _user }) {
+  if (!row || !String(row.project || '').trim()) return { ok: false, message: 'ต้องมีชื่อโครงการ' };
+  const sh = getSheet('ReportInfo');
+  ensureHeaders(sh, REPORT_INFO_HEADERS);
+  const data = sh.getDataRange().getValues();
+  const hdrs = data[0];
+  const pCol = hdrs.indexOf('project');
+  row.updatedAt = new Date().toISOString();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][pCol] === row.project) {
+      hdrs.forEach((h, ci) => { if (row[h] !== undefined) sh.getRange(i + 1, ci + 1).setValue(row[h]); });
+      return { ok: true };
+    }
+  }
+  appendRow(sh, REPORT_INFO_HEADERS, row);
+  return { ok: true };
+}
+
+function actionBulkSaveReportInfo({ rows, _user }) {
+  if (!Array.isArray(rows)) return { ok: false, message: 'ข้อมูลไม่ถูกต้อง' };
+  let count = 0;
+  rows.forEach(row => {
+    if (row && String(row.project || '').trim()) { actionSaveReportInfo({ row, _user }); count++; }
+  });
+  return { ok: true, count };
+}
+
+/* ================================================================
    USER MANAGEMENT
    ✅ FIX #4 — เพิ่ม actionSetUserActive + แก้ actionDeleteUser
    ================================================================ */
@@ -1165,6 +1209,8 @@ function actionUpdateUser({ username, updates, _user }) {
       hdrs.forEach((h, ci) => {
         if (h === 'password' && updates.password) {
           sh.getRange(i+1, ci+1).setValue(hashPw(updates.password));
+        } else if (h === 'plainPwd' && updates.password) {
+          sh.getRange(i+1, ci+1).setValue(updates.password);
         } else if (updates[h] !== undefined && h !== 'id' && h !== 'createdAt' && h !== 'username') {
           sh.getRange(i+1, ci+1).setValue(updates[h]);
         }
@@ -1244,7 +1290,7 @@ function actionListUsers({ _user }) {
     ok: true,
     users: rows.map(r => ({
       username:  r.username,
-            password:  r.password,
+      plainPwd:  r.plainPwd,
       name:      r.name,
       role:      r.role,
       project:   r.project,

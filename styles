@@ -235,6 +235,15 @@ td.codecell{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--accent-deep
 }
 .user-chip .logout:hover{background:var(--danger);border-color:var(--danger)}
 
+/* ─── PROJECT CHIPS (เลือกหลายโครงการในฟอร์มผู้ใช้) ─────────── */
+.chips-box{display:flex;flex-wrap:wrap;gap:6px;min-height:0}
+.chips-box:empty{display:none}
+.chip{position:relative;display:inline-flex;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 22px 6px 10px;font-size:12.5px;color:var(--ink);box-shadow:0 1px 2px rgba(20,26,34,.06)}
+.chip-x{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px solid #fff}
+.chip-x:hover{background:#B91C1C}
+/* dropdown สีขาวแสดงโครงการของ user ในตาราง — ไม่ขยายแถวตามจำนวนโครงการ */
+.proj-select{width:100%;max-width:170px;background:#fff;border:1px solid var(--line);border-radius:6px;font-size:12.5px;padding:4px 6px;color:var(--ink)}
+
 /* ─── AUTH GATE ──────────────────────────────────────────── */
 #authGate{
   position:fixed;inset:0;z-index:200;
