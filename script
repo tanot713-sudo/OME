@@ -45,6 +45,35 @@ function applyLogo(src) {
 applyLogo(LOGO_SRC);
 
 /* ══════════════════════════════════════════════════════════
+   CONFIRM DIALOG — popup สีขาวแทน confirm() ของเบราว์เซอร์
+   ปุ่ม Cancel อยู่ซ้าย, OK/ปุ่มหลักอยู่ขวา
+══════════════════════════════════════════════════════════ */
+function confirmDlg(message, okLabel, onOk){
+  let dlg = document.getElementById('confirmDlg');
+  if(!dlg){
+    dlg = document.createElement('div');
+    dlg.id = 'confirmDlg';
+    dlg.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(20,26,34,.55);display:none;align-items:center;justify-content:center;padding:20px';
+    dlg.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:24px;box-shadow:0 12px 40px rgba(20,26,34,.18)">
+      <div id="confirmDlgMsg" style="font-size:15px;color:#161B22;margin-bottom:20px;line-height:1.5"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button id="confirmDlgCancel" style="flex:1;padding:10px;border-radius:8px;background:#EBEEF2;color:#5B6573;font-weight:600;font-size:14px;cursor:pointer;border:none">ยกเลิก</button>
+        <button id="confirmDlgOk" style="flex:1;padding:10px;border-radius:8px;background:#EE7C16;color:#fff;font-weight:600;font-size:14px;cursor:pointer;border:none">ตกลง</button>
+      </div>
+    </div>`;
+    document.body.appendChild(dlg);
+    dlg.addEventListener('click', e=>{ if(e.target===dlg) dlg.style.display='none'; });
+  }
+  dlg.querySelector('#confirmDlgMsg').textContent = message || '';
+  dlg.querySelector('#confirmDlgOk').textContent = okLabel || 'ตกลง';
+  const okBtn = dlg.querySelector('#confirmDlgOk');
+  const cancelBtn = dlg.querySelector('#confirmDlgCancel');
+  okBtn.onclick = ()=>{ dlg.style.display='none'; if(typeof onOk==='function') onOk(); };
+  cancelBtn.onclick = ()=>{ dlg.style.display='none'; };
+  dlg.style.display = 'flex';
+}
+
+/* ══════════════════════════════════════════════════════════
    CORE APP
 ══════════════════════════════════════════════════════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzjzlcLO0brmnOaD5UNuqi9MuKs0x__p7G9DdQZ2dVZ7MEm6_t8nP4FquwUFhCMStUeNQ/exec';
@@ -513,7 +542,7 @@ function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=
 async function generateWordTemplate(){
   if(typeof docx==='undefined'){toast('ไลบรารี Word ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
   if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}
-  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents}=docx;
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition}=docx;
   const groupBy=$('#wgGroupBy').value;
   const fieldKey={project:'project',system:'system',location:'locName'}[groupBy];
   const groupLabel={project:'โครงการ',system:'ระบบ',location:'สถานที่'}[groupBy];
@@ -640,12 +669,29 @@ async function generateWordTemplate(){
     }
   }
 
+  /* Header / Footer — เฉพาะ section เนื้อหา (ไม่ใส่ในหน้าปก/สารบัญ) ตามแบบ template จริง
+     ใช้ width แบบ DXA (ไม่ใช่ %) กันคอลัมน์บีบแคบเวลาเปิดผ่าน Google Docs */
+  setWgProgress(85,'กำลังสร้างส่วนหัว-ท้าย...');
+  const HDR_DXA_LOGO=2400, HDR_DXA_TEXT=8200; // รวม ~10600 ตรงกับความกว้างเนื้อหา (page width - margins)
+  const hdrLeft=new TableCell({borders:noBorders(),width:{size:HDR_DXA_LOGO,type:WidthType.DXA},children:[
+    logoBuf?new Paragraph({children:[new ImageRun({data:logoBuf,transformation:{width:90,height:56}})]}):P(T('AMR ASIA',{bold:true,color:RED}))
+  ]});
+  const hdrRight=new TableCell({borders:noBorders(),width:{size:HDR_DXA_TEXT,type:WidthType.DXA},children:[
+    P(T(contract||reportName,{size:24,bold:true}),{align:AlignmentType.RIGHT}),
+    P([T('สัญญาเลขที่ ',{size:24}),T(contractNo,{size:24,bold:true})],{align:AlignmentType.RIGHT})
+  ]});
+  const header=new Header({children:[new Table({width:{size:HDR_DXA_LOGO+HDR_DXA_TEXT,type:WidthType.DXA},borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]})]});
+  const footer=new Footer({children:[new Paragraph({tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],children:[
+    T(`ชื่อรายงาน : ${reportName}`,{size:22}),
+    new TextRun({text:'\t',font:FONT}),
+    new TextRun({children:['หน้าที่ ',PageNumber.CURRENT,' of ',PageNumber.TOTAL_PAGES],font:FONT,size:22})
+  ]})]});
+
   setWgProgress(92,'กำลังบีบอัดไฟล์...');
-  // ไม่ใส่ header/footer ในเอกสาร (ตามที่ผู้ใช้แจ้งว่าทำให้รูปแบบเพี้ยนไม่ตรงตัวอย่าง) — ใช้ margin เดียวกันทุก section
   const PAGE_MARGIN={top:1400,bottom:1100,left:1130,right:1130};
   const doc=new Document({styles:{default:{document:{run:{font:FONT}}}},sections:[
     {properties:{page:{margin:PAGE_MARGIN}},children:[...coverKids,new Paragraph({pageBreakBefore:true}),...tocKids]},
-    {properties:{page:{margin:PAGE_MARGIN}},children:bodyKids}
+    {properties:{page:{margin:PAGE_MARGIN}},headers:{default:header},footers:{default:footer},children:bodyKids}
   ]});
   const blob=await Packer.toBlob(doc);
   const fn=`รายงานอุปกรณ์_${groupLabel}_${fileStamp(Date.now())}.docx`;
@@ -1037,7 +1083,7 @@ async function initAuth(){
   $('#authPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
   $('#authUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('#authPass').focus();});
   $('#authEye').addEventListener('click',()=>{const p=$('#authPass');const show=p.type==='password';p.type=show?'text':'password';$('#authEye').textContent=show?'ซ่อน':'แสดง';});
-  $('#logoutBtn').addEventListener('click',()=>{if(confirm('ออกจากระบบ?'))doLogout();});
+  $('#logoutBtn').addEventListener('click',()=>{confirmDlg('ออกจากระบบ?','ออกจากระบบ',()=>doLogout());});
   $('#pdpaAccept').addEventListener('click',acceptPdpa);
   const tgl=()=>$('#pdpaBanner').classList.toggle('expanded');
   $('#pdpaDetailBtn').addEventListener('click',tgl);
