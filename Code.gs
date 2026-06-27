@@ -358,6 +358,21 @@ function actionGenerateReport(payload, _user) {
 }
 
 /* ================================================================
+   PROJECT SCOPING — leader/inspector ดูได้แค่โครงการที่ตัวเองถูกผูกไว้
+   (admin กำหนดได้หลายโครงการต่อคน คั่นด้วย comma ในช่อง "โครงการ")
+   ================================================================ */
+function userProjectList(_user) {
+  return (_user.project || '').split(',').map(p => p.trim()).filter(Boolean);
+}
+// true ถ้า _user เข้าถึงโครงการนี้ได้ — admin/manager เห็นทุกโครงการเสมอ
+// ถ้า leader/inspector ไม่ได้ผูกโครงการไว้เลย (รายการว่าง) ถือว่ายังไม่จำกัด (เห็นทุกโครงการ)
+function userCanAccessProject(_user, project) {
+  if (['admin', 'manager'].includes(_user.role)) return true;
+  const list = userProjectList(_user);
+  return list.length === 0 || list.includes(project);
+}
+
+/* ================================================================
    SHEET HELPERS
    ================================================================ */
 function getSheet(name) {
@@ -675,11 +690,9 @@ function actionListRecords({ _user }) {
   let rows = sheetToObjects(sh);
 
   const role = _user.role;
-  const leaderProjs = (role==='leader')
-    ? (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean)
-    : [];
-  if      (role === 'inspector') rows = rows.filter(r => r.createdBy === _user.username);
-  else if (role === 'leader' && leaderProjs.length>0) rows = rows.filter(r => leaderProjs.includes(r.project));
+  if (role === 'leader' || role === 'inspector') {
+    rows = rows.filter(r => userCanAccessProject(_user, r.project));
+  }
 
   return {
     ok: true,
@@ -699,9 +712,16 @@ imgMain: r.imgMain, thumbMain: r.thumbMain,
 }
 
 function actionDeleteRecord({ id, _user }) {
-  if (!['admin','manager','leader'].includes(_user.role))
+  if (_user.role !== 'admin' && !getPagePermissions(_user.role).includes('delete'))
     return { ok: false, message: 'ไม่มีสิทธิ์ลบ' };
   const sh = getSheet(CONFIG.SHEETS.RECORDS);
+  if (_user.role !== 'admin' && _user.role !== 'manager') {
+    const rows = sheetToObjects(sh);
+    const rec = rows.find(r => r.id === id);
+    if (rec && !userCanAccessProject(_user, rec.project)) {
+      return { ok: false, message: 'ไม่มีสิทธิ์ลบรายการของโครงการนี้' };
+    }
+  }
   const ok = deleteRowById(sh, id);
   return { ok, message: ok ? 'ลบแล้ว' : 'ไม่พบรายการ' };
 }
@@ -726,7 +746,11 @@ function actionSaveMaster({ master, _user }) {
 function actionListMaster({ _user }) {
   const sh   = getSheet(CONFIG.SHEETS.MASTER);
   ensureHeaders(sh, MASTER_HEADERS);
-  return { ok: true, master: sheetToObjects(sh) };
+  let rows = sheetToObjects(sh);
+  if (_user.role === 'leader' || _user.role === 'inspector') {
+    rows = rows.filter(m => userCanAccessProject(_user, m.project));
+  }
+  return { ok: true, master: rows };
 }
 
 function actionGetProgress({ _user }) {
@@ -734,23 +758,18 @@ function actionGetProgress({ _user }) {
   const records = sheetToObjects(getSheet(CONFIG.SHEETS.RECORDS));
   const role    = _user.role;
 
-  const leaderProjs = (role==='leader'||role==='inspector')
-    ? (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean)
-    : [];
-
   const projectMap = {};
   master.forEach(m => {
-    if(leaderProjs.length>0 && !leaderProjs.includes(m.project)) return;
+    if ((role === 'leader' || role === 'inspector') && !userCanAccessProject(_user, m.project)) return;
     if(!projectMap[m.project]) projectMap[m.project]={total:0,serials:new Set()};
     projectMap[m.project].total++;
     if(m.serial) projectMap[m.project].serials.add(m.serial);
   });
 
   let filteredRecords = records;
-  if(role==='leader' && leaderProjs.length>0)
-    filteredRecords = records.filter(r=>leaderProjs.includes(r.project));
-  else if(role==='inspector')
-    filteredRecords = records.filter(r=>r.createdBy===_user.username);
+  if (role === 'leader' || role === 'inspector') {
+    filteredRecords = records.filter(r => userCanAccessProject(_user, r.project));
+  }
 
   const doneSerials = new Set(filteredRecords.map(r=>r.serial).filter(Boolean));
 
@@ -862,11 +881,9 @@ function actionListSurvey({ _user }) {
   let rows = sheetToObjects(sh);
 
   const role = _user.role;
-  const leaderProjs = (role==='leader')
-    ? (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean)
-    : [];
-  if      (role === 'inspector') rows = rows.filter(r => r.createdBy === _user.username);
-  else if (role === 'leader' && leaderProjs.length>0) rows = rows.filter(r => leaderProjs.includes(r.project));
+  if (role === 'leader' || role === 'inspector') {
+    rows = rows.filter(r => userCanAccessProject(_user, r.project));
+  }
 
   return {
     ok: true,
@@ -890,8 +907,9 @@ function actionUpdateSurvey({ record, images, _user }) {
   if (!old) return { ok: false, message: 'ไม่พบรายการ' };
 
   const role = _user.role;
-  if (role === 'inspector' && old.createdBy !== _user.username) return { ok: false, message: 'ไม่มีสิทธิ์แก้ไข' };
-  if (role === 'leader'    && old.project   !== _user.project)  return { ok: false, message: 'ไม่มีสิทธิ์แก้ไข' };
+  if ((role === 'leader' || role === 'inspector') && !userCanAccessProject(_user, old.project)) {
+    return { ok: false, message: 'ไม่มีสิทธิ์แก้ไขรายการของโครงการนี้' };
+  }
 
   let imgMain    = old.imgMain    || '';
   let thumbMain  = old.thumbMain  || '';
@@ -924,9 +942,12 @@ function actionDeleteSurvey({ id, _user }) {
   if (!old) return { ok: false, message: 'ไม่พบรายการ' };
 
   const role = _user.role;
-  if (role === 'inspector' && old.createdBy !== _user.username) return { ok: false, message: 'ไม่มีสิทธิ์ลบ' };
-  if (role === 'leader'    && old.project   !== _user.project)  return { ok: false, message: 'ไม่มีสิทธิ์ลบ' };
-  if (!['admin','manager','leader','inspector'].includes(role))  return { ok: false, message: 'ไม่มีสิทธิ์ลบ' };
+  if (role !== 'admin' && !getPagePermissions(role).includes('delete')) {
+    return { ok: false, message: 'ไม่มีสิทธิ์ลบ' };
+  }
+  if ((role === 'leader' || role === 'inspector') && !userCanAccessProject(_user, old.project)) {
+    return { ok: false, message: 'ไม่มีสิทธิ์ลบรายการของโครงการนี้' };
+  }
 
   const ok = deleteRowById(sh, id);
   return { ok, message: ok ? 'ลบแล้ว' : 'ไม่พบรายการ' };
@@ -977,12 +998,14 @@ function exportSurveyExcelToDrive(project) {
    ================================================================ */
 const PERM_HEADERS = ['role','pages'];
 const DEFAULT_PAGES = {
-  manager:   ['overview','add','records','survey','import'],
-  leader:    ['add','records','survey'],
+  manager:   ['overview','add','records','survey','import','pdfReport','delete'],
+  leader:    ['overview','add','records','survey','pdfReport','delete'],
   inspector: ['add','records','survey'],
   observer:  ['records','survey']
 };
-const ALL_PAGES = ['overview','add','records','survey','import','master','users'];
+// 'pdfReport' และ 'delete' ไม่ใช่หน้าจริง แต่เป็น feature toggle (ปุ่มสร้าง PDF / ปุ่มลบ)
+// ที่ admin กำหนดสิทธิ์แยกได้ในตารางเดียวกับ page permission
+const ALL_PAGES = ['overview','add','records','survey','import','master','users','pdfReport','delete'];
 
 function getPagePermissions(role) {
   if (role === 'admin') return ALL_PAGES;

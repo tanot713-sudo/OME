@@ -108,7 +108,13 @@ async function doLogin(){
   await afterLogin();
 }
 function doLogout(){clearSession();$('#userChip').style.display='none';$('#authUser').value='';$('#authPass').value='';hidePdpa();showGate();}
-async function afterLogin(){await checkPdpa();await loadAll();await loadMasterFromBackend();await Promise.all([loadRecords(),loadProgress(),loadSurvey(),loadTargets()]);}
+async function afterLogin(){
+  await checkPdpa();await loadAll();await loadMasterFromBackend();
+  await Promise.all([
+    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),
+    ...(AUTH.user?.role==='admin' ? [loadPagePerms()] : [])
+  ]);
+}
 
 function paintUser(){
   const u=AUTH.user;if(!u){$('#userChip').style.display='none';return;}
@@ -119,24 +125,70 @@ function paintUser(){
   $('#userChip').style.display='flex';
   applyRoleVisibility();
 }
-function canSeeDashboard(){const r=(AUTH.user&&AUTH.user.role)||'';return r==='admin'||r==='manager'||r==='leader';}
-function canSeeMaster(){return (AUTH.user&&AUTH.user.role)==='admin';}
+// ดูสิทธิ์หน้า/ฟีเจอร์จาก pagePerms ที่ admin ตั้งไว้ (ได้มาตอน login) — admin เห็น/ทำได้ทุกอย่างเสมอ
+function hasPagePerm(page){
+  const u=AUTH.user; if(!u) return false;
+  if(u.role==='admin') return true;
+  return Array.isArray(u.pagePerms) && u.pagePerms.includes(page);
+}
+function canSeeDashboard(){return hasPagePerm('overview');}
+function canSeeMaster(){return hasPagePerm('master');}
 function canSeeUsers(){return (AUTH.user&&AUTH.user.role)==='admin';}
 function canEdit(){return (AUTH.user&&AUTH.user.role)!=='observer';}
-function canDelete(){const r=(AUTH.user&&AUTH.user.role)||'';return r==='admin'||r==='manager'||r==='leader';}
+function canDelete(){return hasPagePerm('delete');}
+function canPdf(){return hasPagePerm('pdfReport');}
 
 function applyRoleVisibility(){
   const dash=canSeeDashboard(),master=canSeeMaster(),users=canSeeUsers(),edit=canEdit();
   if($('#tabDash'))$('#tabDash').style.display=dash?'':'none';
   if($('#tabMaster'))$('#tabMaster').style.display=master?'':'none';
   if($('#tabUsers'))$('#tabUsers').style.display=users?'':'none';
-  if($('#tabAdd'))$('#tabAdd').style.display=edit?'':'none';
+  if($('#tabAdd'))$('#tabAdd').style.display=(edit&&hasPagePerm('add'))?'':'none';
+  document.querySelectorAll('.tab[data-tab="saved"]').forEach(t=>t.style.display=hasPagePerm('records')?'':'none');
+  document.querySelectorAll('.tab[data-tab="survey"]').forEach(t=>t.style.display=hasPagePerm('survey')?'':'none');
+  document.querySelectorAll('.tab[data-tab="import"]').forEach(t=>t.style.display=hasPagePerm('import')?'':'none');
   document.body.classList.toggle('readonly',!edit);
   document.body.classList.toggle('is-admin',(AUTH.user&&AUTH.user.role)==='admin');
-  document.body.classList.toggle('can-pdf',['admin','manager','leader'].includes((AUTH.user&&AUTH.user.role)||''));
+  document.body.classList.toggle('can-pdf',canPdf());
   if(users)loadUsers();
   renderSaved();
   if(master)renderMaster();
+}
+
+/* ─── PAGE PERMISSIONS (admin) ──────────────────────────────── */
+const PAGE_LABELS={overview:'ภาพรวม',add:'เพิ่มรายการ',records:'รายการที่บันทึก',survey:'สำรวจภาคสนาม',import:'Import/Export',master:'จัดการข้อมูลหลัก',users:'จัดการผู้ใช้',pdfReport:'ปุ่มสร้างรายงาน PDF',delete:'ปุ่มลบรายการ'};
+let _pagePerms={};
+function renderPagePermUI(){
+  const box=$('#pagePermContainer'); if(!box) return;
+  const roles=['manager','leader','inspector','observer'];
+  const pages=['overview','add','records','survey','import','master','users','pdfReport','delete'];
+  box.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr><th style="padding:8px 12px;text-align:left">หน้า/ฟีเจอร์</th>${roles.map(r=>`<th style="padding:8px 12px;text-align:center"><span class="role-badge role-${r}">${r}</span></th>`).join('')}</tr></thead>
+    <tbody>${pages.map(pg=>`<tr><td style="padding:7px 12px;border-top:1px solid var(--line-soft)">${PAGE_LABELS[pg]||pg}</td>${roles.map(role=>{
+      const checked=(_pagePerms[role]||[]).includes(pg);
+      return `<td style="text-align:center;border-top:1px solid var(--line-soft)"><input type="checkbox" class="perm-chk" data-role="${role}" data-page="${pg}" ${checked?'checked':''}></td>`;
+    }).join('')}</tr>`).join('')}</tbody></table></div>
+    <div style="margin-top:14px;display:flex;justify-content:flex-end"><button class="btn btn-primary" id="savePagePermsBtn">💾 บันทึกสิทธิ์การเข้าถึง</button></div>`;
+  $('#savePagePermsBtn').addEventListener('click',savePagePerms);
+}
+async function loadPagePerms(){
+  const r=await api('getPagePerms',{});
+  if(r&&r.ok){ _pagePerms=r.perms||{}; renderPagePermUI(); }
+}
+async function savePagePerms(){
+  const perms={};
+  document.querySelectorAll('.perm-chk').forEach(chk=>{
+    const role=chk.dataset.role,pg=chk.dataset.page;
+    if(!perms[role])perms[role]=[];
+    if(chk.checked)perms[role].push(pg);
+  });
+  const btn=$('#savePagePermsBtn'); if(btn){btn.disabled=true;btn.textContent='กำลังบันทึก…';}
+  const r=await api('setPagePerms',{perms});
+  if(btn){btn.disabled=false;btn.textContent='💾 บันทึกสิทธิ์การเข้าถึง';}
+  if(r&&r.ok){
+    _pagePerms=perms;
+    toast('บันทึกสิทธิ์แล้ว',true);
+  } else toast((r&&r.message)||'บันทึกสิทธิ์ไม่สำเร็จ',false);
 }
 
 /* ─── PDPA ──────────────────────────────────────────────── */
@@ -378,7 +430,57 @@ function renderMaster(){
   body.querySelectorAll('tr').forEach(tr=>{const id=tr.dataset.id;const be=tr.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editMaster(id);const bd=tr.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delMaster(id);});
 }
 $('#addMasterBtn').addEventListener('click',()=>editMaster(null));
-function editMaster(id){const m=id?master.find(x=>x.id===id):{project:'',system:'',typeLocation:'',locName:'',subName:'',equipment:'',brand:'',model:'',asset:'',serial:''};if(!m)return;const v=prompt('โครงการ,ระบบ,ประเภทสถานที่,สถานที่,สถานที่ย่อย,อุปกรณ์,ยี่ห้อ,รุ่น,รหัสอุปกรณ์,Serial',[m.project,m.system,m.typeLocation,m.locName,m.subName,m.equipment,m.brand,m.model,m.asset,m.serial].join(','));if(v===null)return;const parts=v.split(',').map(s=>s.trim());const obj={id:id||uid(),project:parts[0]||'',system:parts[1]||'',typeLocation:parts[2]||'',locName:parts[3]||'',subName:parts[4]||'',equipment:parts[5]||'',brand:parts[6]||'',model:parts[7]||'',asset:parts[8]||'',serial:parts[9]||''};if(!obj.project||!obj.equipment){toast('ต้องมีโครงการและอุปกรณ์',false);return;}if(id)master=master.map(x=>x.id===id?obj:x);else master.push(obj);persistMaster();toast(id?'แก้ไขแล้ว':'เพิ่มอุปกรณ์แล้ว',true);}
+function editMaster(id){
+  const m=id?master.find(x=>x.id===id):{project:'',system:'',typeLocation:'',locName:'',subName:'',equipment:'',brand:'',model:'',asset:'',serial:''};
+  if(!m)return;
+  let dlg=$('#masterDialog');
+  if(!dlg){
+    dlg=document.createElement('div'); dlg.id='masterDialog';
+    dlg.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(20,26,34,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(dlg);
+  }
+  const F=[
+    ['project','โครงการ',true],['system','ระบบ',false],['typeLocation','ประเภทสถานที่',false],
+    ['locName','สถานที่',false],['subName','สถานที่ย่อย',false],
+    ['equipment','อุปกรณ์',true],['brand','ยี่ห้อ',false],
+    ['model','รุ่น',false],['asset','รหัสอุปกรณ์',false],['serial','Serial Number',false]
+  ];
+  const dlByField={
+    project:uniq(master.map(x=>x.project)), system:uniq(master.map(x=>x.system)),
+    typeLocation:uniq(master.map(x=>x.typeLocation)),
+    locName:uniq(master.map(x=>x.locName)), subName:uniq(master.map(x=>x.subName)),
+    equipment:uniq(master.map(x=>x.equipment)), brand:uniq(master.map(x=>x.brand)),
+    model:uniq(master.map(x=>x.model))
+  };
+  const fields=F.map(([k,label,req])=>{
+    const dl=dlByField[k];
+    const listAttr=dl?`list="ml_${k}"`:'';
+    const datalist=dl?`<datalist id="ml_${k}">${dl.filter(Boolean).map(v=>`<option value="${escAttr(v)}">`).join('')}</datalist>`:'';
+    return `<div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px">${label}${req?' <span style="color:#E2231A">*</span>':''}</label>
+      <input class="tin mfield" data-k="${k}" ${listAttr} value="${escAttr(m[k]||'')}" style="width:100%" placeholder="${label}" autocomplete="off">
+      ${datalist}</div>`;
+  }).join('');
+  dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">${id?'แก้ไขอุปกรณ์':'เพิ่มอุปกรณ์'}</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">แก้ได้เฉพาะช่องที่ต้องการ · พิมพ์แล้วเลือกจากค่าที่มีอยู่ได้เลย</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px">${fields}</div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-soft" id="mCancel" style="flex:1">ยกเลิก</button>
+      <button class="btn btn-primary" id="mSave" style="flex:1">${id?'บันทึกการแก้ไข':'เพิ่ม'}</button>
+    </div></div>`;
+  dlg.style.display='flex';
+  dlg.querySelector('#mCancel').onclick=()=>dlg.style.display='none';
+  dlg.querySelector('#mSave').onclick=()=>{
+    const vals={};
+    dlg.querySelectorAll('.mfield').forEach(inp=>{vals[inp.dataset.k]=inp.value.trim();});
+    if(!vals.project||!vals.equipment){toast('ต้องมีโครงการและอุปกรณ์',false);return;}
+    const obj={id:id||uid(),...vals};
+    if(id)master=master.map(x=>x.id===id?obj:x);else master.push(obj);
+    dlg.style.display='none';
+    persistMaster();toast(id?'แก้ไขแล้ว':'เพิ่มอุปกรณ์แล้ว',true);
+  };
+}
 function delMaster(id){if(!confirm('ลบอุปกรณ์นี้?'))return;master=master.filter(x=>x.id!==id);persistMaster();toast('ลบแล้ว',true);}
 async function persistMaster(){await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();if(combos.project)setDisabledStates();if(AUTH.token&&AUTH.user&&AUTH.user.role==='admin'){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial}));api(ACT.saveMaster,{master:payload}).then(r=>{if(!(r&&r.ok))console.warn('saveMaster failed',r);});}}
 async function loadMasterFromBackend(){if(!AUTH.token)return;const r=await api(ACT.listMaster,{});if(r&&r.ok&&Array.isArray(r.master)){if(r.master.length){master=r.master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,locName:m.location,subName:m.sublocation,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial}));await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();}else if(AUTH.user&&AUTH.user.role==='admin'&&master.length){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial}));await api(ACT.saveMaster,{master:payload});}}}
@@ -853,8 +955,76 @@ let usersCache=[];
 async function loadUsers(){if(!canSeeUsers())return;const r=await api(ACT.listUsers,{});if(r&&r.ok&&Array.isArray(r.users)){usersCache=r.users;renderUsers(r.users);}}
 function renderUsers(list){list=list||usersCache;window._userList=list;const tb=$('#usersBody');if(!tb)return;tb.innerHTML=list.map(u=>`<tr><td><b>${esc(u.username)}</b></td><td class="codecell" style="font-size:12px">${u.username!=='admin'?(u.plainPwd?esc(u.plainPwd):'—'):'••••••••'}</td><td>${esc(u.name||'-')}</td><td><span class="role-badge role-${esc(u.role)}">${esc(u.role)}</span></td><td>${esc(u.project||'-')}</td><td><span class="status-dot ${u.active?'active':'inactive'}"></span>${u.active?'ใช้งาน':'ปิดแล้ว'}</td><td>${u.username!=='admin'?`<div class="rowact"><button class="icon-btn" onclick="openEditUser('${u.username}')">✎</button><button class="icon-btn del" onclick="deleteUser('${u.username}')">🗑</button></div>`:'—'}</td></tr>`).join('');}
 let editUserTarget=null;
-function openEditUser(username){const u=(window._userList||[]).find(x=>x.username===username);if(!u)return;editUserTarget=username;const np=prompt('รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)','');const role=prompt('สิทธิ์ (admin/manager/leader/inspector/observer)',u.role||'inspector');const project=prompt('โครงการ',u.project||'');saveEditUser(np,role,project);}
-async function saveEditUser(password,role,project){const updates={role:role||'inspector',project:project||''};if(password&&password.trim())updates.password=password.trim();const r=await api('updateUser',{username:editUserTarget,updates});if(r&&r.ok){toast('แก้ไขผู้ใช้แล้ว',true);await loadUsers();}else toast((r&&r.message)||'แก้ไขไม่สำเร็จ',false);}
+function openEditUser(username){
+  const u=(window._userList||[]).find(x=>x.username===username); if(!u)return;
+  editUserTarget=username;
+  if(!$('#editUserDlg')){
+    const d=document.createElement('div');
+    d.id='editUserDlg';
+    d.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(20,26,34,.6);display:none;align-items:center;justify-content:center;padding:16px';
+    const projectOptions=uniq([...master.map(m=>m.project),...(window._userList||[]).map(x=>x.project)]).filter(Boolean);
+    d.innerHTML=`<div style="background:#fff;border-radius:18px;padding:28px;width:400px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+      <h3 style="margin:0 0 18px;font-size:17px;font-weight:700">✏️ แก้ไขผู้ใช้</h3>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">Username</label>
+          <input class="tin" id="euUsername" disabled style="background:#f5f7fa;color:#9DB0C4"></div>
+        <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">รหัสผ่านใหม่ <span style="font-weight:400">(เว้นว่างถ้าไม่เปลี่ยน)</span></label>
+          <input class="tin" id="euPassword" type="text" placeholder="รหัสผ่านใหม่" autocomplete="off"></div>
+        <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">ชื่อ-สกุล</label>
+          <input class="tin" id="euName" placeholder="ชื่อที่แสดง" list="dl_euName" autocomplete="off"></div>
+        <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">สิทธิ์ (role)</label>
+          <select class="tin" id="euRole">
+            <option value="manager">manager — ผู้จัดการ</option>
+            <option value="leader">leader — หัวหน้าทีม</option>
+            <option value="inspector">inspector — ผู้ตรวจ</option>
+            <option value="observer">observer — ผู้สังเกตการณ์</option>
+          </select></div>
+        <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">โครงการ <span style="font-weight:400;color:var(--ink-faint)">(หลายโครงการคั่นด้วย , เช่น A, B)</span></label>
+          <input class="tin" id="euProject" placeholder="เช่น รถไฟฟ้าสายสีทอง" list="dl_euProject" autocomplete="off"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
+          <input type="checkbox" id="euActive" style="width:16px;height:16px;cursor:pointer">
+          <label for="euActive" style="font-size:13px;cursor:pointer">เปิดใช้งาน</label>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-soft" style="flex:1" id="euCancel">ยกเลิก</button>
+        <button class="btn btn-primary" style="flex:1" id="euSave">💾 บันทึก</button>
+      </div>
+      <datalist id="dl_euProject">${projectOptions.map(p=>`<option value="${escAttr(p)}">`).join('')}</datalist>
+      <datalist id="dl_euName"></datalist>
+    </div>`;
+    document.body.appendChild(d);
+    $('#euCancel').onclick=()=>d.style.display='none';
+    $('#euSave').onclick=saveEditUser;
+  } else {
+    const projectOptions=uniq([...master.map(m=>m.project),...(window._userList||[]).map(x=>x.project)]).filter(Boolean);
+    const dl=$('#dl_euProject'); if(dl) dl.innerHTML=projectOptions.map(p=>`<option value="${escAttr(p)}">`).join('');
+  }
+  $('#euUsername').value=u.username;
+  $('#euPassword').value='';
+  $('#euName').value=u.name||'';
+  $('#euRole').value=u.role||'inspector';
+  $('#euProject').value=u.project||'';
+  $('#euActive').checked=u.active!==false;
+  $('#editUserDlg').style.display='flex';
+}
+async function saveEditUser(){
+  const updates={
+    name:$('#euName').value.trim(),
+    role:$('#euRole').value,
+    project:$('#euProject').value.trim(),
+    active:$('#euActive').checked?'true':'false'
+  };
+  if($('#euPassword').value.trim()) updates.password=$('#euPassword').value.trim();
+  const btn=$('#euSave'); btn.disabled=true; btn.textContent='กำลังบันทึก…';
+  const r=await api('updateUser',{username:editUserTarget,updates});
+  btn.disabled=false; btn.textContent='💾 บันทึก';
+  if(r&&r.ok){
+    $('#editUserDlg').style.display='none';
+    toast('แก้ไขผู้ใช้แล้ว',true);
+    await loadUsers();
+  } else toast((r&&r.message)||'แก้ไขไม่สำเร็จ',false);
+}
 async function deleteUser(username){if(!confirm(`ลบผู้ใช้ "${username}"?`))return;const r=await api('deleteUser',{username});if(r&&r.ok){toast('ลบผู้ใช้แล้ว',true);await loadUsers();}else toast((r&&r.message)||'ลบไม่สำเร็จ',false);}
 if($('#nuAdd'))$('#nuAdd').addEventListener('click',async()=>{const username=$('#nuUser').value.trim(),password=$('#nuPass').value.trim();if(!username||!password){toast('กรุณากรอก username และ password',false);return;}const r=await api(ACT.createUser,{username,password,name:$('#nuName').value.trim(),role:$('#nuRole').value,project:$('#nuProject').value.trim()});if(r&&r.ok){toast('เพิ่มผู้ใช้แล้ว',true);['nuUser','nuPass','nuName','nuProject'].forEach(id=>$('#'+id).value='');await loadUsers();}else toast((r&&r.message)||'เพิ่มผู้ใช้ไม่สำเร็จ',false);});
 if($('#usersRefresh'))$('#usersRefresh').addEventListener('click',loadUsers);
