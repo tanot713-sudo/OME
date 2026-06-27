@@ -1012,7 +1012,8 @@ if($('#surveyExportBtn'))$('#surveyExportBtn').addEventListener('click',()=>{
 if($('#makeReport'))$('#makeReport').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}buildReport();});
 function buildReport(){
   // เนื้อหา/โครงสร้างให้ตรงกับ gen Word (header สัญญา + footer ชื่อรายงาน + รูปครบ 4 ช่อง + จัดกลุ่มตาม typeLocation ถ้ามี)
-  // แต่ไม่มีหน้าปก/สารบัญ — พิมพ์ตรงเป็น PDF ผ่าน browser print เลย
+  // แต่ไม่มีหน้าปก/สารบัญ — สร้างเป็นไฟล์ .pdf ดาวน์โหลดตรงผ่าน html2pdf (ไม่ผ่านหน้าพิมพ์ของ browser)
+  if(typeof html2pdf==='undefined'){toast('ไลบรารี PDF ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
   const logo=LOGO_SRC||'';
   const reportName=$('#wgReportName')?.value.trim()||'รายงานอุปกรณ์';
   const contract=$('#wgContract')?.value.trim()||'';
@@ -1042,14 +1043,34 @@ function buildReport(){
       projMap[proj].forEach(e=>{n++;html+=equipBlock(e,n);});
     });
   }
-  $('#reportArea').innerHTML=html;
-  const imgs=Array.from($('#reportArea').querySelectorAll('img'));
-  if(!imgs.length){window.print();return;}
-  let done=0,printed=false;
-  const tryPrint=()=>{if(printed)return;printed=true;window.print();};
-  const tick=()=>{done++;if(done>=imgs.length)tryPrint();};
+  const area=$('#reportArea');
+  area.innerHTML=html;
+  const imgs=Array.from(area.querySelectorAll('img'));
+  const exportPdf=()=>{
+    // render off-screen (ไม่ใช่ display:none) เพราะ html2pdf/html2canvas ต้องใช้ layout จริงถึงจะ capture ได้
+    area.classList.add('pdf-render');
+    const fn=`รายงานอุปกรณ์_${fileStamp(Date.now())}.pdf`;
+    html2pdf().set({
+      margin:[10,10,12,10],
+      filename:fn,
+      image:{type:'jpeg',quality:0.92},
+      html2canvas:{scale:2,useCORS:true,windowWidth:area.scrollWidth},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+      pagebreak:{mode:['css','avoid-all']}
+    }).from(area).save().then(()=>{
+      area.classList.remove('pdf-render');
+      toast('สร้าง PDF แล้ว',true);
+    }).catch(()=>{
+      area.classList.remove('pdf-render');
+      toast('สร้าง PDF ไม่สำเร็จ',false);
+    });
+  };
+  if(!imgs.length){exportPdf();return;}
+  let done=0,exported=false;
+  const tryExport=()=>{if(exported)return;exported=true;exportPdf();};
+  const tick=()=>{done++;if(done>=imgs.length)tryExport();};
   imgs.forEach(im=>{if(im.complete){tick();}else{im.addEventListener('load',tick);im.addEventListener('error',tick);}});
-  setTimeout(tryPrint,8000);
+  setTimeout(tryExport,8000);
 }
 
 /* ─── USERS ─────────────────────────────────────────────── */
