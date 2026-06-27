@@ -319,7 +319,9 @@ td.codecell{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--accent-deep
 }
 /* ใช้ตอนสร้างไฟล์ PDF จริงผ่าน html2pdf — ต้องอยู่ในจอจริง (ไม่ใช่ left:-9999px) ไม่งั้น html2canvas capture ไม่ติด/ได้ภาพเปล่า
    ระหว่างสร้างไฟล์จะมี #pdfGenOverlay (z-index สูงกว่า) คลุมทับไว้ ไม่ให้ผู้ใช้เห็นเนื้อหาวาบ */
-#reportArea.pdf-render{display:block;position:fixed;left:0;top:0;width:190mm;background:#fff;z-index:9999}
+/* ไม่ใช้ position:fixed กับตัวที่จะ capture — html2canvas คำนวณตำแหน่ง/scroll พลาดได้กับ fixed element
+   ทำให้ได้ภาพเปล่า ปล่อยให้อยู่ใน flow ปกติแทน แล้วให้ #pdfGenOverlay (fixed, z-index สูงกว่า) บังหน้าจอไว้ระหว่างสร้างไฟล์ */
+#reportArea.pdf-render{display:block;width:190mm;background:#fff}
 .pdf-page{page-break-after:always}
 /* สไตล์ของ runhead/runfoot ตอน html2pdf capture (ไม่มี position:fixed เพราะ capture เป็น canvas ทีละหน้าตามจุดตัด page-break-after ที่กำหนดเอง) */
 #reportArea.pdf-render .rpt-runhead{position:static;display:flex;align-items:center;gap:10px;border-bottom:1pt solid #000;padding-bottom:6px;margin-bottom:10px}

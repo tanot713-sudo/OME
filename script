@@ -1171,26 +1171,29 @@ function generatePdfFile(list,fields){
   const area=$('#reportArea');
   area.innerHTML=pagesHtml;
   const imgs=Array.from(area.querySelectorAll('img'));
-  const exportPdf=()=>{
+  const exportPdf=async()=>{
     showPdfGenOverlay(true);
     area.classList.add('pdf-render');
+    // ต้องรอให้ browser layout จริงก่อน ไม่งั้น html2canvas จะ capture ก่อน reflow เสร็จ ได้ภาพเปล่า
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     const fn=`รายงานอุปกรณ์_${fileStamp(Date.now())}.pdf`;
-    html2pdf().set({
-      margin:[10,10,10,10],
-      filename:fn,
-      image:{type:'jpeg',quality:0.92},
-      html2canvas:{scale:2,useCORS:true,windowWidth:area.scrollWidth},
-      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-      pagebreak:{mode:['css']}
-    }).from(area).save().then(()=>{
+    try{
+      await html2pdf().set({
+        margin:[10,10,10,10],
+        filename:fn,
+        image:{type:'jpeg',quality:0.92},
+        html2canvas:{scale:2,useCORS:true},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+        pagebreak:{mode:['css']}
+      }).from(area).save();
       area.classList.remove('pdf-render');
       showPdfGenOverlay(false);
       toast('สร้าง PDF แล้ว',true);
-    }).catch(()=>{
+    }catch(e){
       area.classList.remove('pdf-render');
       showPdfGenOverlay(false);
       toast('สร้าง PDF ไม่สำเร็จ',false);
-    });
+    }
   };
   if(!imgs.length){exportPdf();return;}
   let done=0,exported=false;
