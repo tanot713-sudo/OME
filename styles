@@ -323,11 +323,19 @@ td.codecell{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--accent-deep
    ทำให้ได้ภาพเปล่า ปล่อยให้อยู่ใน flow ปกติแทน แล้วให้ #pdfGenOverlay (fixed, z-index สูงกว่า) บังหน้าจอไว้ระหว่างสร้างไฟล์ */
 #reportArea.pdf-render{display:block;width:190mm;background:#fff}
 .pdf-page{page-break-after:always}
+
+/* การ์ตูนวิศวกร AMR ตอนหน้า PDF กำลังโหลด */
+#pgoArm{animation:pgoWrench .6s ease-in-out infinite}
+@keyframes pgoWrench{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-25deg)}}
+#pgoWheelSpin,#pgoWheelSpin2{animation:pgoSpin 1s linear infinite}
+@keyframes pgoSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 /* สไตล์ของ runhead/runfoot ตอน html2pdf capture (ไม่มี position:fixed เพราะ capture เป็น canvas ทีละหน้าตามจุดตัด page-break-after ที่กำหนดเอง) */
 #reportArea.pdf-render .rpt-runhead{position:static;display:flex;align-items:center;gap:10px;border-bottom:1pt solid #000;padding-bottom:6px;margin-bottom:10px}
 #reportArea.pdf-render .rpt-runhead img{height:11mm;width:auto}
 #reportArea.pdf-render .rpt-runhead .ct{flex:1;text-align:right;font-size:10px;line-height:1.35}
 #reportArea.pdf-render .rpt-runfoot{position:static;display:flex;justify-content:space-between;font-size:9pt;color:#000;margin-top:14px;padding-top:6px;border-top:1pt solid #ddd}
+#reportArea.pdf-render .rpt-runfoot .ft-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:10px}
+#reportArea.pdf-render .rpt-runfoot .ft-page{flex:0 0 auto;white-space:nowrap}
 #reportArea{font-family:'IBM Plex Sans Thai',sans-serif;color:#000}
 #reportArea .rpt-h1{font-size:17px;font-weight:700;color:#E2231A;margin:14px 0 4px}
 #reportArea .rpt-proj-heading{font-size:16px;font-weight:700;color:#E2231A;text-align:center;margin:16px 0 10px;padding-bottom:4px;border-bottom:1.5px solid #E2231A}
