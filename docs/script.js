@@ -708,6 +708,7 @@ async function generateWordTemplate(){
   const FONT='TH Sarabun New',RED='E2231A',DARK='1A232E',GREY='5B6573';
   const T=(t,o={})=>new TextRun({text:t,font:FONT,size:(o.size||28),bold:o.bold||false,color:o.color||'000000'});
   const P=(runs,o={})=>new Paragraph({children:Array.isArray(runs)?runs:[runs],alignment:o.align,spacing:o.spacing,heading:o.heading,keepNext:o.keepNext,keepLines:o.keepLines});
+  const noBorders=()=>{const n={style:BorderStyle.NONE,size:0,color:'FFFFFF'};return{top:n,bottom:n,left:n,right:n,insideHorizontal:n,insideVertical:n};};
 
   /* Logo — รองรับทั้ง base64 และ URL */
   let logoBuf=null;
@@ -740,11 +741,18 @@ async function generateWordTemplate(){
   coverKids.push(P(T('นำส่ง'+(submittedTo?' '+submittedTo:''),{size:32}),{align:AlignmentType.RIGHT}));
   for(let i=0;i<6;i++)coverKids.push(new Paragraph({}));
   if(client)coverKids.push(P(T(client,{size:36,bold:true,color:DARK}),{align:AlignmentType.CENTER}));
-  if(logoCustomer){
+  if(logoCustomer||submittedTo){
     // logocustomer คือลิงก์ Google Drive ของรูปโลโก้บริษัทลูกค้า ไม่ใช่ชื่อหน่วยงาน — ดึงมาฝังเป็นรูปในหน้าปก
+    // จัดเป็นตาราง 2 คอลัมน์ (โลโก้ซ้าย / นำส่งขวา) แบบไม่แสดงเส้นตาราง ตามตำแหน่งที่ต้องการ
     setWgProgress(20,'กำลังโหลดโลโก้ลูกค้า...');
-    const custLogoBuf=await fetchImageBuffer(logoCustomer);
-    if(custLogoBuf)coverKids.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:custLogoBuf,transformation:{width:130,height:80}})]}));
+    const custLogoBuf=logoCustomer?await fetchImageBuffer(logoCustomer):null;
+    const logoCell=new TableCell({borders:noBorders(),width:{size:CONTENT_DXA/2,type:WidthType.DXA},children:[
+      custLogoBuf?new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:custLogoBuf,transformation:{width:130,height:80}})]}):new Paragraph({})
+    ]});
+    const submitCell=new TableCell({borders:noBorders(),width:{size:CONTENT_DXA/2,type:WidthType.DXA},children:[
+      new Paragraph({alignment:AlignmentType.CENTER,children:[T(submittedTo||'',{size:32,bold:true})]})
+    ]});
+    coverKids.push(new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[CONTENT_DXA/2,CONTENT_DXA/2],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({cantSplit:true,children:[logoCell,submitCell]})]}));
   }
 
   const tocKids=[P(T('สารบัญ',{size:44,bold:true,color:DARK}),{align:AlignmentType.CENTER}),new TableOfContents('สารบัญ',{hyperlink:true,headingStyleRange:'1-3'})];
@@ -754,8 +762,6 @@ async function generateWordTemplate(){
   const bodyKids=[];
   let imgDone=0,totalImgs=0;
   entries.forEach(e=>{[e.thumbMain||e.imgMain,e.thumbSticker||e.imgSticker,e.thumb3||e.img3,e.thumb4||e.img4].forEach(u=>{if(u)totalImgs++;});});
-
-  const noBorders=()=>{const n={style:BorderStyle.NONE,size:0,color:'FFFFFF'};return{top:n,bottom:n,left:n,right:n,insideHorizontal:n,insideVertical:n};};
 
   async function pushEquipmentBlock(e, idx){
     // keepNext:true ทุกบรรทัดก่อนตารางรูป — บังคับให้ Word ไม่ตัดหน้าคั่นกลางบล็อกนี้
@@ -847,7 +853,8 @@ async function generateWordTemplate(){
     P(T(contract||reportName,{size:24,bold:true}),{align:AlignmentType.RIGHT}),
     P([T('สัญญาเลขที่ ',{size:24}),T(contractNo,{size:24,bold:true})],{align:AlignmentType.RIGHT})
   ]});
-  const header=new Header({children:[new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[HDR_DXA_LOGO,HDR_DXA_TEXT],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]})]});
+  // เพิ่ม paragraph เปล่า 1 บรรทัดต่อจากตาราง header กันเนื้อหาหน้าถัดไปดูติดกับหัวกระดาษเกินไป
+  const header=new Header({children:[new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[HDR_DXA_LOGO,HDR_DXA_TEXT],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]}),new Paragraph({})]});
   const footer=new Footer({children:[new Paragraph({tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],children:[
     T(`ชื่อรายงาน : ${reportName}`,{size:22}),
     new TextRun({text:'\t',font:FONT}),
@@ -1316,6 +1323,9 @@ async function generatePdfFile(list,fields){
   const exportPdf=async()=>{
     showPdfGenOverlay(true,'กำลังสร้าง PDF...');
     area.classList.add('pdf-render');
+    // ต้องรอฟอนต์ไทย (IBM Plex Sans Thai) โหลดเสร็จก่อน ไม่งั้นบนมือถือที่เน็ต/CPU ช้ากว่า เครื่องอาจ capture
+    // ตอนยังใช้ font fallback อยู่ แล้วพอฟอนต์โหลดเสร็จเกิด reflow เลื่อนตำแหน่งข้อความ ทำให้ข้อความลงไปกองด้านล่าง
+    if(document.fonts&&document.fonts.ready) await document.fonts.ready;
     // ต้องรอให้ browser layout จริงก่อน ไม่งั้น html2canvas จะ capture ก่อน reflow เสร็จ ได้ภาพเปล่า
     await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     const fn=`รายงานอุปกรณ์_${fileStamp(Date.now())}.pdf`;
@@ -1324,7 +1334,7 @@ async function generatePdfFile(list,fields){
         margin:0,
         filename:fn,
         image:{type:'jpeg',quality:0.92},
-        html2canvas:{scale:2,useCORS:true},
+        html2canvas:{scale:2,useCORS:true,windowWidth:area.scrollWidth,windowHeight:area.scrollHeight},
         jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
         pagebreak:{mode:['css']}
       }).from(area).save();
