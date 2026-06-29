@@ -738,7 +738,7 @@ function actionDeleteRecord({ id, _user }) {
    ================================================================ */
 const MASTER_HEADERS = [
   'id','project','system','typeLocation','location','sublocation',
-  'equipment','brand','model','asset','serial'
+  'equipment','brand','model','asset','serial','order'
 ];
 
 function actionSaveMaster({ master, _user }) {

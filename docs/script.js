@@ -475,13 +475,13 @@ function renderMaster(){
   else if(fmiss==='serial') list=list.filter(m=>!m.serial);
   else if(fmiss==='any') list=list.filter(m=>!m.brand||!m.model||!m.serial);
   const body=$('#masterBody');if($('#masterPill'))$('#masterPill').textContent=master.length;
-  if(!list.length){body.innerHTML=`<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--ink-faint)">${master.length?'ไม่พบข้อมูลตามเงื่อนไข':'ยังไม่มีข้อมูล'}</td></tr>`;return;}
-  body.innerHTML=list.map(m=>`<tr data-id="${m.id}"><td>${esc(m.project)}</td><td>${esc(m.system)}</td><td>${esc(m.typeLocation)}</td><td>${esc(m.locName)}</td><td>${esc(m.subName)}</td><td>${esc(m.equipment)}</td><td>${esc(m.brand)}</td><td>${esc(m.model)}</td><td class="codecell">${esc(m.asset)}</td><td class="codecell">${esc(m.serial)}</td><td>${canEdit()?`<div class="rowact"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn del" data-act="del">🗑</button></div>`:'—'}</td></tr>`).join('');
+  if(!list.length){body.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--ink-faint)">${master.length?'ไม่พบข้อมูลตามเงื่อนไข':'ยังไม่มีข้อมูล'}</td></tr>`;return;}
+  body.innerHTML=list.map(m=>`<tr data-id="${m.id}"><td class="codecell" style="text-align:center">${esc(m.order)}</td><td>${esc(m.project)}</td><td>${esc(m.system)}</td><td>${esc(m.typeLocation)}</td><td>${esc(m.locName)}</td><td>${esc(m.subName)}</td><td>${esc(m.equipment)}</td><td>${esc(m.brand)}</td><td>${esc(m.model)}</td><td class="codecell">${esc(m.asset)}</td><td class="codecell">${esc(m.serial)}</td><td>${canEdit()?`<div class="rowact"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn del" data-act="del">🗑</button></div>`:'—'}</td></tr>`).join('');
   body.querySelectorAll('tr').forEach(tr=>{const id=tr.dataset.id;const be=tr.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editMaster(id);const bd=tr.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delMaster(id);});
 }
 $('#addMasterBtn').addEventListener('click',()=>editMaster(null));
 function editMaster(id){
-  const m=id?master.find(x=>x.id===id):{project:'',system:'',typeLocation:'',locName:'',subName:'',equipment:'',brand:'',model:'',asset:'',serial:''};
+  const m=id?master.find(x=>x.id===id):{project:'',system:'',typeLocation:'',locName:'',subName:'',equipment:'',brand:'',model:'',asset:'',serial:'',order:''};
   if(!m)return;
   let dlg=$('#masterDialog');
   if(!dlg){
@@ -493,7 +493,8 @@ function editMaster(id){
     ['project','โครงการ',true],['system','ระบบ',false],['typeLocation','ประเภทสถานที่',false],
     ['locName','สถานที่',false],['subName','สถานที่ย่อย',false],
     ['equipment','อุปกรณ์',true],['brand','ยี่ห้อ',false],
-    ['model','รุ่น',false],['asset','รหัสอุปกรณ์',false],['serial','Serial Number',false]
+    ['model','รุ่น',false],['asset','รหัสอุปกรณ์',false],['serial','Serial Number',false],
+    ['order','ลำดับ (สำหรับ gen Word/PDF — เว้นว่าง = เรียง ก-ฮ)',false]
   ];
   const dlByField={
     project:uniq(master.map(x=>x.project)), system:uniq(master.map(x=>x.system)),
@@ -532,15 +533,24 @@ function editMaster(id){
   };
 }
 function delMaster(id){if(!confirm('ลบอุปกรณ์นี้?'))return;master=master.filter(x=>x.id!==id);persistMaster();toast('ลบแล้ว',true);}
-async function persistMaster(){await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();if(combos.project)setDisabledStates();if(AUTH.token&&AUTH.user&&AUTH.user.role==='admin'){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial}));api(ACT.saveMaster,{master:payload}).then(r=>{if(!(r&&r.ok))console.warn('saveMaster failed',r);});}}
-async function loadMasterFromBackend(){if(!AUTH.token)return;const r=await api(ACT.listMaster,{});if(r&&r.ok&&Array.isArray(r.master)){if(r.master.length){master=r.master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,locName:m.location,subName:m.sublocation,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial}));await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();}else if(AUTH.user&&AUTH.user.role==='admin'&&master.length){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial}));await api(ACT.saveMaster,{master:payload});}}}
+async function persistMaster(){await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();if(combos.project)setDisabledStates();if(AUTH.token&&AUTH.user&&AUTH.user.role==='admin'){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));api(ACT.saveMaster,{master:payload}).then(r=>{if(!(r&&r.ok))console.warn('saveMaster failed',r);});}}
+async function loadMasterFromBackend(){if(!AUTH.token)return;const r=await api(ACT.listMaster,{});if(r&&r.ok&&Array.isArray(r.master)){if(r.master.length){master=r.master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,locName:m.location,subName:m.sublocation,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();}else if(AUTH.user&&AUTH.user.role==='admin'&&master.length){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));await api(ACT.saveMaster,{master:payload});}}}
 
 /* ─── STATS ─────────────────────────────────────────────── */
 function updateStats(){$('#statCount').textContent=entries.length;$('#savedPill').textContent=entries.length;}
 
 /* ─── EXPORT EXCEL ──────────────────────────────────────── */
 $('#exportXlsx').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูลให้ส่งออก',false);return;}const rows=entries.map(e=>({'วันที่บันทึก':fmtDate(e.createdAt,true),'โครงการ':e.project,'ระบบ':e.system,'สถานที่':e.locName,'สถานที่ย่อย':e.subName,'อุปกรณ์':e.equipment,'ยี่ห้อ':e.brand,'รุ่น':e.model,'รหัสอุปกรณ์':e.asset,'Serial Number':e.serial,'ชื่อผู้ตรวจ':e.inspector,'หมายเหตุ':e.note}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'รายการ');XLSX.writeFile(wb,`records_${fileStamp(Date.now())}.xlsx`);toast(`ส่งออก Excel แล้ว (${entries.length} รายการ)`,true);});
-const MASTER_IMPORT_COLS=[['project','โครงการ'],['system','ระบบ'],['typeLocation','ประเภทสถานที่'],['locName','สถานที่'],['subName','สถานที่ย่อย'],['equipment','อุปกรณ์'],['brand','ยี่ห้อ'],['model','รุ่น'],['asset','รหัสอุปกรณ์'],['serial','Serial Number']];
+const MASTER_IMPORT_COLS=[['project','โครงการ'],['system','ระบบ'],['typeLocation','ประเภทสถานที่'],['locName','สถานที่'],['subName','สถานที่ย่อย'],['equipment','อุปกรณ์'],['brand','ยี่ห้อ'],['model','รุ่น'],['asset','รหัสอุปกรณ์'],['serial','Serial Number'],['order','ลำดับ']];
+// ใช้ฟิลด์ "ลำดับ" จาก Master Data จัดเรียงสถานที่/สถานที่ย่อย/อุปกรณ์ ตอน gen Word/PDF แทนการเรียง ก-ฮ อัตโนมัติ
+// match กันด้วย โครงการ+ประเภทสถานที่+สถานที่+สถานที่ย่อย+อุปกรณ์ — ไม่ได้ตั้งเลขไว้ = เรียง ก-ฮ เหมือนเดิม (fallback)
+function masterOrderKey(o){return [o.project,o.typeLocation,o.locName,o.subName,o.equipment].map(x=>String(x||'').trim()).join('|');}
+function buildMasterOrderMap(){
+  const map={};
+  master.forEach(m=>{ const n=Number(m.order); if(m.order!==undefined&&m.order!==''&&!isNaN(n)) map[masterOrderKey(m)]=n; });
+  return map;
+}
+function masterOrderOf(orderMap,e){ const v=orderMap[masterOrderKey(e)]; return v===undefined?Infinity:v; }
 function downloadMasterTemplate(){try{const ws=XLSX.utils.aoa_to_sheet([MASTER_IMPORT_COLS.map(c=>c[1])]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_template.xlsx');}catch(e){toast('โหลดฟอร์มไม่สำเร็จ',false);}}
 function downloadMasterData(){try{if(!master.length){toast('ยังไม่มีข้อมูล Master Data',false);return;}const rows=master.map(m=>MASTER_IMPORT_COLS.map(c=>m[c[0]]||''));const ws=XLSX.utils.aoa_to_sheet([MASTER_IMPORT_COLS.map(c=>c[1]),...rows]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Master');XLSX.writeFile(wb,'master_data.xlsx');toast('ดาวน์โหลด Master Data แล้ว',true);}catch(e){toast('โหลดข้อมูลไม่สำเร็จ',false);}}
 // นำเข้าข้อมูลอุปกรณ์จาก Excel — เพิ่มเข้า Master Data ที่มีอยู่ (ไม่ลบของเดิม)
@@ -559,7 +569,7 @@ if($('#fileXlsx'))$('#fileXlsx').addEventListener('change',async(ev)=>{
       return obj;
     }).filter(o=>o.project&&o.equipment);
     if(!rows.length){if(prev)prev.innerHTML=`<div class="empty">ไม่พบข้อมูลที่นำเข้าได้ (ต้องมีคอลัมน์ "โครงการ" และ "อุปกรณ์" อย่างน้อย)</div>`;return;}
-    rows.forEach(r=>master.push({id:uid(),project:r.project||'',system:r.system||'',typeLocation:r.typeLocation||'',locName:r.locName||'',subName:r.subName||'',equipment:r.equipment||'',brand:r.brand||'',model:r.model||'',asset:r.asset||'',serial:r.serial||''}));
+    rows.forEach(r=>master.push({id:uid(),project:r.project||'',system:r.system||'',typeLocation:r.typeLocation||'',locName:r.locName||'',subName:r.subName||'',equipment:r.equipment||'',brand:r.brand||'',model:r.model||'',asset:r.asset||'',serial:r.serial||'',order:r.order||''}));
     await persistMaster();
     if(prev)prev.innerHTML=`<div class="empty" style="color:var(--ok)">นำเข้า Master Data แล้ว ${rows.length} รายการ</div>`;
     toast(`นำเข้า Master Data แล้ว ${rows.length} รายการ`,true);
@@ -603,7 +613,10 @@ function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=
 
 async function generateWordTemplate(){
   if(typeof docx==='undefined'){toast('ไลบรารี Word ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
-  if(!entries.length){toast('ยังไม่มีข้อมูล',false);return;}
+  // ใช้ข้อมูลตาม filter ที่เลือกอยู่ในตารางรายการที่บันทึก ณ ขณะนี้ (เหมือนปุ่ม PDF) ไม่ใช่ทุกโครงการรวมกัน
+  const entries=getSavedFilteredList();
+  if(!entries.length){toast('ไม่มีข้อมูลตาม filter ปัจจุบัน',false);return;}
+  const orderMap=buildMasterOrderMap();
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition,TableLayoutType}=docx;
   const groupBy=$('#wgGroupBy').value;
   const fieldKey={project:'project',system:'system',location:'locName'}[groupBy];
@@ -714,16 +727,28 @@ async function generateWordTemplate(){
 
   const useTypeLoc = groupBy==='location' && entries.some(e=>e.typeLocation);
 
+  // เรียงกลุ่ม/รายการตามเลข "ลำดับ" ใน Master Data ก่อน (ถ้าตั้งไว้) แล้วค่อย fallback เป็น ก-ฮ
+  const byOrderThenAlpha=(getItemsA,getItemsB,a,b)=>{
+    const oa=Math.min(...getItemsA.map(e=>masterOrderOf(orderMap,e)));
+    const ob=Math.min(...getItemsB.map(e=>masterOrderOf(orderMap,e)));
+    if(oa!==ob) return oa-ob;
+    return a.localeCompare(b,'th');
+  };
+  const sortItemsByOrder=(items)=>items.slice().sort((a,b)=>{
+    const oa=masterOrderOf(orderMap,a),ob=masterOrderOf(orderMap,b);
+    if(oa===Infinity&&ob===Infinity) return 0; // ไม่ได้ตั้งไว้ทั้งคู่ — คงลำดับเดิมไว้ (sort เสถียร), เลี่ยง Infinity-Infinity=NaN
+    return oa-ob;
+  });
   if(useTypeLoc){
     const typeGroups={};entries.forEach(e=>{const tk=e.typeLocation||'(ไม่ระบุประเภทสถานที่)';(typeGroups[tk]=typeGroups[tk]||[]).push(e);});
-    const typeNames=Object.keys(typeGroups).sort((a,b)=>a.localeCompare(b,'th'));
+    const typeNames=Object.keys(typeGroups).sort((a,b)=>byOrderThenAlpha(typeGroups[a],typeGroups[b],a,b));
     for(let ti=0;ti<typeNames.length;ti++){
       const tname=typeNames[ti];const titems=typeGroups[tname];
       bodyKids.push(P(T(`${ti+1}. ${tname}`,{size:32,bold:true,color:RED}),{heading:HeadingLevel.HEADING_1}));
       const locGroups={};titems.forEach(e=>{const lk=e.locName||'(ไม่ระบุสถานที่)';(locGroups[lk]=locGroups[lk]||[]).push(e);});
-      const locNames=Object.keys(locGroups).sort((a,b)=>a.localeCompare(b,'th'));
+      const locNames=Object.keys(locGroups).sort((a,b)=>byOrderThenAlpha(locGroups[a],locGroups[b],a,b));
       for(let li=0;li<locNames.length;li++){
-        const lname=locNames[li];const litems=locGroups[lname];
+        const lname=locNames[li];const litems=sortItemsByOrder(locGroups[lname]);
         bodyKids.push(P(T(`${ti+1}.${li+1} ${lname}`,{size:30,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_2,align:AlignmentType.CENTER}));
         bodyKids.push(P(T(`จำนวน ${litems.length} รายการ`,{size:26,color:GREY})));
         for(let i=0;i<litems.length;i++) await pushEquipmentBlock(litems[i], i+1);
@@ -732,9 +757,9 @@ async function generateWordTemplate(){
   } else {
     bodyKids.unshift(P(T(groupLabel,{size:36,bold:true,color:RED}),{heading:HeadingLevel.HEADING_1}));
     const groups={};entries.forEach(e=>{const k=e[fieldKey]||'(ไม่ระบุ)';(groups[k]=groups[k]||[]).push(e);});
-    const groupNames=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'th'));
+    const groupNames=Object.keys(groups).sort((a,b)=>byOrderThenAlpha(groups[a],groups[b],a,b));
     for(let gi=0;gi<groupNames.length;gi++){
-      const gname=groupNames[gi];const items=groups[gname];
+      const gname=groupNames[gi];const items=sortItemsByOrder(groups[gname]);
       bodyKids.push(P(T(`${gi+1}. ${gname}`,{size:30,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_2}));
       bodyKids.push(P(T(`จำนวน ${items.length} รายการ`,{size:26,color:GREY})));
       for(let i=0;i<items.length;i++) await pushEquipmentBlock(items[i], i+1);
@@ -1151,14 +1176,26 @@ async function generatePdfFile(list,fields){
   const headerHtml=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">${esc(contract||reportName)}<br>สัญญาเลขที่ ${esc(contractNo)}</div></div>`;
   const cell=(url,cap)=>url?`<div class="cell"><img src="${url}"><div class="cap">${cap}</div></div>`:'';
   const useTypeLoc=list.some(e=>e.typeLocation);
+  const orderMap=buildMasterOrderMap();
+  const byOrderThenAlpha=(getItemsA,getItemsB,a,b)=>{
+    const oa=Math.min(...getItemsA.map(e=>masterOrderOf(orderMap,e)));
+    const ob=Math.min(...getItemsB.map(e=>masterOrderOf(orderMap,e)));
+    if(oa!==ob) return oa-ob;
+    return a.localeCompare(b,'th');
+  };
+  const sortItemsByOrder=(items)=>items.slice().sort((a,b)=>{
+    const oa=masterOrderOf(orderMap,a),ob=masterOrderOf(orderMap,b);
+    if(oa===Infinity&&ob===Infinity) return 0;
+    return oa-ob;
+  });
   const seq=[]; // [{heading, e}] — heading จะมีค่าแค่รายการแรกของกลุ่มนั้น
   if(useTypeLoc){
     const typeGroups={};list.forEach(e=>{const tk=e.typeLocation||'(ไม่ระบุประเภทสถานที่)';(typeGroups[tk]=typeGroups[tk]||[]).push(e);});
-    Object.keys(typeGroups).sort((a,b)=>a.localeCompare(b,'th')).forEach((tname,ti)=>{
+    Object.keys(typeGroups).sort((a,b)=>byOrderThenAlpha(typeGroups[a],typeGroups[b],a,b)).forEach((tname,ti)=>{
       let first=true;
       const locGroups={};typeGroups[tname].forEach(e=>{const lk=e.locName||'(ไม่ระบุสถานที่)';(locGroups[lk]=locGroups[lk]||[]).push(e);});
-      Object.keys(locGroups).sort((a,b)=>a.localeCompare(b,'th')).forEach(lname=>{
-        locGroups[lname].forEach(e=>{
+      Object.keys(locGroups).sort((a,b)=>byOrderThenAlpha(locGroups[a],locGroups[b],a,b)).forEach(lname=>{
+        sortItemsByOrder(locGroups[lname]).forEach(e=>{
           seq.push({heading:first?`<div class="rpt-proj-heading">${ti+1}. ${esc(tname)}</div>`:'',e});
           first=false;
         });
@@ -1166,8 +1203,8 @@ async function generatePdfFile(list,fields){
     });
   }else{
     const projMap={};list.forEach(e=>{const proj=e.project||'(ไม่ระบุ)';(projMap[proj]=projMap[proj]||[]).push(e);});
-    Object.keys(projMap).sort().forEach((proj,pi)=>{
-      projMap[proj].forEach((e,idx)=>{
+    Object.keys(projMap).sort((a,b)=>byOrderThenAlpha(projMap[a],projMap[b],a,b)).forEach((proj,pi)=>{
+      sortItemsByOrder(projMap[proj]).forEach((e,idx)=>{
         seq.push({heading:idx===0?`<div class="rpt-proj-heading">${pi+1}. ${esc(proj)}</div>`:'',e});
       });
     });
