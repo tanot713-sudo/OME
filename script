@@ -1481,9 +1481,9 @@ function openEditUser(username){
           </select></div>
         <div id="euProjectChips" class="chips-box"></div>
         <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">โครงการ <span style="font-weight:400;color:var(--ink-faint)">(เลือกแล้วกด + ทีละโครงการ)</span></label>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px">
             <input class="tin" id="euProject" placeholder="เช่น รถไฟฟ้าสายสีทอง" list="dl_euProject" autocomplete="off" style="flex:1">
-            <button type="button" class="btn btn-soft" id="euProjectAdd" style="flex:none">+</button>
+            <button type="button" class="round-add-btn" id="euProjectAdd" title="เพิ่มโครงการนี้">+</button>
           </div></div>
         <div style="display:flex;align-items:center;gap:10px;padding:4px 0">
           <input type="checkbox" id="euActive" style="width:16px;height:16px;cursor:pointer">
