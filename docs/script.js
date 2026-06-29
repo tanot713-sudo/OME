@@ -139,7 +139,7 @@ function doLogout(){clearSession();$('#userChip').style.display='none';$('#authU
 async function afterLogin(){
   await checkPdpa();await loadAll();await loadMasterFromBackend();
   await Promise.all([
-    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),
+    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),
     ...(AUTH.user?.role==='admin' ? [loadPagePerms()] : [])
   ]);
 }
@@ -326,7 +326,7 @@ function upgradeToCombo(inputIdOrEl,getOptionsFn){
     list.innerHTML=html;
     list.querySelectorAll('.combo-opt').forEach(o=>o.addEventListener('mousedown',e=>{e.preventDefault();pick(o.dataset.v);}));
   }
-  function pick(v){inp.value=v;wrap.classList.toggle('has-val',!!v);wrap.classList.remove('open');inp.dispatchEvent(new Event('change',{bubbles:true}));}
+  function pick(v){inp.value=v;wrap.classList.toggle('has-val',!!v);wrap.classList.remove('open');inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}
   function open(){wrap.classList.add('open');render(inp.value);}
   inp.addEventListener('focus',open);
   inp.addEventListener('click',open);
@@ -546,31 +546,42 @@ function editMaster(id){
     ['model','รุ่น',false],['asset','รหัสอุปกรณ์',false],['serial','Serial Number',false],
     ['order','ลำดับ (สำหรับ gen Word/PDF — เว้นว่าง = เรียง ก-ฮ)',false]
   ];
-  const dlByField={
-    project:uniq(master.map(x=>x.project)), system:uniq(master.map(x=>x.system)),
-    typeLocation:uniq(master.map(x=>x.typeLocation)),
-    locName:uniq(master.map(x=>x.locName)), subName:uniq(master.map(x=>x.subName)),
-    equipment:uniq(master.map(x=>x.equipment)), brand:uniq(master.map(x=>x.brand)),
-    model:uniq(master.map(x=>x.model))
-  };
-  const fields=F.map(([k,label,req])=>{
-    const dl=dlByField[k];
-    const listAttr=dl?`list="ml_${k}"`:'';
-    const datalist=dl?`<datalist id="ml_${k}">${dl.filter(Boolean).map(v=>`<option value="${escAttr(v)}">`).join('')}</datalist>`:'';
-    return `<div style="margin-bottom:10px">
+  const fields=F.map(([k,label,req])=>`<div style="margin-bottom:10px">
       <label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px">${label}${req?' <span style="color:#E2231A">*</span>':''}</label>
-      <input class="tin mfield" data-k="${k}" ${listAttr} value="${escAttr(m[k]||'')}" style="width:100%" placeholder="${label}" autocomplete="off">
-      ${datalist}</div>`;
-  }).join('');
+      <input class="tin mfield" data-k="${k}" value="${escAttr(m[k]||'')}" style="width:100%" placeholder="${label}" autocomplete="off">
+    </div>`).join('');
   dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
     <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">${id?'แก้ไขอุปกรณ์':'เพิ่มอุปกรณ์'}</h3>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">แก้ได้เฉพาะช่องที่ต้องการ · พิมพ์แล้วเลือกจากค่าที่มีอยู่ได้เลย</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">แก้ได้เฉพาะช่องที่ต้องการ · พิมพ์แล้วเลือกจากค่าที่มีอยู่ของโครงการเดียวกันได้เลย</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px">${fields}</div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-soft" id="mCancel" style="flex:1">ยกเลิก</button>
       <button class="btn btn-primary" id="mSave" style="flex:1">${id?'บันทึกการแก้ไข':'เพิ่ม'}</button>
     </div></div>`;
-  dlg.querySelectorAll('.mfield[list]').forEach(el=>upgradeToCombo(el,dlOptions(el.getAttribute('list'))));
+  // เรียงตามลำดับ: โครงการ → ระบบ → ประเภทสถานที่ → สถานที่ → สถานที่ย่อย → อุปกรณ์ — ตัวเลือกของแต่ละช่อง
+  // กรองจากค่าที่ "เลือกไว้ก่อนหน้า" เท่านั้น กันไม่ให้เห็น/เลือกค่าข้ามโครงการกันได้เหมือนเดิม
+  const HIER=['project','system','typeLocation','locName','subName','equipment'];
+  const fieldVal=(k)=>{const el=dlg.querySelector(`.mfield[data-k="${k}"]`);return el?el.value.trim():'';};
+  const cascadeOptions=(level)=>{
+    let rows=master;
+    for(const lv of HIER){ if(lv===level)break; const v=fieldVal(lv); if(v) rows=rows.filter(r=>String(r[lv]||'')===v); }
+    return uniq(rows.map(r=>r[level])).filter(Boolean);
+  };
+  const equipScopedOptions=(field)=>{
+    let rows=master;
+    const proj=fieldVal('project'), equip=fieldVal('equipment');
+    if(proj) rows=rows.filter(r=>String(r.project||'')===proj);
+    if(equip) rows=rows.filter(r=>String(r.equipment||'')===equip);
+    return uniq(rows.map(r=>r[field])).filter(Boolean);
+  };
+  HIER.forEach(k=>{
+    const el=dlg.querySelector(`.mfield[data-k="${k}"]`);
+    if(el) upgradeToCombo(el,()=>k==='project'?uniq(master.map(r=>r.project)).filter(Boolean):cascadeOptions(k));
+  });
+  ['brand','model','asset','serial'].forEach(k=>{
+    const el=dlg.querySelector(`.mfield[data-k="${k}"]`);
+    if(el) upgradeToCombo(el,()=>equipScopedOptions(k));
+  });
   dlg.style.display='flex';
   dlg.querySelector('#mCancel').onclick=()=>dlg.style.display='none';
   dlg.querySelector('#mSave').onclick=()=>{
@@ -1021,7 +1032,9 @@ function openSurveyDialog(editId){
     let dl=document.getElementById('dl_'+id);
     if(!dl){dl=document.createElement('datalist');dl.id='dl_'+id;document.body.appendChild(dl);}
     dl.innerHTML=uniq(values).filter(Boolean).map(v=>`<option value="${escAttr(v)}">`).join('');
-    const inp=$('#'+id); if(inp) inp.setAttribute('list','dl_'+id);
+    const inp=$('#'+id);
+    // ถ้าเปลี่ยนเป็น combo style แล้วไม่ต้องใส่ list attribute กลับ (เดี๋ยว native datalist popup โผล่มาซ้อนกับ combo)
+    if(inp&&!inp.dataset.comboUpgraded) inp.setAttribute('list','dl_'+id);
   };
   const updateSurveyCascade=()=>{
     let scope=master;
@@ -1613,6 +1626,11 @@ upgradeToCombo('wgClient',dlOptions('dl_wgClient'));
 upgradeToCombo('wgClause',dlOptions('dl_wgClause'));
 upgradeToCombo('wgSubmittedTo',dlOptions('dl_wgSubmittedTo'));
 upgradeToCombo('nuProject',dlOptions('nuProjectList'));
+// ช่องในหน้า "สำรวจข้อมูลภาคสนาม" ใช้ <datalist> ที่ updateSurveyCascade() เติมข้อมูลให้สดทุกครั้งอยู่แล้ว
+// (กรองตามโครงการ/ระบบ/สถานที่ที่เลือกไว้ก่อนถูกต้องอยู่แล้ว) — ที่นี่แค่เปลี่ยนหน้าตาให้เป็น combo style เดียวกัน
+['sdlgProject','sdlgSystem','sdlgLoc','sdlgSub','sdlgEquip','sdlgBrand','sdlgModel','sdlgInspector'].forEach(id=>{
+  upgradeToCombo(id,dlOptions('dl_'+id));
+});
 
 /* ─── REPORT INFO (ข้อมูลสัญญาผูกกับโครงการ) ──────────────────── */
 let reportInfoCache=[];
