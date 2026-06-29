@@ -1168,13 +1168,25 @@ if($('#surveyExportBtn'))$('#surveyExportBtn').addEventListener('click',()=>{
 });
 
 /* ─── PDF REPORT (html2pdf, ตามรายการที่ filter อยู่ในตารางตอนกดปุ่ม) ──── */
+// กดแล้วสร้าง PDF ตรงเลย ไม่ต้องเปิด popup ให้กรอก/ยืนยันซ้ำ เพราะระบบดึงข้อมูลที่กรอกไว้แล้วมาเติมอัตโนมัติอยู่แล้ว
 if($('#makeReport'))$('#makeReport').addEventListener('click',()=>{
   const list=getSavedFilteredList();
   if(!list.length){toast('ไม่มีข้อมูลตาม filter ปัจจุบัน',false);return;}
-  openPdfReportDialog(list);
+  const fields={
+    reportName:$('#wgReportName')?.value.trim()||'รายงานอุปกรณ์',
+    contract:$('#wgContract')?.value.trim()||'',
+    contractNo:$('#wgContractNo')?.value.trim()||'-',
+    date:$('#wgDate')?.value.trim()||'',
+    client:$('#wgClient')?.value.trim()||'',
+    clause:$('#wgClause')?.value.trim()||'',
+    submittedTo:$('#wgSubmittedTo')?.value.trim()||'',
+    logoCustomer:$('#wgLogoCustomer')?.value.trim()||''
+  };
+  api('saveReportPreset',{fields:{contractName:fields.contract,contractNo:fields.contractNo,clause:fields.clause,submittedTo:fields.submittedTo,logoCustomer:fields.logoCustomer}}).then(()=>loadReportPresets());
+  generatePdfFile(list,fields);
 });
 
-/* popup กรอกข้อมูลก่อนสร้าง PDF — ใช้ฟิลด์ชุดเดียวกับหน้า Word และ autocomplete จาก preset เดียวกัน */
+/* popup กรอกข้อมูลก่อนสร้าง PDF (เก็บไว้เผื่อใช้ในอนาคต — ปัจจุบันปุ่มสร้าง PDF ไม่เรียกใช้แล้ว) */
 function openPdfReportDialog(list){
   let dlg=$('#pdfReportDlg');
   if(!dlg){
@@ -1334,7 +1346,9 @@ async function generatePdfFile(list,fields){
         margin:0,
         filename:fn,
         image:{type:'jpeg',quality:0.92},
-        html2canvas:{scale:2,useCORS:true},
+        // windowWidth คงที่ 794px (=210mm ที่ 96dpi) ไม่ใช้ scrollWidth/scrollHeight (ลองแล้วพังบนคอม)
+        // กันปัญหาจอมือถือแคบกว่า .pdf-page มาก ทำให้ html2canvas render ผิดสัดส่วนจนเนื้อหาขยับลงไปกองด้านล่าง
+        html2canvas:{scale:2,useCORS:true,windowWidth:794},
         jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
         pagebreak:{mode:['css']}
       }).from(area).save();

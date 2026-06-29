@@ -149,6 +149,9 @@ td.codecell{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--accent-deep
 .icon-btn{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--ink-faint);transition:.15s;cursor:pointer}
 .icon-btn:hover{background:#EEF1F4;color:var(--ink)}
 .icon-btn.del:hover{background:#FBE9E8;color:var(--danger)}
+/* ปุ่ม + ทรงกลมสีส้ม ใช้แทนปุ่มข้อความเดิม (เพิ่ม Template/อัปโหลดข้อมูลสัญญา) ให้เด่นและกินที่น้อย */
+.round-add-btn{width:30px;height:30px;flex:none;border-radius:50%;background:var(--accent);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;transition:.15s}
+.round-add-btn:hover{background:var(--accent-deep)}
 
 /* ─── RECORD LIST ───────────────────────────────────────── */
 .rlist{display:flex;flex-direction:column;gap:10px}
@@ -407,5 +410,15 @@ body.readonly .ro-banner{display:block}
   .tabs{padding:0 8px;overflow-x:auto}
   .tab{padding:12px 12px;font-size:13px;white-space:nowrap}
   .sdlg-grid,.sdlg-imgs{grid-template-columns:1fr}
+  /* ช่อง filter (รายการที่บันทึก/จัดการข้อมูลหลัก/สำรวจ) เรียงเต็มความกว้างทีละช่องบนมือถือ
+     กันปัญหา wrap ไม่สม่ำเสมอ (2 ช่องบรรทัดหนึ่ง 1 ช่องอีกบรรทัด) ไม่กระทบขนาดบนคอม */
+  .flt-toolbar{gap:8px}
+  .flt-toolbar>select.tin,.flt-toolbar>input{width:100%;min-width:0;flex:1 1 100%}
+  /* แถบผู้ใช้/ปุ่มออกจากระบบบนมือถือ ให้กระชับขึ้น ไม่ดูรกรุงรัง */
+  .user-chip{margin-left:0;padding-left:0;border-left:none;gap:8px}
+  .user-chip .av{width:26px;height:26px;font-size:11px}
+  .user-chip .un{font-size:12.5px}
+  .user-chip .ur{font-size:9px}
+  .user-chip .logout{padding:6px 10px;font-size:11.5px}
 }
 
