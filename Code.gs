@@ -1143,10 +1143,23 @@ function findRowByFieldValue_(sh, rows, field, value) {
    ================================================================ */
 const REPORT_INFO_HEADERS = ['project','contractName','contractNo','contractDate','client','clause','submittedTo','logoCustomer','updatedAt'];
 
+// Google Sheets แอบแปลงข้อความที่หน้าตาเหมือนวันที่ (เช่น "25/06/2570") เป็นเซลล์ชนิดวันที่จริงให้เอง
+// พอ getValues() อ่านกลับมาจะได้ JS Date object แทน string แล้ว JSON.stringify จะกลายเป็น ISO timestamp ดิบๆ
+// ฟังก์ชันนี้แปลง Date ที่หลงเหลือกลับเป็น string dd/MM/yyyy ก่อนส่งออกไปให้ frontend เสมอ
+function normalizeDateFields_(rows) {
+  return rows.map(r => {
+    const out = {};
+    Object.keys(r).forEach(k => {
+      out[k] = (r[k] instanceof Date) ? Utilities.formatDate(r[k], 'Asia/Bangkok', 'dd/MM/yyyy') : r[k];
+    });
+    return out;
+  });
+}
+
 function actionListReportInfo({ _user }) {
   const sh = getSheet('ReportInfo');
   ensureHeaders(sh, REPORT_INFO_HEADERS);
-  return { ok: true, info: sheetToObjects(sh) };
+  return { ok: true, info: normalizeDateFields_(sheetToObjects(sh)) };
 }
 
 // upsert ตาม project — โครงการเดิมจะถูกเขียนทับทั้งแถว ไม่สะสมของเก่าไว้

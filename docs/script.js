@@ -679,7 +679,7 @@ async function generateWordTemplate(){
   let entries=getSavedFilteredList();
   if(!entries.length){toast('ไม่มีข้อมูลตาม filter ปัจจุบัน',false);return;}
   const orderMap=buildMasterOrderMap();
-  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition,TableLayoutType}=docx;
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition,TableLayoutType,VerticalAlign}=docx;
   const groupBy=$('#wgGroupBy').value;
   const fieldKey={project:'project',system:'system',location:'locName'}[groupBy];
   const groupLabel={project:'โครงการ',system:'ระบบ',location:'สถานที่'}[groupBy];
@@ -746,10 +746,10 @@ async function generateWordTemplate(){
     // จัดเป็นตาราง 2 คอลัมน์ (โลโก้ซ้าย / นำส่งขวา) แบบไม่แสดงเส้นตาราง ตามตำแหน่งที่ต้องการ
     setWgProgress(20,'กำลังโหลดโลโก้ลูกค้า...');
     const custLogoBuf=logoCustomer?await fetchImageBuffer(logoCustomer):null;
-    const logoCell=new TableCell({borders:noBorders(),width:{size:CONTENT_DXA/2,type:WidthType.DXA},children:[
+    const logoCell=new TableCell({borders:noBorders(),verticalAlign:VerticalAlign.CENTER,width:{size:CONTENT_DXA/2,type:WidthType.DXA},children:[
       custLogoBuf?new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:custLogoBuf,transformation:{width:130,height:80}})]}):new Paragraph({})
     ]});
-    const submitCell=new TableCell({borders:noBorders(),width:{size:CONTENT_DXA/2,type:WidthType.DXA},children:[
+    const submitCell=new TableCell({borders:noBorders(),verticalAlign:VerticalAlign.CENTER,width:{size:CONTENT_DXA/2,type:WidthType.DXA},children:[
       new Paragraph({alignment:AlignmentType.CENTER,children:[T(submittedTo||'',{size:32,bold:true})]})
     ]});
     coverKids.push(new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[CONTENT_DXA/2,CONTENT_DXA/2],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({cantSplit:true,children:[logoCell,submitCell]})]}));
@@ -1334,7 +1334,7 @@ async function generatePdfFile(list,fields){
         margin:0,
         filename:fn,
         image:{type:'jpeg',quality:0.92},
-        html2canvas:{scale:2,useCORS:true,windowWidth:area.scrollWidth,windowHeight:area.scrollHeight},
+        html2canvas:{scale:2,useCORS:true},
         jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
         pagebreak:{mode:['css']}
       }).from(area).save();
