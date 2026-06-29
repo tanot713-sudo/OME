@@ -299,6 +299,56 @@ function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('s
 function setBM(boxId,inpId,vals){const box=$('#'+boxId),inp=$('#'+inpId);if(sel.equip&&vals.length===1){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+esc(vals[0]);$('#'+inpId).value=vals[0];}else if(sel.equip){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" placeholder="กรอกเอง" value="${escAttr(vals[0]||'')}">`;}else{box.classList.add('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+(box.dataset.empty||'—');$('#'+inpId).value='';}}
 function refreshDerived(){$('#masterPill').textContent=master.length;}
 
+// แทน <input list="..."> ของ browser ด้วย combo style เดียวกับหน้า "เพิ่มรายการ" (ไม่มี "+ ใช้...ใหม่" — พิมพ์เองได้ตรงๆอยู่แล้ว)
+// ใช้ inputId เดิม (ย้าย element เดิมเข้า wrapper) เพื่อให้โค้ดเดิมที่อ่าน $('#id').value ไม่ต้องแก้อะไรเลย
+function upgradeToCombo(inputIdOrEl,getOptionsFn){
+  const inp=typeof inputIdOrEl==='string'?document.getElementById(inputIdOrEl):inputIdOrEl;
+  if(!inp||inp.dataset.comboUpgraded)return;
+  inp.dataset.comboUpgraded='1';
+  inp.removeAttribute('list');
+  inp.classList.add('combo-input');
+  inp.setAttribute('autocomplete','off');
+  const wrap=document.createElement('div');wrap.className='combo';
+  const ctl=document.createElement('div');ctl.className='combo-ctl';
+  inp.parentNode.insertBefore(wrap,inp);
+  ctl.appendChild(inp);wrap.appendChild(ctl);
+  const clearBtn=document.createElement('span');clearBtn.className='combo-clear';clearBtn.innerHTML='&times;';ctl.appendChild(clearBtn);
+  const caret=document.createElement('span');caret.className='combo-caret';caret.textContent='▾';ctl.appendChild(caret);
+  const list=document.createElement('div');list.className='combo-list';wrap.appendChild(list);
+  let active=-1;
+  function render(filter){
+    let opts=getOptionsFn();
+    const f=(filter||'').trim().toLowerCase();
+    if(f)opts=opts.filter(o=>String(o).toLowerCase().includes(f));
+    active=-1;
+    let html=opts.map(o=>`<div class="combo-opt" data-v="${escAttr(o)}">${esc(o)}</div>`).join('');
+    if(!html)html=`<div class="combo-empty">ไม่มีตัวเลือก</div>`;
+    list.innerHTML=html;
+    list.querySelectorAll('.combo-opt').forEach(o=>o.addEventListener('mousedown',e=>{e.preventDefault();pick(o.dataset.v);}));
+  }
+  function pick(v){inp.value=v;wrap.classList.toggle('has-val',!!v);wrap.classList.remove('open');inp.dispatchEvent(new Event('change',{bubbles:true}));}
+  function open(){wrap.classList.add('open');render(inp.value);}
+  inp.addEventListener('focus',open);
+  inp.addEventListener('click',open);
+  inp.addEventListener('input',()=>{wrap.classList.add('open');wrap.classList.toggle('has-val',!!inp.value);render(inp.value);});
+  inp.addEventListener('keydown',e=>{
+    const items=list.querySelectorAll('.combo-opt');
+    if(e.key==='ArrowDown'){e.preventDefault();active=Math.min(active+1,items.length-1);}
+    else if(e.key==='ArrowUp'){e.preventDefault();active=Math.max(active-1,0);}
+    else if(e.key==='Enter'){if(active>=0){e.preventDefault();pick(items[active].dataset.v);}return;}
+    else if(e.key==='Escape'){wrap.classList.remove('open');return;}
+    items.forEach((it,i)=>it.classList.toggle('active',i===active));
+    if(active>=0)items[active].scrollIntoView({block:'nearest'});
+  });
+  inp.addEventListener('blur',()=>setTimeout(()=>wrap.classList.remove('open'),150));
+  clearBtn.addEventListener('mousedown',e=>{e.preventDefault();pick('');});
+  wrap.classList.toggle('has-val',!!inp.value);
+}
+// คืนค่าตัวเลือกปัจจุบันจาก <datalist> (อ่านสดทุกครั้ง เผื่อมีการเติม option เพิ่มทีหลัง เช่นตอน loadReportPresets/loadReportInfo)
+function dlOptions(datalistId){return ()=>{const dl=document.getElementById(datalistId);return dl?Array.from(dl.options).map(o=>o.value).filter(Boolean):[];};}
+// sync class "has-val" เวลามีโค้ดอื่นไป set .value ตรงๆ (ไม่ผ่าน pick()) เช่นตอนเปิด dialog แล้วเติมค่าเริ่มต้น
+function syncComboVal(inputId){const inp=document.getElementById(inputId);const wrap=inp&&inp.closest('.combo');if(wrap)wrap.classList.toggle('has-val',!!inp.value);}
+
 function buildInspectorCombo(){const el=$('#inspCombo');if(!el)return;el.innerHTML=`<div class="combo-ctl"><input id="inpInspector" class="combo-input" placeholder="พิมพ์ชื่อผู้ตรวจ" autocomplete="off"><span class="combo-clear">&times;</span><span class="combo-caret">▾</span></div><div class="combo-list"></div>`;const input=el.querySelector('.combo-input'),list=el.querySelector('.combo-list'),clear=el.querySelector('.combo-clear');let active=-1;const people=()=>{const role=AUTH.user?.role||'';if(role==='leader'||role==='inspector')return[AUTH.user?.name||AUTH.user?.username||''];let pool=entries;if(sel['project'])pool=pool.filter(e=>e.project===sel['project']);return uniq([...INSP_SEED,...pool.map(e=>e.inspector)]).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));};function render(filter){let opts=people();const f=(filter||'').trim().toLowerCase();if(f)opts=opts.filter(o=>o.toLowerCase().includes(f));active=-1;let html=opts.map(o=>`<div class="combo-opt" data-v="${escAttr(o)}">${esc(o)}</div>`).join('');if(f&&!people().some(o=>o.toLowerCase()===f))html+=`<div class="combo-new" data-new="${escAttr(filter.trim())}">+ ใช้ "${esc(filter.trim())}" (ใหม่)</div>`;if(!html)html=`<div class="combo-empty">พิมพ์ชื่อผู้ตรวจ</div>`;list.innerHTML=html;list.querySelectorAll('.combo-opt').forEach(o=>o.addEventListener('mousedown',e=>{e.preventDefault();pick(o.dataset.v);}));const nw=list.querySelector('.combo-new');if(nw)nw.addEventListener('mousedown',e=>{e.preventDefault();pick(nw.dataset.new);});}function pick(v){input.value=v;el.classList.toggle('has-val',!!v);el.classList.remove('open');}function open(){el.classList.add('open');render(input.value);}input.addEventListener('focus',open);input.addEventListener('click',open);input.addEventListener('input',()=>{el.classList.add('open');el.classList.toggle('has-val',!!input.value);render(input.value);});input.addEventListener('keydown',e=>{const items=list.querySelectorAll('.combo-opt,.combo-new');if(e.key==='ArrowDown'){e.preventDefault();active=Math.min(active+1,items.length-1);}else if(e.key==='ArrowUp'){e.preventDefault();active=Math.max(active-1,0);}else if(e.key==='Enter'){e.preventDefault();if(active>=0){const it=items[active];pick(it.dataset.v||it.dataset.new);}else if(input.value.trim())pick(input.value.trim());return;}else if(e.key==='Escape'){el.classList.remove('open');return;}items.forEach((it,i)=>it.classList.toggle('active',i===active));if(active>=0)items[active].scrollIntoView({block:'nearest'});});input.addEventListener('blur',()=>setTimeout(()=>el.classList.remove('open'),150));clear.addEventListener('mousedown',e=>{e.preventDefault();pick('');});}
 
 /* ─── IMAGE WIRING ──────────────────────────────────────── */
@@ -520,6 +570,7 @@ function editMaster(id){
       <button class="btn btn-soft" id="mCancel" style="flex:1">ยกเลิก</button>
       <button class="btn btn-primary" id="mSave" style="flex:1">${id?'บันทึกการแก้ไข':'เพิ่ม'}</button>
     </div></div>`;
+  dlg.querySelectorAll('.mfield[list]').forEach(el=>upgradeToCombo(el,dlOptions(el.getAttribute('list'))));
   dlg.style.display='flex';
   dlg.querySelector('#mCancel').onclick=()=>dlg.style.display='none';
   dlg.querySelector('#mSave').onclick=()=>{
@@ -1135,6 +1186,12 @@ function openPdfReportDialog(list){
     document.body.appendChild(dlg);
     dlg.querySelector('#pdlgCancel').onclick=()=>dlg.style.display='none';
     dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.style.display='none';});
+    upgradeToCombo('pdlgContract',dlOptions('dl_wgContract'));
+    upgradeToCombo('pdlgContractNo',dlOptions('dl_wgContractNo'));
+    upgradeToCombo('pdlgClient',dlOptions('dl_wgClient'));
+    upgradeToCombo('pdlgClause',dlOptions('dl_wgClause'));
+    upgradeToCombo('pdlgSubmittedTo',dlOptions('dl_wgSubmittedTo'));
+    upgradeToCombo('pdlgLogoCustomer',dlOptions('dl_wgLogoCustomer'));
   }
   loadReportPresets();
   $('#pdfDlgCount').textContent=list.length;
@@ -1147,6 +1204,7 @@ function openPdfReportDialog(list){
   $('#pdlgClause').value=$('#wgClause')?.value.trim()||'';
   $('#pdlgSubmittedTo').value=$('#wgSubmittedTo')?.value.trim()||'';
   $('#pdlgLogoCustomer').value=$('#wgLogoCustomer')?.value.trim()||'';
+  ['pdlgContract','pdlgContractNo','pdlgClient','pdlgClause','pdlgSubmittedTo','pdlgLogoCustomer'].forEach(syncComboVal);
   dlg.style.display='flex';
   dlg.querySelector('#pdlgGo').onclick=()=>{
     const fields={
@@ -1326,6 +1384,8 @@ let usersCache=[];
 async function loadUsers(){if(!canSeeUsers())return;const r=await api(ACT.listUsers,{});if(r&&r.ok&&Array.isArray(r.users)){usersCache=r.users;renderUsers(r.users);}}
 function renderUsers(list){
   list=list||usersCache;window._userList=list;
+  const projectOptions=uniq([...master.map(m=>m.project),...list.map(x=>x.project)]).filter(Boolean);
+  const nuDl=$('#nuProjectList'); if(nuDl) nuDl.innerHTML=projectOptions.map(p=>`<option value="${escAttr(p)}">`).join('');
   const tb=$('#usersBody');if(!tb)return;
   const projCell=u=>{
     const ps=(u.project||'').split(',').map(p=>p.trim()).filter(Boolean);
@@ -1395,6 +1455,7 @@ function openEditUser(username){
       $('#euProject').value='';
       renderChips('euProjectChips',euProjects);
     };
+    upgradeToCombo('euProject',dlOptions('dl_euProject'));
   } else {
     const projectOptions=uniq([...master.map(m=>m.project),...(window._userList||[]).map(x=>x.project)]).filter(Boolean);
     const dl=$('#dl_euProject'); if(dl) dl.innerHTML=projectOptions.map(p=>`<option value="${escAttr(p)}">`).join('');
@@ -1545,6 +1606,13 @@ async function loadReportPresets(){
   });
 }
 document.querySelectorAll('.tab[data-tab="import"]').forEach(t=>t.addEventListener('click',()=>{ loadReportTemplates(); loadReportPresets(); loadReportInfo(); }));
+// เปลี่ยนช่อง autocomplete ของฟอร์ม Word ให้เป็น combo style เดียวกับหน้า "เพิ่มรายการ" ทั้งหมด
+upgradeToCombo('wgContract',dlOptions('dl_wgContract'));
+upgradeToCombo('wgContractNo',dlOptions('dl_wgContractNo'));
+upgradeToCombo('wgClient',dlOptions('dl_wgClient'));
+upgradeToCombo('wgClause',dlOptions('dl_wgClause'));
+upgradeToCombo('wgSubmittedTo',dlOptions('dl_wgSubmittedTo'));
+upgradeToCombo('nuProject',dlOptions('nuProjectList'));
 
 /* ─── REPORT INFO (ข้อมูลสัญญาผูกกับโครงการ) ──────────────────── */
 let reportInfoCache=[];
