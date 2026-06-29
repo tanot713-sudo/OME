@@ -1552,6 +1552,13 @@ let reportInfoCache=[];
 async function loadReportInfo(){
   const r=await api('listReportInfo',{});
   if(r&&r.ok&&Array.isArray(r.info))reportInfoCache=r.info;
+  // เพิ่มชื่อโครงการที่อัปโหลดผ่าน Excel (ReportInfo) เข้า dropdown ของช่อง "ชื่อสัญญา/โครงการ" ด้วย
+  // เพราะ dl_wgContract เดิมดึงมาจาก ReportPresets (ค่าที่เคย gen word สำเร็จ) คนละแหล่งกัน
+  const dl=document.getElementById('dl_wgContract');
+  if(dl){
+    const existing=new Set(Array.from(dl.options).map(o=>o.value));
+    reportInfoCache.forEach(r=>{ if(r.project&&!existing.has(r.project)){ dl.insertAdjacentHTML('beforeend',`<option value="${escAttr(r.project)}">`); existing.add(r.project); } });
+  }
 }
 // พิมพ์/เลือกชื่อสัญญา-โครงการแล้วถ้าเคยมีข้อมูลของโครงการนี้อยู่ ให้เติมช่องอื่นให้อัตโนมัติ
 if($('#wgContract'))$('#wgContract').addEventListener('change',()=>{
