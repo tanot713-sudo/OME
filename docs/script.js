@@ -676,7 +676,7 @@ function setWgProgress(pct,msg){const bar=$('#wgBar'),status=$('#wgStatus'),box=
 async function generateWordTemplate(){
   if(typeof docx==='undefined'){toast('ไลบรารี Word ยังโหลดไม่เสร็จ ลองใหม่',false);return;}
   // ใช้ข้อมูลตาม filter ที่เลือกอยู่ในตารางรายการที่บันทึก ณ ขณะนี้ (เหมือนปุ่ม PDF) ไม่ใช่ทุกโครงการรวมกัน
-  const entries=getSavedFilteredList();
+  let entries=getSavedFilteredList();
   if(!entries.length){toast('ไม่มีข้อมูลตาม filter ปัจจุบัน',false);return;}
   const orderMap=buildMasterOrderMap();
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,ImageRun,AlignmentType,BorderStyle,WidthType,TableOfContents,Header,Footer,PageNumber,TabStopType,TabStopPosition,TableLayoutType}=docx;
@@ -685,6 +685,12 @@ async function generateWordTemplate(){
   const groupLabel={project:'โครงการ',system:'ระบบ',location:'สถานที่'}[groupBy];
   const reportName=$('#wgReportName').value.trim()||'รายงานอุปกรณ์';
   const contract=$('#wgContract').value.trim();
+  // ถ้าช่อง "ชื่อสัญญา/โครงการ" พิมพ์ตรงกับชื่อโครงการจริง ให้กรองข้อมูลเหลือแค่โครงการนั้นด้วย
+  // (เผื่อผู้ใช้ลืม set filter โครงการแยกในตารางรายการที่บันทึก แต่พิมพ์ชื่อโครงการตรงนี้ไว้แล้ว)
+  if(contract && master.some(m=>m.project===contract)){
+    const scoped=entries.filter(e=>e.project===contract);
+    if(scoped.length) entries=scoped;
+  }
   const contractNo=$('#wgContractNo').value.trim()||'-';
   const contractDate=$('#wgDate').value.trim()||'-';
   const client=$('#wgClient').value.trim();
@@ -701,7 +707,7 @@ async function generateWordTemplate(){
   const CONTENT_DXA=PAGE_SIZE.width-PAGE_MARGIN.left-PAGE_MARGIN.right-60; // เผื่อ buffer เล็กน้อยกันเส้นขอบ/rounding
   const FONT='TH Sarabun New',RED='E2231A',DARK='1A232E',GREY='5B6573';
   const T=(t,o={})=>new TextRun({text:t,font:FONT,size:(o.size||28),bold:o.bold||false,color:o.color||'000000'});
-  const P=(runs,o={})=>new Paragraph({children:Array.isArray(runs)?runs:[runs],alignment:o.align,spacing:o.spacing,heading:o.heading});
+  const P=(runs,o={})=>new Paragraph({children:Array.isArray(runs)?runs:[runs],alignment:o.align,spacing:o.spacing,heading:o.heading,keepNext:o.keepNext,keepLines:o.keepLines});
 
   /* Logo — รองรับทั้ง base64 และ URL */
   let logoBuf=null;
@@ -752,10 +758,12 @@ async function generateWordTemplate(){
   const noBorders=()=>{const n={style:BorderStyle.NONE,size:0,color:'FFFFFF'};return{top:n,bottom:n,left:n,right:n,insideHorizontal:n,insideVertical:n};};
 
   async function pushEquipmentBlock(e, idx){
-    bodyKids.push(P(T(`${idx}. ${e.equipment||'(ไม่ระบุอุปกรณ์)'}`,{size:28,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_3}));
-    const bm=[e.brand?'ยี่ห้อ '+e.brand:'',e.model?'รุ่น '+e.model:''].filter(Boolean).join('  ');if(bm)bodyKids.push(P(T(bm,{size:28})));
-    const meta=[e.serial?'Serial: '+e.serial:'',e.asset?'รหัส: '+e.asset:''].filter(Boolean).join('   ');if(meta)bodyKids.push(P(T(meta,{size:24,color:GREY})));
-    const loc=[e.locName,e.subName].filter(Boolean).join(' ');if(loc)bodyKids.push(P(T(loc,{size:26,color:GREY})));
+    // keepNext:true ทุกบรรทัดก่อนตารางรูป — บังคับให้ Word ไม่ตัดหน้าคั่นกลางบล็อกนี้
+    // (ถ้าทั้งบล็อกไม่พอที่เหลือในหน้านั้น จะดันทั้งหัวข้อ+ข้อความ+รูปไปอยู่หน้าถัดไปด้วยกันทั้งหมด ไม่ใช่แยกหน้า)
+    bodyKids.push(P(T(`${idx}. ${e.equipment||'(ไม่ระบุอุปกรณ์)'}`,{size:28,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_3,keepNext:true}));
+    const bm=[e.brand?'ยี่ห้อ '+e.brand:'',e.model?'รุ่น '+e.model:''].filter(Boolean).join('  ');if(bm)bodyKids.push(P(T(bm,{size:28}),{keepNext:true}));
+    const meta=[e.serial?'Serial: '+e.serial:'',e.asset?'รหัส: '+e.asset:''].filter(Boolean).join('   ');if(meta)bodyKids.push(P(T(meta,{size:24,color:GREY}),{keepNext:true}));
+    const loc=[e.locName,e.subName].filter(Boolean).join(' ');if(loc)bodyKids.push(P(T(loc,{size:26,color:GREY}),{keepNext:true}));
     const photoSlots=[
       {u:e.thumbMain||e.imgMain,cap:'รูปรวมอุปกรณ์'},
       {u:e.thumbSticker||e.imgSticker,cap:'รูปสติกเกอร์'},
@@ -779,7 +787,7 @@ async function generateWordTemplate(){
       const rows=[];
       for(let ri=0;ri<slotBufs.length;ri+=2){
         const left=slotBufs[ri],right=slotBufs[ri+1];
-        rows.push(new TableRow({children: right?[cellFor(left),cellFor(right)]:[cellFor(left,true)]}));
+        rows.push(new TableRow({cantSplit:true,children: right?[cellFor(left),cellFor(right)]:[cellFor(left,true)]}));
       }
       if(rows.length)bodyKids.push(new Table({width:{size:CELL_DXA_FULL,type:WidthType.DXA},columnWidths:[CELL_DXA_HALF,CELL_DXA_HALF],layout:TableLayoutType.FIXED,rows}));
     }
@@ -1244,6 +1252,11 @@ async function generatePdfFile(list,fields){
   showPdfGenOverlay(true,'กำลังโหลดรูปภาพ...');
   const logo=LOGO_SRC||'';
   const reportName=fields.reportName,contract=fields.contract,contractNo=fields.contractNo;
+  // ถ้าชื่อสัญญา/โครงการที่กรอกตรงกับโครงการจริง กรองข้อมูลเหลือแค่โครงการนั้นด้วย (เผื่อลืม set filter ในตาราง)
+  if(contract && master.some(m=>m.project===contract)){
+    const scoped=list.filter(e=>e.project===contract);
+    if(scoped.length) list=scoped;
+  }
   const headerHtml=`<div class="rpt-runhead">${logo?`<img src="${logo}" alt="AMR">`:'<b style="color:#E2231A">AMR ASIA</b>'}<div class="ct">${esc(contract||reportName)}<br>สัญญาเลขที่ ${esc(contractNo)}</div></div>`;
   const cell=(url,cap)=>url?`<div class="cell"><img src="${url}"><div class="cap">${cap}</div></div>`:'';
   const useTypeLoc=list.some(e=>e.typeLocation);
