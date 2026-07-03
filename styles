@@ -92,12 +92,12 @@ main{max-width:1400px;margin:0 auto;padding:24px 22px 80px}
 .combo.open .combo-caret{transform:rotate(180deg)}
 .combo-clear{padding:0 8px;color:var(--ink-faint);font-size:16px;display:none}
 .combo.has-val .combo-clear{display:block}
-.combo-list{position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lift);z-index:30;max-height:260px;overflow:auto;display:none}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 5px);background:#fff !important;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lift);z-index:30;max-height:260px;overflow:auto;display:none}
 .combo.open .combo-list{display:block}
-.combo-opt{padding:10px 13px;cursor:pointer;font-size:14.5px;border-bottom:1px solid var(--line-soft)}
-.combo-opt:hover,.combo-opt.active{background:var(--accent-wash)}
-.combo-new{padding:10px 13px;font-size:13px;color:var(--accent-deep);cursor:pointer;background:#FFF9F3}
-.combo-empty{padding:13px;text-align:center;color:var(--ink-faint);font-size:13px}
+.combo-opt{padding:10px 13px;cursor:pointer;font-size:14.5px;border-bottom:1px solid var(--line-soft);background:#fff !important;color:var(--ink) !important}
+.combo-opt:hover,.combo-opt.active{background:var(--accent-wash) !important}
+.combo-new{padding:10px 13px;font-size:13px;color:var(--accent-deep) !important;cursor:pointer;background:#FFF9F3 !important}
+.combo-empty{padding:13px;text-align:center;color:var(--ink-faint);font-size:13px;background:#fff !important}
 
 /* ─── BM ROW (Brand / Model auto) ───────────────────────── */
 .bm-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
@@ -142,6 +142,9 @@ label.drop.has-img:hover .replace-badge{opacity:1}
 .flt-toolbar select.tin{flex:1;min-width:100px}
 .flt-toolbar input.tin{flex:1;min-width:120px}
 .combo-list{z-index:9999}
+
+/* ─── PAGE WIDTH: wide only for table panels ─────────────── */
+#panel-dash,#panel-add,#panel-import,#panel-users{max-width:1080px;margin-left:auto;margin-right:auto}
 
 /* ─── TABLE ─────────────────────────────────────────────── */
 .table-wrap{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);box-shadow:var(--shadow);overflow:auto}

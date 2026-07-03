@@ -284,6 +284,7 @@ function optionsFor(level){
   const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
   if((role==='leader'||role==='inspector')&&userProjs.length>0)rows=rows.filter(r=>userProjs.includes(r.project));
   for(let i=0;i<idx;i++){const lv=LEVELS[i];if(sel[lv])rows=rows.filter(r=>String(r[PROP[lv]]||'')===sel[lv]);}
+  if(level==='equip'){const asset=($('#inpAsset')?.value||'').trim();if(asset)rows=rows.filter(r=>String(r.asset||'')===asset);}
   if(level==='serial'){const brand=($('#inpBrand')&&$('#inpBrand').value||'').trim();if(brand)rows=rows.filter(r=>String(r.brand||'')===brand);return uniq(rows.map(r=>String(r.serial||'')).filter(Boolean)).sort((a,b)=>a.localeCompare(b,'th'));}
   return uniq(rows.map(r=>String(r[PROP[level]]||''))).sort((a,b)=>a.localeCompare(b,'th'));
 }
@@ -322,12 +323,13 @@ function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('s
 function setBM(boxId,inpId,vals){const box=$('#'+boxId),inp=$('#'+inpId);if(sel.equip&&vals.length===1){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+esc(vals[0]);$('#'+inpId).value=vals[0];}else if(sel.equip){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" placeholder="กรอกเอง" value="${escAttr(vals[0]||'')}">`;}else{box.classList.add('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+(box.dataset.empty||'—');$('#'+inpId).value='';}}
 function refreshDerived(){
   $('#masterPill').textContent=master.length;
-  // อัปเดต datalist สำหรับ ประเภทอุปกรณ์ autocomplete
-  let dl=document.getElementById('dl_inpAsset');
-  if(!dl){dl=document.createElement('datalist');dl.id='dl_inpAsset';document.body.appendChild(dl);}
-  const assets=uniq(master.map(m=>m.asset).filter(Boolean));
-  dl.innerHTML=assets.map(v=>`<option value="${escAttr(v)}">`).join('');
-  const inp=$('#inpAsset');if(inp&&!inp.getAttribute('list'))inp.setAttribute('list','dl_inpAsset');
+  upgradeToCombo('inpAsset',()=>uniq(master.map(m=>m.asset).filter(Boolean)).sort((a,b)=>a.localeCompare(b,'th')));
+  const assetInp=$('#inpAsset');
+  if(assetInp&&!assetInp.dataset.equipListener){
+    assetInp.dataset.equipListener='1';
+    assetInp.addEventListener('input',()=>{if(combos.equip)combos.equip.list.innerHTML='';});
+    assetInp.addEventListener('change',()=>{if(combos.equip)combos.equip.list.innerHTML='';});
+  }
 }
 
 // แทน <input list="..."> ของ browser ด้วย combo style เดียวกับหน้า "เพิ่มรายการ" (ไม่มี "+ ใช้...ใหม่" — พิมพ์เองได้ตรงๆอยู่แล้ว)
@@ -408,7 +410,7 @@ $('#saveBtn').addEventListener('click',async()=>{
   editingId=null;goTab('saved');
 });
 $('#resetBtn').addEventListener('click',resetForm);
-function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['fileMain','fileSticker','fileImg3','fileImg4'].forEach(id=>$('#'+id).value='');['dropMain','dropSticker','dropImg3','dropImg4'].forEach(id=>{const l=$('#'+id);l.classList.remove('has-img');l.style.backgroundImage='';const ph=l.querySelector('.ph-content');if(ph)ph.style.display='';});['inpInspector','inpAsset','inpNote'].forEach(id=>$('#'+id).value='');$('#inspCombo').classList.remove('has-val');LEVELS.forEach(lv=>{sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}});setDisabledStates();updateBrandModel();const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);if(role==='leader'||role==='inspector'){$('#inpInspector').value=AUTH.user?.name||AUTH.user?.username||'';$('#inpInspector').disabled=true;$('#inspCombo').classList.add('has-val');$('#inspCombo').style.background='#EEF1F4';if(userProjs.length===1){setTimeout(()=>choose('project',userProjs[0]),50);if(combos.project){combos.project.input.disabled=true;combos.project.el.style.background='#EEF1F4';}}}else{$('#inpInspector').disabled=false;$('#inspCombo').style.background='';if(role&&role!=='admin'){const n=AUTH.user?.name||AUTH.user?.username||'';if(n){$('#inpInspector').value=n;$('#inspCombo').classList.add('has-val');}}if(combos.project){combos.project.input.disabled=false;combos.project.el.style.background='';}}$('#addEyebrow').textContent='New Record';$('#addTitle').textContent='เพิ่มรายการใหม่';$('#saveBtn').textContent='บันทึกรายการ';}
+function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['fileMain','fileSticker','fileImg3','fileImg4'].forEach(id=>$('#'+id).value='');['dropMain','dropSticker','dropImg3','dropImg4'].forEach(id=>{const l=$('#'+id);l.classList.remove('has-img');l.style.backgroundImage='';const ph=l.querySelector('.ph-content');if(ph)ph.style.display='';});['inpInspector','inpAsset','inpNote'].forEach(id=>$('#'+id).value='');$('#inspCombo').classList.remove('has-val');syncComboVal('inpAsset');LEVELS.forEach(lv=>{sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}});setDisabledStates();updateBrandModel();const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);if(role==='leader'||role==='inspector'){$('#inpInspector').value=AUTH.user?.name||AUTH.user?.username||'';$('#inpInspector').disabled=true;$('#inspCombo').classList.add('has-val');$('#inspCombo').style.background='#EEF1F4';if(userProjs.length===1){setTimeout(()=>choose('project',userProjs[0]),50);if(combos.project){combos.project.input.disabled=true;combos.project.el.style.background='#EEF1F4';}}}else{$('#inpInspector').disabled=false;$('#inspCombo').style.background='';if(role&&role!=='admin'){const n=AUTH.user?.name||AUTH.user?.username||'';if(n){$('#inpInspector').value=n;$('#inspCombo').classList.add('has-val');}}if(combos.project){combos.project.input.disabled=false;combos.project.el.style.background='';}}$('#addEyebrow').textContent='New Record';$('#addTitle').textContent='เพิ่มรายการใหม่';$('#saveBtn').textContent='บันทึกรายการ';}
 
 /* ─── RECORDS ───────────────────────────────────────────── */
 async function loadRecords(){if(!AUTH.token)return;const r=await api(ACT.listRecords,{});if(r&&r.ok&&Array.isArray(r.records)){entries=r.records.map(x=>({id:x.id,project:x.project,system:x.system,typeLocation:x.typeLocation,locName:x.location,subName:x.sublocation,equipment:x.equipment,serial:x.serial,brand:x.brand,model:x.model,asset:x.asset,inspector:x.inspector,note:x.note,imgMain:x.imgMain,imgSticker:x.imgSticker,img3:x.img3,img4:x.img4,thumbMain:x.thumbMain,thumbSticker:x.thumbSticker,thumb3:x.thumb3,thumb4:x.thumb4,createdAt:x.createdAt||Date.now(),synced:true}));entries.sort((a,b)=>b.createdAt-a.createdAt);renderSaved();updateStats();renderDashboard();}}
@@ -482,11 +484,36 @@ function renderSaved(){
   const grid=$('#savedGrid');
   if(!list.length){grid.innerHTML=`<div class="empty"><b>${entries.length?'ไม่พบรายการตามเงื่อนไข':'ยังไม่มีรายการที่บันทึก'}</b></div>`;return;}
   grid.innerHTML=list.map(e=>{const thumb=e.thumbMain||e.thumbSticker||e.imgMain||e.imgSticker||'';const n=(e.imgMain?1:0)+(e.imgSticker?1:0);const title=esc([e.equipment,e.brand,e.model].filter(Boolean).join(' · '))||'(ไม่ระบุอุปกรณ์)';const loc=esc([e.project,e.locName,e.subName].filter(Boolean).join(' › '));return `<div class="rrow" data-id="${e.id}"><div class="thumb" style="background-image:url(${thumb})">${n?`<span class="cnt">${n} รูป</span>`:''}</div><div class="body"><div class="tt">${title}</div>${loc?`<div class="loc">${loc}</div>`:''}<div class="meta"><span>${esc(e.inspector||'-')}</span>${e.serial?`<span>SN: ${esc(e.serial)}</span>`:''}<span>${fmtDate(e.createdAt,true)}</span></div></div><div class="acts">${canEdit()?'<button data-act="edit">แก้ไข</button>':''}<button data-act="img">รูป</button>${canDelete()?'<button data-act="del" class="del">ลบ</button>':''}</div></div>`;}).join('');
-  grid.querySelectorAll('.rrow').forEach(c=>{const id=c.dataset.id;const be=c.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editEntry(id);c.querySelector('[data-act="img"]').onclick=()=>downloadImgs(id);const bd=c.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delEntry(id);});
+  grid.querySelectorAll('.rrow').forEach(c=>{const id=c.dataset.id;const be=c.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editEntry(id);c.querySelector('[data-act="img"]').onclick=()=>viewImgs(id);const bd=c.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delEntry(id);});
 }
-function editEntry(id){const e=entries.find(x=>x.id===id);if(!e)return;resetForm();editingId=id;imgMain=e.imgMain||'';imgSticker=e.imgSticker||'';img3=e.img3||'';img4=e.img4||'';choose('project',e.project||'');choose('system',e.system||'');choose('loc',e.locName||'');choose('sub',e.subName||'');choose('equip',e.equipment||'');choose('serial',e.serial||'');if($('#inpBrand'))$('#inpBrand').value=e.brand||'';if($('#inpModel'))$('#inpModel').value=e.model||'';$('#inpAsset').value=e.asset||'';$('#inpInspector').value=e.inspector||'';$('#inspCombo').classList.toggle('has-val',!!e.inspector);$('#inpNote').value=e.note||'';$('#addEyebrow').textContent='Edit Record';$('#addTitle').textContent='แก้ไขรายการ';$('#saveBtn').textContent='บันทึกการแก้ไข';goTab('add');window.scrollTo(0,0);}
+function editEntry(id){const e=entries.find(x=>x.id===id);if(!e)return;resetForm();editingId=id;imgMain=e.imgMain||'';imgSticker=e.imgSticker||'';img3=e.img3||'';img4=e.img4||'';choose('project',e.project||'');choose('system',e.system||'');choose('loc',e.locName||'');choose('sub',e.subName||'');choose('equip',e.equipment||'');choose('serial',e.serial||'');if($('#inpBrand'))$('#inpBrand').value=e.brand||'';if($('#inpModel'))$('#inpModel').value=e.model||'';$('#inpAsset').value=e.asset||'';syncComboVal('inpAsset');$('#inpInspector').value=e.inspector||'';$('#inspCombo').classList.toggle('has-val',!!e.inspector);$('#inpNote').value=e.note||'';$('#addEyebrow').textContent='Edit Record';$('#addTitle').textContent='แก้ไขรายการ';$('#saveBtn').textContent='บันทึกการแก้ไข';goTab('add');window.scrollTo(0,0);}
 async function delEntry(id){if(!confirm('ลบรายการนี้ถาวร?'))return;if(AUTH.token){const r=await api(ACT.deleteRecord,{id});if(r&&r.ok){await loadRecords();toast('ลบรายการแล้ว',true);}else toast((r&&r.message)||'ลบไม่สำเร็จ',false);}}
-function downloadImgs(id){const e=entries.find(x=>x.id===id);if(!e)return;const isData=u=>String(u).startsWith('data:');let n=0;[['main',e.imgMain],['sticker',e.imgSticker],['img3',e.img3],['img4',e.img4]].forEach(([k,u],i)=>{if(!u)return;n++;setTimeout(()=>{if(isData(u)){const a=document.createElement('a');a.href=u;a.download=`img_${k}.jpg`;a.click();}else window.open(u,'_blank');},i*300);});if(n)toast(`เปิด/ดาวน์โหลดรูป ${n} ไฟล์`,true);else toast('ไม่มีรูป',false);}
+function viewImgs(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  const imgs=[{label:'รูปหลัก',src:e.imgMain||e.thumbMain},{label:'สติ๊กเกอร์',src:e.imgSticker||e.thumbSticker},{label:'รูปที่ 3',src:e.img3||e.thumb3},{label:'รูปที่ 4',src:e.img4||e.thumb4}].filter(x=>x.src);
+  if(!imgs.length){toast('ไม่มีรูป',false);return;}
+  let cur=0;
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;box-sizing:border-box';
+  ov.addEventListener('click',ev=>{if(ev.target===ov)ov.remove();});
+  function render(){
+    ov.innerHTML='';
+    const hd=document.createElement('div');hd.style.cssText='display:flex;align-items:center;justify-content:space-between;width:min(90vw,760px)';
+    const lbl=document.createElement('span');lbl.style.cssText='color:#fff;font-size:14px;font-weight:600';lbl.textContent=imgs[cur].label+'  ('+( cur+1)+'/'+imgs.length+')';
+    const xBtn=document.createElement('button');xBtn.textContent='✕';xBtn.style.cssText='background:rgba(255,255,255,.18);border:none;color:#fff;font-size:18px;width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0';xBtn.onclick=()=>ov.remove();
+    hd.appendChild(lbl);hd.appendChild(xBtn);ov.appendChild(hd);
+    const img=document.createElement('img');img.src=imgs[cur].src;img.style.cssText='max-width:min(90vw,760px);max-height:65vh;border-radius:10px;object-fit:contain;background:#111';ov.appendChild(img);
+    if(imgs.length>1){
+      const nav=document.createElement('div');nav.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center';
+      const mkBtn=(txt,dis,fn)=>{const b=document.createElement('button');b.textContent=txt;b.style.cssText='padding:7px 16px;border-radius:8px;border:none;background:#fff;cursor:'+(dis?'default':'pointer')+';font-size:15px;opacity:'+(dis?.35:1);if(!dis)b.onclick=fn;return b;};
+      nav.appendChild(mkBtn('◀',cur===0,()=>{cur--;render();}));
+      imgs.forEach((im,i)=>{const tb=document.createElement('div');tb.style.cssText='width:46px;height:46px;border-radius:6px;overflow:hidden;cursor:pointer;border:2.5px solid '+(i===cur?'#EE7C16':'rgba(255,255,255,.3)');const ti=document.createElement('img');ti.src=im.src;ti.style.cssText='width:100%;height:100%;object-fit:cover';tb.appendChild(ti);tb.onclick=()=>{cur=i;render();};nav.appendChild(tb);});
+      nav.appendChild(mkBtn('▶',cur===imgs.length-1,()=>{cur++;render();}));
+      ov.appendChild(nav);
+    }
+  }
+  render();document.body.appendChild(ov);
+}
 
 /* ─── DASHBOARD ─────────────────────────────────────────── */
 let progressCache=[];
