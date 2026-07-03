@@ -323,7 +323,17 @@ function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('s
 function setBM(boxId,inpId,vals){const box=$('#'+boxId),inp=$('#'+inpId);if(sel.equip&&vals.length===1){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+esc(vals[0]);$('#'+inpId).value=vals[0];}else if(sel.equip){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" placeholder="กรอกเอง" value="${escAttr(vals[0]||'')}">`;}else{box.classList.add('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+(box.dataset.empty||'—');$('#'+inpId).value='';}}
 function refreshDerived(){
   $('#masterPill').textContent=master.length;
-  upgradeToCombo('inpAsset',()=>uniq(master.map(m=>m.asset).filter(Boolean)).sort((a,b)=>a.localeCompare(b,'th')));
+  upgradeToCombo('inpAsset',()=>{
+    let rows=master;
+    const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    if((role==='leader'||role==='inspector')&&userProjs.length>0)rows=rows.filter(r=>userProjs.includes(r.project));
+    if(sel.project)rows=rows.filter(r=>String(r.project||'')===sel.project);
+    if(sel.system)rows=rows.filter(r=>String(r.system||'')===sel.system);
+    if(sel.typeloc)rows=rows.filter(r=>String(r.typeLocation||'')===sel.typeloc);
+    if(sel.loc)rows=rows.filter(r=>String(r.location||'')===sel.loc);
+    if(sel.sub)rows=rows.filter(r=>String(r.sublocation||'')===sel.sub);
+    return uniq(rows.map(m=>m.asset).filter(Boolean)).sort((a,b)=>a.localeCompare(b,'th'));
+  });
   const assetInp=$('#inpAsset');
   if(assetInp&&!assetInp.dataset.equipListener){
     assetInp.dataset.equipListener='1';
