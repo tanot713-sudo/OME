@@ -674,7 +674,7 @@ function editMaster(id){
 }
 function delMaster(id){if(!confirm('ลบอุปกรณ์นี้?'))return;master=master.filter(x=>x.id!==id);persistMaster();toast('ลบแล้ว',true);}
 async function persistMaster(){await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();if(combos.project)setDisabledStates();if(AUTH.token&&AUTH.user&&AUTH.user.role==='admin'){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));api(ACT.saveMaster,{master:payload}).then(r=>{if(!(r&&r.ok))console.warn('saveMaster failed',r);});}}
-async function loadMasterFromBackend(){if(!AUTH.token)return;const r=await api(ACT.listMaster,{});if(r&&r.ok&&Array.isArray(r.master)){if(r.master.length){master=r.master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,locName:m.location,subName:m.sublocation,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();}else if(AUTH.user&&AUTH.user.role==='admin'&&master.length){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));await api(ACT.saveMaster,{master:payload});}}}
+async function loadMasterFromBackend(){if(!AUTH.token)return;const r=await api(ACT.listMaster,{});if(r&&r.ok&&Array.isArray(r.master)){if(r.master.length){const ns=s=>String(s||'').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();master=r.master.map(m=>({id:m.id,project:ns(m.project),system:ns(m.system),typeLocation:ns(m.typeLocation),locName:ns(m.location),subName:ns(m.sublocation),equipment:ns(m.equipment),brand:ns(m.brand),model:ns(m.model),asset:ns(m.asset),serial:ns(m.serial),order:m.order||''}));await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();}else if(AUTH.user&&AUTH.user.role==='admin'&&master.length){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));await api(ACT.saveMaster,{master:payload});}}}
 
 /* ─── STATS ─────────────────────────────────────────────── */
 function updateStats(){$('#statCount').textContent=entries.length;$('#savedPill').textContent=entries.length;}
@@ -704,8 +704,9 @@ if($('#fileXlsx'))$('#fileXlsx').addEventListener('change',async(ev)=>{
     const rowsAoa=XLSX.utils.sheet_to_json(ws,{header:1});
     const header=rowsAoa[0]||[];
     const colIdx={};MASTER_IMPORT_COLS.forEach(([key,label])=>{const idx=header.findIndex(h=>String(h).replace(/^﻿/,'').trim()===label);if(idx>=0)colIdx[key]=idx;});
+    const normStr=s=>String(s||'').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();
     const rows=rowsAoa.slice(1).filter(r=>r&&r.length).map(r=>{
-      const obj={};Object.keys(colIdx).forEach(key=>{obj[key]=String(r[colIdx[key]]||'').trim();});
+      const obj={};Object.keys(colIdx).forEach(key=>{obj[key]=normStr(r[colIdx[key]]);});
       return obj;
     }).filter(o=>o.project&&o.equipment);
     if(!rows.length){if(prev)prev.innerHTML=`<div class="empty">ไม่พบข้อมูลที่นำเข้าได้ (ต้องมีคอลัมน์ "โครงการ" และ "อุปกรณ์" อย่างน้อย)</div>`;return;}
