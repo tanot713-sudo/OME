@@ -306,7 +306,7 @@ function buildCombos(){
   });
   setDisabledStates();
 }
-function choose(level,val){val=String(val||'').trim();if(sel[level]===val){combos[level].input.value=val;combos[level].el.classList.toggle('has-val',!!val);combos[level].el.classList.remove('open');return;}sel[level]=val;combos[level].input.value=val;combos[level].el.classList.toggle('has-val',!!val);combos[level].el.classList.remove('open');const idx=LEVELS.indexOf(level);for(let i=idx+1;i<LEVELS.length;i++){const lv=LEVELS[i];sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}}setDisabledStates();updateBrandModel();}
+function choose(level,val){val=String(val||'').trim();if(sel[level]===val){combos[level].input.value=val;combos[level].el.classList.toggle('has-val',!!val);combos[level].el.classList.remove('open');return;}sel[level]=val;combos[level].input.value=val;combos[level].el.classList.toggle('has-val',!!val);combos[level].el.classList.remove('open');const idx=LEVELS.indexOf(level);for(let i=idx+1;i<LEVELS.length;i++){const lv=LEVELS[i];sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}}setDisabledStates();updateBrandModel();if(level==='equip'&&val){setTimeout(()=>{const s=optionsFor('serial');if(s.length===1&&!sel.serial)choose('serial',s[0]);},50);}}
 function setDisabledStates(){
   const REQUIRED_ANCESTOR={project:null,system:'project',typeloc:'project',loc:'project',sub:'loc',equip:'loc',serial:'equip'};
   LEVELS.forEach((lv)=>{
@@ -317,6 +317,9 @@ function setDisabledStates(){
     else{c.el.classList.add('disabled');c.input.disabled=true;c.input.placeholder=`เลือก${LABEL[req]}ก่อน`;}
   });
   if(combos.serial)refreshSerialCombo();
+  // sync inpAsset combo disabled state
+  const assetWrap=$('#inpAsset')?.closest?.('.combo');
+  if(assetWrap){const en=!!sel.loc;assetWrap.classList.toggle('disabled',!en);$('#inpAsset').disabled=!en;$('#inpAsset').placeholder=en?'เช่น Firewall, Switch, Transceiver...':'เลือกสถานที่ก่อน';if(!en&&$('#inpAsset').value){$('#inpAsset').value='';syncComboVal('inpAsset');}}
 }
 function updateBrandModel(){let rows=master;['project','system','loc','sub','equip','serial'].forEach(lv=>{if(sel[lv])rows=rows.filter(r=>String(r[PROP[lv]]||'')===sel[lv]);});const brands=uniq(rows.map(r=>r.brand)),models=uniq(rows.map(r=>r.model)),assets=uniq(rows.map(r=>r.asset));setBM('bmBrand','inpBrand',brands);setBM('bmModel','inpModel',models);if(assets.length===1&&!$('#inpAsset').value)$('#inpAsset').value=assets[0];}
 function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('serial');if(sel.serial&&!valid.includes(sel.serial)){sel.serial='';combos.serial.input.value='';combos.serial.el.classList.remove('has-val');}const ph=sel.equip?(valid.length?`เลือก Serial (${valid.length} รายการ)`:'ไม่มี Serial ใน master'):'เลือกอุปกรณ์ก่อน';if(combos.serial.input)combos.serial.input.placeholder=ph;}
