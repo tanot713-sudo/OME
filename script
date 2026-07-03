@@ -327,8 +327,15 @@ function refreshDerived(){
   const assetInp=$('#inpAsset');
   if(assetInp&&!assetInp.dataset.equipListener){
     assetInp.dataset.equipListener='1';
-    assetInp.addEventListener('input',()=>{if(combos.equip)combos.equip.list.innerHTML='';});
-    assetInp.addEventListener('change',()=>{if(combos.equip)combos.equip.list.innerHTML='';});
+    assetInp.addEventListener('input',()=>{
+      if(combos.equip){combos.equip.el.classList.remove('open');combos.equip.list.innerHTML='';}
+    });
+    assetInp.addEventListener('change',()=>{
+      if(!combos.equip||combos.equip.el.classList.contains('disabled'))return;
+      const opts=optionsFor('equip');
+      if(opts.length===1){setTimeout(()=>choose('equip',opts[0]),50);}
+      else{setTimeout(()=>combos.equip.input.focus(),50);}
+    });
   }
 }
 
@@ -359,11 +366,12 @@ function upgradeToCombo(inputIdOrEl,getOptionsFn){
     list.innerHTML=html;
     list.querySelectorAll('.combo-opt').forEach(o=>o.addEventListener('mousedown',e=>{e.preventDefault();pick(o.dataset.v);}));
   }
-  function pick(v){inp.value=v;wrap.classList.toggle('has-val',!!v);wrap.classList.remove('open');inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));}
+  let _picking=false;
+  function pick(v){_picking=true;inp.value=v;wrap.classList.toggle('has-val',!!v);wrap.classList.remove('open');inp.dispatchEvent(new Event('change',{bubbles:true}));_picking=false;}
   function open(){wrap.classList.add('open');render(inp.value);}
   inp.addEventListener('focus',open);
   inp.addEventListener('click',open);
-  inp.addEventListener('input',()=>{wrap.classList.add('open');wrap.classList.toggle('has-val',!!inp.value);render(inp.value);});
+  inp.addEventListener('input',()=>{if(_picking)return;wrap.classList.add('open');wrap.classList.toggle('has-val',!!inp.value);render(inp.value);});
   inp.addEventListener('keydown',e=>{
     const items=list.querySelectorAll('.combo-opt');
     if(e.key==='ArrowDown'){e.preventDefault();active=Math.min(active+1,items.length-1);}
