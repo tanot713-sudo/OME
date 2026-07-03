@@ -283,7 +283,8 @@ function optionsFor(level){
   const idx=LEVELS.indexOf(level);let rows=master;
   const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
   if((role==='leader'||role==='inspector')&&userProjs.length>0)rows=rows.filter(r=>userProjs.includes(r.project));
-  for(let i=0;i<idx;i++){const lv=LEVELS[i];if(sel[lv])rows=rows.filter(r=>String(r[PROP[lv]]||'')===sel[lv]);}
+  for(let i=0;i<idx;i++){const lv=LEVELS[i];if(!sel[lv])continue;if((level==='equip'||level==='serial')&&lv==='typeloc')continue;rows=rows.filter(r=>String(r[PROP[lv]]||'')===sel[lv]);}
+  if(level==='equip'){const asset=($('#inpAsset')?.value||'').trim();if(asset)rows=rows.filter(r=>String(r.asset||'')===asset);}
   if(level==='serial'){const brand=($('#inpBrand')&&$('#inpBrand').value||'').trim();if(brand)rows=rows.filter(r=>String(r.brand||'')===brand);return uniq(rows.map(r=>String(r.serial||'')).filter(Boolean)).sort((a,b)=>a.localeCompare(b,'th'));}
   return uniq(rows.map(r=>String(r[PROP[level]]||''))).sort((a,b)=>a.localeCompare(b,'th'));
 }
@@ -322,6 +323,27 @@ function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('s
 function setBM(boxId,inpId,vals){const box=$('#'+boxId),inp=$('#'+inpId);if(sel.equip&&vals.length===1){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+esc(vals[0]);$('#'+inpId).value=vals[0];}else if(sel.equip){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" placeholder="กรอกเอง" value="${escAttr(vals[0]||'')}">`;}else{box.classList.add('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+(box.dataset.empty||'—');$('#'+inpId).value='';}}
 function refreshDerived(){
   $('#masterPill').textContent=master.length;
+  upgradeToCombo('inpAsset',()=>{
+    let rows=master;
+    const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    if((role==='leader'||role==='inspector')&&userProjs.length>0)rows=rows.filter(r=>userProjs.includes(r.project));
+    if(sel.project)rows=rows.filter(r=>String(r.project||'')===sel.project);
+    if(sel.system)rows=rows.filter(r=>String(r.system||'')===sel.system);
+    if(sel.loc)rows=rows.filter(r=>String(r.locName||'')===sel.loc);
+    if(sel.sub)rows=rows.filter(r=>String(r.subName||'')===sel.sub);
+    return uniq(rows.map(m=>m.asset).filter(Boolean)).sort((a,b)=>a.localeCompare(b,'th'));
+  });
+  const assetInp=$('#inpAsset');
+  if(assetInp&&!assetInp.dataset.equipListener){
+    assetInp.dataset.equipListener='1';
+    assetInp.addEventListener('input',()=>{if(combos.equip){combos.equip.el.classList.remove('open');combos.equip.list.innerHTML='';}});
+    assetInp.addEventListener('change',()=>{
+      if(!combos.equip||combos.equip.el.classList.contains('disabled'))return;
+      const opts=optionsFor('equip');
+      if(opts.length===1){setTimeout(()=>choose('equip',opts[0]),50);}
+      else{setTimeout(()=>combos.equip.input.focus(),50);}
+    });
+  }
 }
 
 // แทน <input list="..."> ของ browser ด้วย combo style เดียวกับหน้า "เพิ่มรายการ" (ไม่มี "+ ใช้...ใหม่" — พิมพ์เองได้ตรงๆอยู่แล้ว)
@@ -403,7 +425,7 @@ $('#saveBtn').addEventListener('click',async()=>{
   editingId=null;goTab('saved');
 });
 $('#resetBtn').addEventListener('click',resetForm);
-function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['fileMain','fileSticker','fileImg3','fileImg4'].forEach(id=>$('#'+id).value='');['dropMain','dropSticker','dropImg3','dropImg4'].forEach(id=>{const l=$('#'+id);l.classList.remove('has-img');l.style.backgroundImage='';const ph=l.querySelector('.ph-content');if(ph)ph.style.display='';});['inpInspector','inpAsset','inpNote'].forEach(id=>$('#'+id).value='');$('#inspCombo').classList.remove('has-val');LEVELS.forEach(lv=>{sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}});setDisabledStates();updateBrandModel();const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);if(role==='leader'||role==='inspector'){$('#inpInspector').value=AUTH.user?.name||AUTH.user?.username||'';$('#inpInspector').disabled=true;$('#inspCombo').classList.add('has-val');$('#inspCombo').style.background='#EEF1F4';if(userProjs.length===1){setTimeout(()=>choose('project',userProjs[0]),50);if(combos.project){combos.project.input.disabled=true;combos.project.el.style.background='#EEF1F4';}}}else{$('#inpInspector').disabled=false;$('#inspCombo').style.background='';if(role&&role!=='admin'){const n=AUTH.user?.name||AUTH.user?.username||'';if(n){$('#inpInspector').value=n;$('#inspCombo').classList.add('has-val');}}if(combos.project){combos.project.input.disabled=false;combos.project.el.style.background='';}}$('#addEyebrow').textContent='New Record';$('#addTitle').textContent='เพิ่มรายการใหม่';$('#saveBtn').textContent='บันทึกรายการ';}
+function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['fileMain','fileSticker','fileImg3','fileImg4'].forEach(id=>$('#'+id).value='');['dropMain','dropSticker','dropImg3','dropImg4'].forEach(id=>{const l=$('#'+id);l.classList.remove('has-img');l.style.backgroundImage='';const ph=l.querySelector('.ph-content');if(ph)ph.style.display='';});['inpInspector','inpAsset','inpNote'].forEach(id=>$('#'+id).value='');$('#inspCombo').classList.remove('has-val');syncComboVal('inpAsset');LEVELS.forEach(lv=>{sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}});setDisabledStates();updateBrandModel();const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);if(role==='leader'||role==='inspector'){$('#inpInspector').value=AUTH.user?.name||AUTH.user?.username||'';$('#inpInspector').disabled=true;$('#inspCombo').classList.add('has-val');$('#inspCombo').style.background='#EEF1F4';if(userProjs.length===1){setTimeout(()=>choose('project',userProjs[0]),50);if(combos.project){combos.project.input.disabled=true;combos.project.el.style.background='#EEF1F4';}}}else{$('#inpInspector').disabled=false;$('#inspCombo').style.background='';if(role&&role!=='admin'){const n=AUTH.user?.name||AUTH.user?.username||'';if(n){$('#inpInspector').value=n;$('#inspCombo').classList.add('has-val');}}if(combos.project){combos.project.input.disabled=false;combos.project.el.style.background='';}}$('#addEyebrow').textContent='New Record';$('#addTitle').textContent='เพิ่มรายการใหม่';$('#saveBtn').textContent='บันทึกรายการ';}
 
 /* ─── RECORDS ───────────────────────────────────────────── */
 async function loadRecords(){if(!AUTH.token)return;const r=await api(ACT.listRecords,{});if(r&&r.ok&&Array.isArray(r.records)){entries=r.records.map(x=>({id:x.id,project:x.project,system:x.system,typeLocation:x.typeLocation,locName:x.location,subName:x.sublocation,equipment:x.equipment,serial:x.serial,brand:x.brand,model:x.model,asset:x.asset,inspector:x.inspector,note:x.note,imgMain:x.imgMain,imgSticker:x.imgSticker,img3:x.img3,img4:x.img4,thumbMain:x.thumbMain,thumbSticker:x.thumbSticker,thumb3:x.thumb3,thumb4:x.thumb4,createdAt:x.createdAt||Date.now(),synced:true}));entries.sort((a,b)=>b.createdAt-a.createdAt);renderSaved();updateStats();renderDashboard();}}
@@ -479,7 +501,7 @@ function renderSaved(){
   grid.innerHTML=list.map(e=>{const thumb=e.thumbMain||e.thumbSticker||e.imgMain||e.imgSticker||'';const n=(e.imgMain?1:0)+(e.imgSticker?1:0);const title=esc([e.equipment,e.brand,e.model].filter(Boolean).join(' · '))||'(ไม่ระบุอุปกรณ์)';const loc=esc([e.project,e.locName,e.subName].filter(Boolean).join(' › '));return `<div class="rrow" data-id="${e.id}"><div class="thumb" style="background-image:url(${thumb})">${n?`<span class="cnt">${n} รูป</span>`:''}</div><div class="body"><div class="tt">${title}</div>${loc?`<div class="loc">${loc}</div>`:''}<div class="meta"><span>${esc(e.inspector||'-')}</span>${e.serial?`<span>SN: ${esc(e.serial)}</span>`:''}<span>${fmtDate(e.createdAt,true)}</span></div></div><div class="acts">${canEdit()?'<button data-act="edit">แก้ไข</button>':''}<button data-act="img">รูป</button>${canDelete()?'<button data-act="del" class="del">ลบ</button>':''}</div></div>`;}).join('');
   grid.querySelectorAll('.rrow').forEach(c=>{const id=c.dataset.id;const be=c.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editEntry(id);c.querySelector('[data-act="img"]').onclick=()=>viewImgs(id);const bd=c.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delEntry(id);});
 }
-function editEntry(id){const e=entries.find(x=>x.id===id);if(!e)return;resetForm();editingId=id;imgMain=e.imgMain||'';imgSticker=e.imgSticker||'';img3=e.img3||'';img4=e.img4||'';choose('project',e.project||'');choose('system',e.system||'');choose('loc',e.locName||'');choose('sub',e.subName||'');choose('equip',e.equipment||'');choose('serial',e.serial||'');if($('#inpBrand'))$('#inpBrand').value=e.brand||'';if($('#inpModel'))$('#inpModel').value=e.model||'';$('#inpAsset').value=e.asset||'';$('#inpInspector').value=e.inspector||'';$('#inspCombo').classList.toggle('has-val',!!e.inspector);$('#inpNote').value=e.note||'';$('#addEyebrow').textContent='Edit Record';$('#addTitle').textContent='แก้ไขรายการ';$('#saveBtn').textContent='บันทึกการแก้ไข';goTab('add');window.scrollTo(0,0);}
+function editEntry(id){const e=entries.find(x=>x.id===id);if(!e)return;resetForm();editingId=id;imgMain=e.imgMain||'';imgSticker=e.imgSticker||'';img3=e.img3||'';img4=e.img4||'';choose('project',e.project||'');choose('system',e.system||'');choose('loc',e.locName||'');choose('sub',e.subName||'');choose('equip',e.equipment||'');choose('serial',e.serial||'');if($('#inpBrand'))$('#inpBrand').value=e.brand||'';if($('#inpModel'))$('#inpModel').value=e.model||'';$('#inpAsset').value=e.asset||'';syncComboVal('inpAsset');$('#inpInspector').value=e.inspector||'';$('#inspCombo').classList.toggle('has-val',!!e.inspector);$('#inpNote').value=e.note||'';$('#addEyebrow').textContent='Edit Record';$('#addTitle').textContent='แก้ไขรายการ';$('#saveBtn').textContent='บันทึกการแก้ไข';goTab('add');window.scrollTo(0,0);}
 async function delEntry(id){if(!confirm('ลบรายการนี้ถาวร?'))return;if(AUTH.token){const r=await api(ACT.deleteRecord,{id});if(r&&r.ok){await loadRecords();toast('ลบรายการแล้ว',true);}else toast((r&&r.message)||'ลบไม่สำเร็จ',false);}}
 function viewImgs(id){
   const e=entries.find(x=>x.id===id);if(!e)return;
