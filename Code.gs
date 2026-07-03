@@ -1005,14 +1005,14 @@ function exportSurveyExcelToDrive(project) {
    ================================================================ */
 const PERM_HEADERS = ['role','pages'];
 const DEFAULT_PAGES = {
-  manager:   ['overview','add','records','survey','import','pdfReport','delete'],
-  leader:    ['overview','add','records','survey','pdfReport','delete'],
+  manager:   ['overview','add','records','survey','import','delete'],
+  leader:    ['overview','add','records','survey','delete'],
   inspector: ['add','records','survey'],
   observer:  ['records','survey']
 };
-// 'pdfReport' และ 'delete' ไม่ใช่หน้าจริง แต่เป็น feature toggle (ปุ่มสร้าง PDF / ปุ่มลบ)
+// 'delete' ไม่ใช่หน้าจริง แต่เป็น feature toggle (ปุ่มลบ)
 // ที่ admin กำหนดสิทธิ์แยกได้ในตารางเดียวกับ page permission
-const ALL_PAGES = ['overview','add','records','survey','import','master','users','pdfReport','delete'];
+const ALL_PAGES = ['overview','add','records','survey','import','master','users','delete'];
 
 function getPagePermissions(role) {
   if (role === 'admin') return ALL_PAGES;
