@@ -94,7 +94,19 @@ const uniq=a=>[...new Set(a.filter(v=>v!==''&&v!=null))];
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const escAttr=s=>String(s==null?'':s).replace(/"/g,'&quot;');
 const pad=n=>String(n).padStart(2,'0');
-const fmtDate=(ts,t)=>{const d=new Date(ts);let s=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()+543}`;if(t)s+=` ${pad(d.getHours())}:${pad(d.getMinutes())} น.`;return s;};
+const fmtDate=(ts,t)=>{
+  if(!ts)return'';
+  // ถ้าเป็น ISO string ที่มีปี พ.ศ. (>2400) เช่น "2570-06-25T00:00:00.000Z" ให้แยก date part ออกโดยตรง
+  if(typeof ts==='string'&&/^\d{4}-\d{2}-\d{2}/.test(ts)){
+    const[yr,mo,dy]=ts.slice(0,10).split('-').map(Number);
+    if(yr>2400){let s=`${pad(dy)}/${pad(mo)}/${yr}`;if(t)s+=` 00:00 น.`;return s;}
+  }
+  // ถ้าเป็น string dd/MM/yyyy หรือ dd-MM-yyyy แล้ว ให้คืนตรงๆ
+  if(typeof ts==='string'&&/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(ts))return ts.replace(/-/g,'/');
+  const d=new Date(ts);if(isNaN(d))return String(ts);
+  let s=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()+543}`;
+  if(t)s+=` ${pad(d.getHours())}:${pad(d.getMinutes())} น.`;return s;
+};
 const fileStamp=ts=>{const d=new Date(ts);return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;};
 
 async function getClientIP(){if(_clientIP)return _clientIP;try{const r=await fetch('https://api.ipify.org?format=json');const j=await r.json();_clientIP=j.ip||'';}catch(e){_clientIP='';}return _clientIP;}
@@ -308,7 +320,15 @@ function setDisabledStates(){
 function updateBrandModel(){let rows=master;['project','system','loc','sub','equip','serial'].forEach(lv=>{if(sel[lv])rows=rows.filter(r=>String(r[PROP[lv]]||'')===sel[lv]);});const brands=uniq(rows.map(r=>r.brand)),models=uniq(rows.map(r=>r.model)),assets=uniq(rows.map(r=>r.asset));setBM('bmBrand','inpBrand',brands);setBM('bmModel','inpModel',models);if(assets.length===1&&!$('#inpAsset').value)$('#inpAsset').value=assets[0];}
 function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('serial');if(sel.serial&&!valid.includes(sel.serial)){sel.serial='';combos.serial.input.value='';combos.serial.el.classList.remove('has-val');}const ph=sel.equip?(valid.length?`เลือก Serial (${valid.length} รายการ)`:'ไม่มี Serial ใน master'):'เลือกอุปกรณ์ก่อน';if(combos.serial.input)combos.serial.input.placeholder=ph;}
 function setBM(boxId,inpId,vals){const box=$('#'+boxId),inp=$('#'+inpId);if(sel.equip&&vals.length===1){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+esc(vals[0]);$('#'+inpId).value=vals[0];}else if(sel.equip){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" placeholder="กรอกเอง" value="${escAttr(vals[0]||'')}">`;}else{box.classList.add('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+(box.dataset.empty||'—');$('#'+inpId).value='';}}
-function refreshDerived(){$('#masterPill').textContent=master.length;}
+function refreshDerived(){
+  $('#masterPill').textContent=master.length;
+  // อัปเดต datalist สำหรับ ประเภทอุปกรณ์ autocomplete
+  let dl=document.getElementById('dl_inpAsset');
+  if(!dl){dl=document.createElement('datalist');dl.id='dl_inpAsset';document.body.appendChild(dl);}
+  const assets=uniq(master.map(m=>m.asset).filter(Boolean));
+  dl.innerHTML=assets.map(v=>`<option value="${escAttr(v)}">`).join('');
+  const inp=$('#inpAsset');if(inp&&!inp.getAttribute('list'))inp.setAttribute('list','dl_inpAsset');
+}
 
 // แทน <input list="..."> ของ browser ด้วย combo style เดียวกับหน้า "เพิ่มรายการ" (ไม่มี "+ ใช้...ใหม่" — พิมพ์เองได้ตรงๆอยู่แล้ว)
 // ใช้ inputId เดิม (ย้าย element เดิมเข้า wrapper) เพื่อให้โค้ดเดิมที่อ่าน $('#id').value ไม่ต้องแก้อะไรเลย
@@ -525,6 +545,7 @@ function renderMaster(){
   const fsub=$('#masterFSub')?$('#masterFSub').value:'';
   const feq=$('#masterFEquip')?$('#masterFEquip').value:'';
   const fmiss=$('#masterFMissing')?$('#masterFMissing').value:'';
+  const fsort=$('#masterFSort')?$('#masterFSort').value:'order_asc';
   let list=master.filter(m=>!q||[m.project,m.system,m.typeLocation,m.locName,m.subName,m.equipment,m.brand,m.model,m.asset,m.serial].join(' ').toLowerCase().includes(q));
   if(fp)list=list.filter(m=>m.project===fp);
   if(fs)list=list.filter(m=>m.system===fs);
@@ -535,6 +556,7 @@ function renderMaster(){
   else if(fmiss==='model') list=list.filter(m=>!m.model);
   else if(fmiss==='serial') list=list.filter(m=>!m.serial);
   else if(fmiss==='any') list=list.filter(m=>!m.brand||!m.model||!m.serial);
+  list.sort((a,b)=>{const na=parseFloat(a.order)||0,nb=parseFloat(b.order)||0;return fsort==='order_desc'?nb-na:na-nb;});
   const body=$('#masterBody');if($('#masterPill'))$('#masterPill').textContent=master.length;
   if(!list.length){body.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--ink-faint)">${master.length?'ไม่พบข้อมูลตามเงื่อนไข':'ยังไม่มีข้อมูล'}</td></tr>`;return;}
   body.innerHTML=list.map(m=>`<tr data-id="${m.id}"><td class="codecell" style="text-align:center">${esc(m.order)}</td><td>${esc(m.project)}</td><td>${esc(m.system)}</td><td>${esc(m.typeLocation)}</td><td>${esc(m.locName)}</td><td>${esc(m.subName)}</td><td class="codecell">${esc(m.asset)}</td><td>${esc(m.equipment)}</td><td>${esc(m.brand)}</td><td>${esc(m.model)}</td><td class="codecell">${esc(m.serial)}</td><td>${canEdit()?`<div class="rowact"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn del" data-act="del">🗑</button></div>`:'—'}</td></tr>`).join('');
@@ -1594,7 +1616,7 @@ if($('#fileUsers'))$('#fileUsers').addEventListener('change',async(ev)=>{
 
 /* ─── MASTER SEARCH ─────────────────────────────────────── */
 document.getElementById('masterSearch')?.addEventListener('input',renderMaster);
-['masterFProject','masterFSystem','masterFLoc','masterFSub','masterFEquip','masterFMissing'].forEach(id=>{
+['masterFProject','masterFSystem','masterFLoc','masterFSub','masterFEquip','masterFMissing','masterFSort'].forEach(id=>{
   document.getElementById(id)?.addEventListener('change',renderMaster);
 });
 
@@ -1730,7 +1752,7 @@ if($('#wgContract'))$('#wgContract').addEventListener('change',()=>{
   const v=$('#wgContract').value.trim(); if(!v)return;
   const info=reportInfoCache.find(r=>r.project===v); if(!info)return;
   if($('#wgContractNo'))$('#wgContractNo').value=info.contractNo||'';
-  if($('#wgDate'))$('#wgDate').value=info.contractDate||'';
+  if($('#wgDate'))$('#wgDate').value=fmtDate(info.contractDate)||info.contractDate||'';
   if($('#wgClient'))$('#wgClient').value=info.client||'';
   if($('#wgClause'))$('#wgClause').value=info.clause||'';
   if($('#wgSubmittedTo'))$('#wgSubmittedTo').value=info.submittedTo||'';
