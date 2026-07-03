@@ -202,12 +202,12 @@ function applyRoleVisibility(){
 }
 
 /* ─── PAGE PERMISSIONS (admin) ──────────────────────────────── */
-const PAGE_LABELS={overview:'ภาพรวม',add:'เพิ่มรายการ',records:'รายการที่บันทึก',survey:'สำรวจภาคสนาม',import:'Import/Export',master:'จัดการข้อมูลหลัก',users:'จัดการผู้ใช้',pdfReport:'ปุ่มสร้างรายงาน PDF',delete:'ปุ่มลบรายการ'};
+const PAGE_LABELS={overview:'ภาพรวม',add:'เพิ่มรายการ',records:'รายการที่บันทึก',survey:'สำรวจภาคสนาม',import:'Import/Export',master:'จัดการข้อมูลหลัก',users:'จัดการผู้ใช้',delete:'ปุ่มลบรายการ'};
 let _pagePerms={};
 function renderPagePermUI(){
   const box=$('#pagePermContainer'); if(!box) return;
   const roles=['manager','leader','inspector','observer'];
-  const pages=['overview','add','records','survey','import','master','users','pdfReport','delete'];
+  const pages=['overview','add','records','survey','import','master','users','delete'];
   box.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
     <thead><tr><th style="padding:8px 12px;text-align:left">หน้า/ฟีเจอร์</th>${roles.map(r=>`<th style="padding:8px 12px;text-align:center"><span class="role-badge role-${r}">${r}</span></th>`).join('')}</tr></thead>
     <tbody>${pages.map(pg=>`<tr><td style="padding:7px 12px;border-top:1px solid var(--line-soft)">${PAGE_LABELS[pg]||pg}</td>${roles.map(role=>{
@@ -294,7 +294,17 @@ function buildCombos(){
   setDisabledStates();
 }
 function choose(level,val){val=String(val||'').trim();if(sel[level]===val){combos[level].input.value=val;combos[level].el.classList.toggle('has-val',!!val);combos[level].el.classList.remove('open');return;}sel[level]=val;combos[level].input.value=val;combos[level].el.classList.toggle('has-val',!!val);combos[level].el.classList.remove('open');const idx=LEVELS.indexOf(level);for(let i=idx+1;i<LEVELS.length;i++){const lv=LEVELS[i];sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}}setDisabledStates();updateBrandModel();}
-function setDisabledStates(){LEVELS.forEach((lv,i)=>{const parentOk=i===0?true:!!sel[LEVELS[i-1]];const c=combos[lv];if(!c)return;if(parentOk){c.el.classList.remove('disabled');c.input.disabled=false;c.input.placeholder=`พิมพ์หรือเลือก${LABEL[lv]}...`;}else{c.el.classList.add('disabled');c.input.disabled=true;c.input.placeholder=`เลือก${LABEL[LEVELS[i-1]]}ก่อน`;}});if(combos.serial)refreshSerialCombo();}
+function setDisabledStates(){
+  const REQUIRED_ANCESTOR={project:null,system:'project',typeloc:'project',loc:'project',sub:'loc',equip:'loc',serial:'equip'};
+  LEVELS.forEach((lv)=>{
+    const c=combos[lv];if(!c)return;
+    const req=REQUIRED_ANCESTOR[lv];
+    const parentOk=!req||!!sel[req];
+    if(parentOk){c.el.classList.remove('disabled');c.input.disabled=false;c.input.placeholder=`พิมพ์หรือเลือก${LABEL[lv]}...`;}
+    else{c.el.classList.add('disabled');c.input.disabled=true;c.input.placeholder=`เลือก${LABEL[req]}ก่อน`;}
+  });
+  if(combos.serial)refreshSerialCombo();
+}
 function updateBrandModel(){let rows=master;['project','system','loc','sub','equip','serial'].forEach(lv=>{if(sel[lv])rows=rows.filter(r=>String(r[PROP[lv]]||'')===sel[lv]);});const brands=uniq(rows.map(r=>r.brand)),models=uniq(rows.map(r=>r.model)),assets=uniq(rows.map(r=>r.asset));setBM('bmBrand','inpBrand',brands);setBM('bmModel','inpModel',models);if(assets.length===1&&!$('#inpAsset').value)$('#inpAsset').value=assets[0];}
 function refreshSerialCombo(){if(!combos.serial)return;const valid=optionsFor('serial');if(sel.serial&&!valid.includes(sel.serial)){sel.serial='';combos.serial.input.value='';combos.serial.el.classList.remove('has-val');}const ph=sel.equip?(valid.length?`เลือก Serial (${valid.length} รายการ)`:'ไม่มี Serial ใน master'):'เลือกอุปกรณ์ก่อน';if(combos.serial.input)combos.serial.input.placeholder=ph;}
 function setBM(boxId,inpId,vals){const box=$('#'+boxId),inp=$('#'+inpId);if(sel.equip&&vals.length===1){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+esc(vals[0]);$('#'+inpId).value=vals[0];}else if(sel.equip){box.classList.remove('empty');box.innerHTML=`<input id="${inpId}" placeholder="กรอกเอง" value="${escAttr(vals[0]||'')}">`;}else{box.classList.add('empty');box.innerHTML=`<input id="${inpId}" style="display:none">`+(box.dataset.empty||'—');$('#'+inpId).value='';}}
@@ -378,7 +388,7 @@ $('#saveBtn').addEventListener('click',async()=>{
   editingId=null;goTab('saved');
 });
 $('#resetBtn').addEventListener('click',resetForm);
-function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['fileMain','fileSticker','fileImg3','fileImg4'].forEach(id=>$('#'+id).value='');['dropMain','dropSticker','dropImg3','dropImg4'].forEach(id=>{const l=$('#'+id);l.classList.remove('has-img');l.style.backgroundImage='';const ph=l.querySelector('.ph-content');if(ph)ph.style.display='';});['inpInspector','inpAsset','inpNote'].forEach(id=>$('#'+id).value='');$('#inspCombo').classList.remove('has-val');LEVELS.forEach(lv=>{sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}});setDisabledStates();updateBrandModel();const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);if(role==='leader'||role==='inspector'){$('#inpInspector').value=AUTH.user?.name||AUTH.user?.username||'';$('#inpInspector').disabled=true;$('#inspCombo').classList.add('has-val');$('#inspCombo').style.background='#EEF1F4';if(userProjs.length===1){setTimeout(()=>choose('project',userProjs[0]),50);if(combos.project){combos.project.input.disabled=true;combos.project.el.style.background='#EEF1F4';}}}else{$('#inpInspector').disabled=false;$('#inspCombo').style.background='';if(combos.project){combos.project.input.disabled=false;combos.project.el.style.background='';}}$('#addEyebrow').textContent='New Record';$('#addTitle').textContent='เพิ่มรายการใหม่';$('#saveBtn').textContent='บันทึกรายการ';}
+function resetForm(){imgMain='';imgSticker='';editingId=null;img3='';img4='';['fileMain','fileSticker','fileImg3','fileImg4'].forEach(id=>$('#'+id).value='');['dropMain','dropSticker','dropImg3','dropImg4'].forEach(id=>{const l=$('#'+id);l.classList.remove('has-img');l.style.backgroundImage='';const ph=l.querySelector('.ph-content');if(ph)ph.style.display='';});['inpInspector','inpAsset','inpNote'].forEach(id=>$('#'+id).value='');$('#inspCombo').classList.remove('has-val');LEVELS.forEach(lv=>{sel[lv]='';if(combos[lv]){combos[lv].input.value='';combos[lv].el.classList.remove('has-val');}});setDisabledStates();updateBrandModel();const role=AUTH.user?.role||'';const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);if(role==='leader'||role==='inspector'){$('#inpInspector').value=AUTH.user?.name||AUTH.user?.username||'';$('#inpInspector').disabled=true;$('#inspCombo').classList.add('has-val');$('#inspCombo').style.background='#EEF1F4';if(userProjs.length===1){setTimeout(()=>choose('project',userProjs[0]),50);if(combos.project){combos.project.input.disabled=true;combos.project.el.style.background='#EEF1F4';}}}else{$('#inpInspector').disabled=false;$('#inspCombo').style.background='';if(role&&role!=='admin'){const n=AUTH.user?.name||AUTH.user?.username||'';if(n){$('#inpInspector').value=n;$('#inspCombo').classList.add('has-val');}}if(combos.project){combos.project.input.disabled=false;combos.project.el.style.background='';}}$('#addEyebrow').textContent='New Record';$('#addTitle').textContent='เพิ่มรายการใหม่';$('#saveBtn').textContent='บันทึกรายการ';}
 
 /* ─── RECORDS ───────────────────────────────────────────── */
 async function loadRecords(){if(!AUTH.token)return;const r=await api(ACT.listRecords,{});if(r&&r.ok&&Array.isArray(r.records)){entries=r.records.map(x=>({id:x.id,project:x.project,system:x.system,typeLocation:x.typeLocation,locName:x.location,subName:x.sublocation,equipment:x.equipment,serial:x.serial,brand:x.brand,model:x.model,asset:x.asset,inspector:x.inspector,note:x.note,imgMain:x.imgMain,imgSticker:x.imgSticker,img3:x.img3,img4:x.img4,thumbMain:x.thumbMain,thumbSticker:x.thumbSticker,thumb3:x.thumb3,thumb4:x.thumb4,createdAt:x.createdAt||Date.now(),synced:true}));entries.sort((a,b)=>b.createdAt-a.createdAt);renderSaved();updateStats();renderDashboard();}}
@@ -527,7 +537,7 @@ function renderMaster(){
   else if(fmiss==='any') list=list.filter(m=>!m.brand||!m.model||!m.serial);
   const body=$('#masterBody');if($('#masterPill'))$('#masterPill').textContent=master.length;
   if(!list.length){body.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--ink-faint)">${master.length?'ไม่พบข้อมูลตามเงื่อนไข':'ยังไม่มีข้อมูล'}</td></tr>`;return;}
-  body.innerHTML=list.map(m=>`<tr data-id="${m.id}"><td class="codecell" style="text-align:center">${esc(m.order)}</td><td>${esc(m.project)}</td><td>${esc(m.system)}</td><td>${esc(m.typeLocation)}</td><td>${esc(m.locName)}</td><td>${esc(m.subName)}</td><td>${esc(m.equipment)}</td><td>${esc(m.brand)}</td><td>${esc(m.model)}</td><td class="codecell">${esc(m.asset)}</td><td class="codecell">${esc(m.serial)}</td><td>${canEdit()?`<div class="rowact"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn del" data-act="del">🗑</button></div>`:'—'}</td></tr>`).join('');
+  body.innerHTML=list.map(m=>`<tr data-id="${m.id}"><td class="codecell" style="text-align:center">${esc(m.order)}</td><td>${esc(m.project)}</td><td>${esc(m.system)}</td><td>${esc(m.typeLocation)}</td><td>${esc(m.locName)}</td><td>${esc(m.subName)}</td><td class="codecell">${esc(m.asset)}</td><td>${esc(m.equipment)}</td><td>${esc(m.brand)}</td><td>${esc(m.model)}</td><td class="codecell">${esc(m.serial)}</td><td>${canEdit()?`<div class="rowact"><button class="icon-btn" data-act="edit">✎</button><button class="icon-btn del" data-act="del">🗑</button></div>`:'—'}</td></tr>`).join('');
   body.querySelectorAll('tr').forEach(tr=>{const id=tr.dataset.id;const be=tr.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editMaster(id);const bd=tr.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delMaster(id);});
 }
 $('#addMasterBtn').addEventListener('click',()=>editMaster(null));
@@ -543,8 +553,8 @@ function editMaster(id){
   const F=[
     ['project','โครงการ',true],['system','ระบบ',false],['typeLocation','ประเภทสถานที่',false],
     ['locName','สถานที่',false],['subName','สถานที่ย่อย',false],
-    ['equipment','อุปกรณ์',true],['brand','ยี่ห้อ',false],
-    ['model','รุ่น',false],['asset','รหัสอุปกรณ์',false],['serial','Serial Number',false],
+    ['asset','ประเภทอุปกรณ์',false],['equipment','อุปกรณ์',true],['brand','ยี่ห้อ',false],
+    ['model','รุ่น',false],['serial','Serial Number',false],
     ['order','ลำดับ (สำหรับ gen Word/PDF — เว้นว่าง = เรียง ก-ฮ)',false]
   ];
   const fields=F.map(([k,label,req])=>`<div style="margin-bottom:10px">
@@ -604,7 +614,7 @@ function updateStats(){$('#statCount').textContent=entries.length;$('#savedPill'
 
 /* ─── EXPORT EXCEL ──────────────────────────────────────── */
 $('#exportXlsx').addEventListener('click',()=>{if(!entries.length){toast('ยังไม่มีข้อมูลให้ส่งออก',false);return;}const rows=entries.map(e=>({'วันที่บันทึก':fmtDate(e.createdAt,true),'โครงการ':e.project,'ระบบ':e.system,'สถานที่':e.locName,'สถานที่ย่อย':e.subName,'อุปกรณ์':e.equipment,'ยี่ห้อ':e.brand,'รุ่น':e.model,'รหัสอุปกรณ์':e.asset,'Serial Number':e.serial,'ชื่อผู้ตรวจ':e.inspector,'หมายเหตุ':e.note}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'รายการ');XLSX.writeFile(wb,`records_${fileStamp(Date.now())}.xlsx`);toast(`ส่งออก Excel แล้ว (${entries.length} รายการ)`,true);});
-const MASTER_IMPORT_COLS=[['project','โครงการ'],['system','ระบบ'],['typeLocation','ประเภทสถานที่'],['locName','สถานที่'],['subName','สถานที่ย่อย'],['equipment','อุปกรณ์'],['brand','ยี่ห้อ'],['model','รุ่น'],['asset','รหัสอุปกรณ์'],['serial','Serial Number'],['order','ลำดับ']];
+const MASTER_IMPORT_COLS=[['order','ลำดับ'],['project','โครงการ'],['system','ระบบ'],['typeLocation','ประเภทสถานที่'],['locName','สถานที่'],['subName','สถานที่ย่อย'],['asset','ประเภทอุปกรณ์'],['equipment','อุปกรณ์'],['brand','ยี่ห้อ'],['model','รุ่น'],['serial','Serial Number']];
 // ใช้ฟิลด์ "ลำดับ" จาก Master Data จัดเรียงสถานที่/สถานที่ย่อย/อุปกรณ์ ตอน gen Word/PDF แทนการเรียง ก-ฮ อัตโนมัติ
 // match กันด้วย โครงการ+ประเภทสถานที่+สถานที่+สถานที่ย่อย+อุปกรณ์ — ไม่ได้ตั้งเลขไว้ = เรียง ก-ฮ เหมือนเดิม (fallback)
 function masterOrderKey(o){return [o.project,o.typeLocation,o.locName,o.subName,o.equipment].map(x=>String(x||'').trim()).join('|');}
@@ -1637,12 +1647,44 @@ async function loadReportTemplates(){
     if(chosen) applyTemplateSelection(chosen.name.replace(' (ค่าตั้งต้น)',''), chosen.fileId);
   };
 }
-if($('#tmplAddBtn')) $('#tmplAddBtn').addEventListener('click', async ()=>{
-  const name=prompt('ชื่อ Template (เช่น AMR_report_template_v2.docx)'); if(!name) return;
-  const fileId=prompt('Drive File ID ของ Template (ต้องแชร์ให้บัญชีที่ deploy เข้าถึงได้)'); if(!fileId) return;
-  const r=await api('saveReportTemplate',{name:name.trim(),fileId:fileId.trim()});
-  if(r&&r.ok){ toast('เพิ่ม Template แล้ว',true); await loadReportTemplates(); }
-  else toast((r&&r.message)||'เพิ่มไม่สำเร็จ',false);
+if($('#tmplAddBtn')) $('#tmplAddBtn').addEventListener('click', ()=>{
+  let dlg=$('#tmplAddDlg');
+  if(!dlg){
+    dlg=document.createElement('div');dlg.id='tmplAddDlg';
+    dlg.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(20,26,34,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+    dlg.innerHTML=`<div style="background:#fff;border-radius:16px;width:100%;max-width:460px;padding:28px 28px 22px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+      <div style="font-size:17px;font-weight:700;margin-bottom:18px">เพิ่ม Report Template</div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">ชื่อ Template <span style="color:#E2231A">*</span></label>
+        <input id="tmplDlgName" class="tin" style="width:100%" placeholder="เช่น AMR_report_template_v2.docx" autocomplete="off">
+      </div>
+      <div style="margin-bottom:22px">
+        <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">Drive File ID <span style="color:#E2231A">*</span></label>
+        <input id="tmplDlgId" class="tin" style="width:100%" placeholder="ID ของไฟล์ใน Google Drive" autocomplete="off">
+        <div style="font-size:11px;color:#888;margin-top:5px">ต้องแชร์ให้บัญชีที่ deploy เข้าถึงได้ก่อน</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button id="tmplDlgCancel" class="ghost-btn">ยกเลิก</button>
+        <button id="tmplDlgSave" class="btn btn-primary">เพิ่ม Template</button>
+      </div>
+    </div>`;
+    document.body.appendChild(dlg);
+    dlg.addEventListener('click',e=>{if(e.target===dlg)dlg.style.display='none';});
+    $('#tmplDlgCancel').addEventListener('click',()=>dlg.style.display='none');
+    $('#tmplDlgSave').addEventListener('click',async()=>{
+      const name=$('#tmplDlgName').value.trim();
+      const fileId=$('#tmplDlgId').value.trim();
+      if(!name||!fileId){toast('กรุณากรอกทั้งชื่อและ File ID',false);return;}
+      const btn=$('#tmplDlgSave');btn.disabled=true;btn.textContent='กำลังบันทึก...';
+      const r=await api('saveReportTemplate',{name,fileId});
+      btn.disabled=false;btn.textContent='เพิ่ม Template';
+      if(r&&r.ok){toast('เพิ่ม Template แล้ว',true);dlg.style.display='none';await loadReportTemplates();}
+      else toast((r&&r.message)||'เพิ่มไม่สำเร็จ',false);
+    });
+  }
+  $('#tmplDlgName').value='';$('#tmplDlgId').value='';
+  dlg.style.display='flex';
+  setTimeout(()=>$('#tmplDlgName').focus(),50);
 });
 
 /* ─── Report field presets — autocomplete จากค่าที่เคยกรอก ───────────────── */
