@@ -83,7 +83,8 @@ const ACT = {
   createRecord:'createRecord', listRecords:'listRecords', deleteRecord:'deleteRecord',
   createUser:'createUser', bulkCreateUsers:'bulkCreateUsers', listUsers:'listUsers',
   saveMaster:'saveMaster', listMaster:'listMaster', getProgress:'getProgress',
-  saveAssignment:'saveAssignment', listAssignments:'listAssignments', completeAssignment:'completeAssignment'
+  saveAssignment:'saveAssignment', listAssignments:'listAssignments', completeAssignment:'completeAssignment',
+  getAssignStats:'getAssignStats', saveTarget:'saveTarget', listTargets:'listTargets'
 };
 const ASSIGN_KEY='amr_assignments';
 const TOKEN_KEY='amr_token', USER_KEY='amr_user';
@@ -154,7 +155,7 @@ function doLogout(){clearSession();$('#userChip').style.display='none';$('#authU
 async function afterLogin(){
   await checkPdpa();await loadAll();await loadMasterFromBackend();
   await Promise.all([
-    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),loadAssignments(),
+    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),loadAssignments(),loadAssignStats(),
     ...(AUTH.user?.role==='admin' ? [loadPagePerms()] : [])
   ]);
 }
@@ -271,7 +272,7 @@ const MASTER_KEY='master';
 const LEVELS=['project','system','typeloc','loc','sub','equip','serial'];
 const PROP={project:'project',system:'system',typeloc:'typeLocation',loc:'locName',sub:'subName',equip:'equipment',serial:'serial'};
 const LABEL={project:'โครงการ',system:'ระบบ',typeloc:'ประเภทสถานที่',loc:'สถานที่',sub:'สถานที่ย่อย',equip:'อุปกรณ์',serial:'Serial Number'};
-let master=[],entries=[],assignments=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
+let master=[],entries=[],assignments=[],assignStats=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
 const sel={project:'',system:'',loc:'',sub:'',equip:'',serial:''};
 const combos={};
 const INSP_SEED=['สมชาย ใจดี','สมหญิง รักงาน'];
@@ -554,6 +555,137 @@ const DONUT_COLORS=['#EE7C16','#3B82F6','#10B981','#8B5CF6','#EC4899','#F59E0B',
 let targetsCache=[];
 async function loadTargets(){if(!AUTH.token)return;const role=(AUTH.user&&AUTH.user.role)||'';if(!['admin','manager','leader'].includes(role))return;const r=await api('listTargets',{});if(r&&r.ok)targetsCache=r.targets||[];}
 function getTargetForProject(proj){const username=AUTH.user?.username||'',role=AUTH.user?.role||'';return targetsCache.find(t=>t.project===proj&&(role!=='leader'||t.username===username));}
+function getProjectDeadline(proj){return targetsCache.find(t=>t.project===proj&&t.username==='__project__')?.deadline||'';}
+async function loadAssignStats(){
+  if(!AUTH.token)return;
+  const r=await api(ACT.getAssignStats,{});
+  if(r&&r.ok)assignStats=r.stats||[];
+  renderAssignStatsPanel();
+  renderDashAssign();
+}
+function daysLeft(dateStr){if(!dateStr)return null;const d=new Date(dateStr),now=new Date();now.setHours(0,0,0,0);return Math.ceil((d-now)/(1000*60*60*24));}
+function daysChip(dateStr){const d=daysLeft(dateStr);if(d===null)return '';if(d<0)return `<span style="background:#FEE2E2;color:#DC2626;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600">⚠ เลย ${Math.abs(d)} วัน</span>`;if(d<=3)return `<span style="background:#FEF3C7;color:#D97706;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600">⏰ ${d} วัน</span>`;return `<span style="background:#DCFCE7;color:#16A34A;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600">✅ ${d} วัน</span>`;}
+
+function renderAssignStatsPanel(){
+  const me=AUTH.user?.username||'';
+  const role=AUTH.user?.role||'';
+  const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+  const ids=['assignStatsPanel','surveyAssignStatsPanel'];
+  ids.forEach(id=>{
+    const el=$('#'+id);if(!el)return;
+    if(!assignStats.length){el.innerHTML='';return;}
+    let html='';
+    if(role==='inspector'){
+      // รวม stats ของตัวเองทุกโครงการ
+      let total=0,done=0,earliest='';
+      assignStats.forEach(proj=>{
+        const ins=proj.inspectors.find(i=>i.username===me);
+        if(!ins)return;
+        total+=ins.total;done+=ins.done;
+        if(ins.earliestTargetDate&&(!earliest||ins.earliestTargetDate<earliest))earliest=ins.earliestTargetDate;
+      });
+      const remain=total-done;
+      const pct=total?Math.round(done/total*100):0;
+      const barColor=pct>=80?'#10B981':pct>=50?'#3B82F6':'#F59E0B';
+      html=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:8px 14px;text-align:center;min-width:64px"><div style="font-size:20px;font-weight:700;color:var(--ink)">${total}</div><div style="font-size:10px;color:var(--ink-soft)">ทั้งหมด</div></div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:8px 14px;text-align:center;min-width:64px"><div style="font-size:20px;font-weight:700;color:#10B981">${done}</div><div style="font-size:10px;color:var(--ink-soft)">เสร็จแล้ว</div></div>
+        <div style="background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:8px 14px;text-align:center;min-width:64px"><div style="font-size:20px;font-weight:700;color:#F59E0B">${remain}</div><div style="font-size:10px;color:var(--ink-soft)">คงเหลือ</div></div>
+        ${earliest?`<div style="display:flex;align-items:center;padding:0 8px">${daysChip(earliest)}</div>`:''}
+      </div>
+      ${total?`<div style="background:var(--line-soft);border-radius:8px;height:10px;overflow:hidden;margin-bottom:4px"><div style="width:${pct}%;height:100%;background:${barColor};border-radius:8px;transition:width .6s"></div></div><div style="font-size:11px;color:var(--ink-soft);text-align:right">${pct}%</div>`:''}`;
+    } else if(role==='leader'){
+      const myProjs=assignStats.filter(p=>userProjs.length===0||userProjs.includes(p.project));
+      myProjs.forEach(proj=>{
+        if(!proj.inspectors.length)return;
+        const dl=proj.projectDeadline;
+        html+=`<div style="margin-bottom:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><b style="font-size:13px">${esc(proj.project)}</b>${dl?daysChip(dl):''}</div>`;
+        proj.inspectors.forEach(ins=>{
+          const pct=ins.total?Math.round(ins.done/ins.total*100):0;
+          const barColor=pct>=80?'#10B981':pct>=50?'#3B82F6':'#F59E0B';
+          html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <div style="width:110px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ins.name)}</div>
+            <div style="flex:1;background:var(--line-soft);border-radius:6px;height:14px;overflow:hidden;position:relative"><div style="width:${pct}%;height:100%;background:${barColor};border-radius:6px;transition:width .6s"></div></div>
+            <div style="width:52px;font-size:11px;color:var(--ink-soft);text-align:right">${ins.done}/${ins.total}</div>
+            <div style="width:70px">${ins.earliestTargetDate?daysChip(ins.earliestTargetDate):''}</div>
+          </div>`;
+        });
+        html+=`</div>`;
+      });
+    } else if(role==='admin'||role==='manager'){
+      // Accordion per project
+      assignStats.forEach((proj,pi)=>{
+        if(!proj.inspectors.length)return;
+        const totalP=proj.inspectors.reduce((s,i)=>s+i.total,0);
+        const doneP=proj.inspectors.reduce((s,i)=>s+i.done,0);
+        const pct=totalP?Math.round(doneP/totalP*100):0;
+        const barColor=pct>=80?'#10B981':pct>=50?'#3B82F6':'#F59E0B';
+        const dl=proj.projectDeadline;
+        html+=`<div style="border:1px solid var(--line-soft);border-radius:12px;margin-bottom:8px;overflow:hidden">
+          <div style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--bg)" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.ac-caret').textContent=this.nextElementSibling.style.display==='none'?'▸':'▾'">
+            <span class="ac-caret" style="font-size:13px;color:var(--ink-faint)">▸</span>
+            <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(proj.project)}</div>
+            <div style="background:var(--line-soft);border-radius:4px;height:6px;overflow:hidden;margin-top:4px"><div style="width:${pct}%;height:100%;background:${barColor};border-radius:4px"></div></div></div>
+            <div style="text-align:right;flex:none"><div style="font-size:12px;font-weight:700">${pct}%</div><div style="font-size:10px;color:var(--ink-soft)">${doneP}/${totalP}</div></div>
+            ${dl?`<div style="flex:none">${daysChip(dl)}</div>`:''}
+          </div>
+          <div style="display:none;padding:10px 14px 14px">
+            ${proj.inspectors.map(ins=>{const p2=ins.total?Math.round(ins.done/ins.total*100):0;const bc=p2>=80?'#10B981':p2>=50?'#3B82F6':'#F59E0B';return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+              <div style="width:110px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(ins.name)}</div>
+              <div style="flex:1;background:var(--line-soft);border-radius:6px;height:12px;overflow:hidden"><div style="width:${p2}%;height:100%;background:${bc};border-radius:6px;transition:width .6s"></div></div>
+              <div style="width:52px;font-size:11px;color:var(--ink-soft);text-align:right">${ins.done}/${ins.total}</div>
+              <div style="width:70px">${ins.earliestTargetDate?daysChip(ins.earliestTargetDate):''}</div>
+            </div>`}).join('')}
+          </div>
+        </div>`;
+      });
+    }
+    el.innerHTML=html;
+  });
+}
+
+function renderDashAssign(){
+  const card=$('#assignDashCard'),chart=$('#assignDashChart');
+  if(!card||!chart)return;
+  if(!assignStats.length){card.style.display='none';return;}
+  card.style.display='';
+  const role=AUTH.user?.role||'';
+  const me=AUTH.user?.username||'';
+  const fProj=$('#assignDashFProject');
+  if(fProj){
+    const prev=fProj.value;
+    fProj.innerHTML='<option value="">ทุกโครงการ</option>'+assignStats.map(p=>`<option value="${escAttr(p.project)}">${esc(p.project)}</option>`).join('');
+    if(prev)fProj.value=prev;
+  }
+  const filterProj=fProj?fProj.value:'';
+  let data=filterProj?assignStats.filter(p=>p.project===filterProj):assignStats;
+  if(role==='inspector') data=data.map(p=>({...p,inspectors:p.inspectors.filter(i=>i.username===me)})).filter(p=>p.inspectors.length);
+  if(!data.length){chart.innerHTML='<div class="empty">ไม่มีข้อมูล</div>';return;}
+  // Render horizontal stacked bars per project
+  let html='<div style="display:flex;flex-direction:column;gap:10px">';
+  data.forEach(proj=>{
+    const totalP=proj.inspectors.reduce((s,i)=>s+i.total,0);
+    const doneP=proj.inspectors.reduce((s,i)=>s+i.done,0);
+    const pct=totalP?Math.round(doneP/totalP*100):0;
+    const barColor=pct>=80?'#10B981':pct>=50?'#3B82F6':'#F59E0B';
+    const dl=proj.projectDeadline;
+    html+=`<div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px">
+        <span style="font-size:12px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(proj.project)}</span>
+        <span style="font-size:11px;color:var(--ink-soft);white-space:nowrap">${doneP}/${totalP}</span>
+        ${dl?daysChip(dl):''}
+      </div>
+      <div style="background:var(--line-soft);border-radius:8px;height:16px;overflow:hidden;position:relative">
+        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:8px;transition:width .6s;display:flex;align-items:center;justify-content:flex-end;padding-right:4px">
+          ${pct>=20?`<span style="font-size:10px;color:#fff;font-weight:600">${pct}%</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  chart.innerHTML=html;
+}
+
 function deadlineLabel(deadline){if(!deadline)return '<span style="color:var(--ink-faint)">ยังไม่ได้ตั้ง</span>';const d=new Date(deadline),now=new Date();now.setHours(0,0,0,0);const diff=Math.ceil((d-now)/(1000*60*60*24));const fmt=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()+543}`;if(diff<0)return `<span class="deadline-over">⚠ เลยกำหนด ${Math.abs(diff)} วัน (${fmt})</span>`;if(diff<=7)return `<span class="deadline-warn">⏰ เหลือ ${diff} วัน (${fmt})</span>`;return `<span class="deadline-ok">✅ ${fmt} (เหลือ ${diff} วัน)</span>`;}
 function renderLeaderDashboard(){const role=(AUTH.user&&AUTH.user.role)||'';const sec=$('#leaderDashSection');if(!sec)return;if(role!=='leader'){sec.style.display='none';return;}if(!progressCache.length){sec.style.display='none';return;}sec.style.display='';const list=progressCache;const totalAll=list.reduce((a,p)=>a+p.total,0);const doneAll=list.reduce((a,p)=>a+p.done,0);const pctAll=totalAll?Math.round(doneAll/totalAll*100):0;if($('#leaderDonutPct'))$('#leaderDonutPct').textContent=pctAll+'%';const svg=$('#leaderDonutSvg');const cx=100,cy=100,R=80,r=52;let startAngle=-Math.PI/2,paths='';list.forEach((p,i)=>{const frac=totalAll?p.total/totalAll:1/list.length;const angle=frac*2*Math.PI;const endAngle=startAngle+angle;const x1=cx+R*Math.cos(startAngle),y1=cy+R*Math.sin(startAngle);const x2=cx+R*Math.cos(endAngle),y2=cy+R*Math.sin(endAngle);const ix1=cx+r*Math.cos(startAngle),iy1=cy+r*Math.sin(startAngle);const ix2=cx+r*Math.cos(endAngle),iy2=cy+r*Math.sin(endAngle);const large=angle>Math.PI?1:0;const color=DONUT_COLORS[i%DONUT_COLORS.length];const pct=p.total?Math.round(p.done/p.total*100):0;paths+=`<path class="donut-seg" d="M${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} L${ix2.toFixed(2)},${iy2.toFixed(2)} A${r},${r} 0 ${large},0 ${ix1.toFixed(2)},${iy1.toFixed(2)} Z" fill="${color}" data-proj="${escAttr(p.project)}"><title>${esc(p.project)}: ${p.done}/${p.total} (${pct}%)</title></path>`;startAngle=endAngle;});svg.innerHTML=paths;svg.querySelectorAll('.donut-seg').forEach(seg=>seg.addEventListener('click',()=>openProjDetail(seg.dataset.proj)));$('#leaderDonutList').innerHTML=list.map((p,i)=>{const pct=p.total?Math.round(p.done/p.total*100):0;const color=DONUT_COLORS[i%DONUT_COLORS.length];const t=getTargetForProject(p.project);return `<div class="proj-item" onclick="openProjDetail('${escAttr(p.project)}')"><div class="proj-dot" style="background:${color}"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${esc(p.project)}</div><div class="proj-bar-track" style="margin:4px 0"><div class="proj-bar-fill" style="width:${pct}%;background:${color}"></div></div><div style="font-size:11px">${p.done}/${p.total} (${pct}%)</div><div style="font-size:11px;margin-top:2px">${t?deadlineLabel(t.deadline):'<span style="color:var(--ink-faint)">ยังไม่ได้ตั้ง target</span>'}</div></div></div>`;}).join('');if($('#leaderDonutLegend'))$('#leaderDonutLegend').textContent=`${list.length} โครงการ · ${doneAll}/${totalAll} รายการ`;}
 
@@ -2019,6 +2151,10 @@ function updateAssignBtn(){
   if(btn)btn.style.display=canAssign()?'':'none';
   const btn2=$('#surveyAssignWorkBtn');
   if(btn2)btn2.style.display=canAssign()?'':'none';
+  const tBtn=$('#setProjectTargetBtn');
+  if(tBtn)tBtn.style.display=canAssign()?'':'none';
+  const tBtn2=$('#surveySetProjectTargetBtn');
+  if(tBtn2)tBtn2.style.display=canAssign()?'':'none';
 }
 
 // ── Show assign modal ──
@@ -2067,9 +2203,64 @@ function showAssignModal(){
   document.querySelector('input[name="awScope"][value="project"]').checked=true;
   awScopeChange();
   $('#awNote').value='';
+  const td=$('#awTargetDate');if(td)td.value='';
+  const hint=$('#awTargetHint');if(hint)hint.innerHTML='';
 }
 
 function refreshAssigneeList(){}  // no-op: options are live via upgradeToCombo getOptionsFn
+
+// ── Project Target Modal ──
+function showProjectTargetModal(presetProject){
+  const modal=$('#projectTargetModal');if(!modal)return;
+  modal.style.display='flex';
+  upgradeToCombo('ptProject',()=>{
+    const role=AUTH.user?.role||'';
+    const ups=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    let projs=uniq(master.map(m=>m.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    if(role==='leader'&&ups.length)projs=projs.filter(p=>ups.includes(p));
+    return projs;
+  });
+  if(presetProject){
+    const inp=$('#ptProject');if(inp)inp.value=presetProject;
+    inp?.dispatchEvent(new Event('change',{bubbles:true}));
+  } else {
+    const inp=$('#ptProject');if(inp)inp.value='';
+  }
+  $('#ptDeadline').value='';
+  $('#ptNote').value='';
+  const info=$('#ptCurrentInfo');if(info)info.style.display='none';
+  // show current if project already selected
+  if(presetProject)_ptUpdateCurrentInfo(presetProject);
+}
+function _ptUpdateCurrentInfo(proj){
+  const info=$('#ptCurrentInfo');if(!info)return;
+  const dl=getProjectDeadline(proj);
+  if(dl){
+    const dInp=$('#ptDeadline');if(dInp)dInp.value=dl;
+    const existing=targetsCache.find(t=>t.project===proj&&t.username==='__project__');
+    if(existing&&existing.note&&$('#ptNote'))$('#ptNote').value=existing.note;
+    info.style.display='';
+    info.innerHTML=`<div style="font-size:11px;color:var(--ink-soft);margin-top:6px">deadline ปัจจุบัน: <b>${dl}</b></div>`;
+  } else {
+    info.style.display='none';
+  }
+}
+async function saveProjectTarget(){
+  const proj=$('#ptProject').value.trim();
+  const deadline=$('#ptDeadline').value;
+  const note=$('#ptNote').value.trim();
+  if(!proj){toast('กรุณาเลือกโครงการ',false);return;}
+  if(!deadline){toast('กรุณาเลือกวันที่',false);return;}
+  const r=await api(ACT.saveTarget,{project:proj,username:'__project__',deadline,note});
+  if(r&&r.ok){
+    toast('บันทึก Target โครงการแล้ว',true);
+    await loadTargets();
+    await loadAssignStats();
+    $('#projectTargetModal').style.display='none';
+  } else {
+    toast((r&&r.message)||'เกิดข้อผิดพลาด',false);
+  }
+}
 
 function awScopeChange(){
   const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
@@ -2111,6 +2302,9 @@ async function saveAssignment(){
   const resolvedAssignee=validUser?validUser.username:assignee;
   const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
   const note=$('#awNote').value.trim();
+  const targetDate=$('#awTargetDate')?.value||'';
+  const projDL=getProjectDeadline(proj);
+  if(targetDate&&projDL&&targetDate>projDL){toast('วันที่ต้องเสร็จต้องไม่เกิน deadline โครงการ ('+projDL+')',false);return;}
   const by=AUTH.user?.username||'';
   let newItems=[];
   if(scope==='missing'){
@@ -2119,11 +2313,11 @@ async function saveAssignment(){
     chks.forEach(c=>{
       const m=master.find(x=>x.id===c.dataset.id);if(!m)return;
       const mf=[!m.brand&&'brand',!m.model&&'model',!m.serial&&'serial'].filter(Boolean);
-      newItems.push({id:uid(),project:proj,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
+      newItems.push({id:uid(),project:proj,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate});
     });
   } else {
     const locName=$('#awLoc').value||'';const subName=$('#awSub').value||'';const equipment=$('#awEquip').value||'';
-    newItems.push({id:uid(),project:proj,scopeType:scope,locName,subName,equipment,masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
+    newItems.push({id:uid(),project:proj,scopeType:scope,locName,subName,equipment,masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate});
   }
   assignments.push(...newItems);
   await sSet(ASSIGN_KEY,JSON.stringify(assignments));
@@ -2191,7 +2385,11 @@ $('#assignModalClose')?.addEventListener('click',()=>$('#assignModal').style.dis
 $('#awCancelBtn')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#assignModal')?.addEventListener('click',e=>{if(e.target===$('#assignModal'))$('#assignModal').style.display='none';});
 document.addEventListener('change',e=>{
-  if(e.target.id==='awProject'){_awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');renderMissingTable();}
+  if(e.target.id==='awProject'){
+    _awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');renderMissingTable();
+    const dl=getProjectDeadline(e.target.value);
+    const hint=$('#awTargetHint');if(hint)hint.innerHTML=dl?`📅 deadline โครงการ: <b>${dl}</b>`:'';
+  }
   if(e.target.id==='awLoc'){_awClearComboVal('awSub');_awClearComboVal('awEquip');}
   if(e.target.id==='awSub'){_awClearComboVal('awEquip');}
 });
@@ -2212,6 +2410,15 @@ $('#surveyExportAssignBtn')?.addEventListener('click',exportAssignData);
 $('#surveyAssignToggle')?.addEventListener('click',()=>{
   const l=$('#surveyAssignList');if(l)l.style.display=l.style.display==='none'?'flex':'none';
 });
+
+// ── Project Target Modal events ──
+$('#setProjectTargetBtn')?.addEventListener('click',()=>showProjectTargetModal());
+$('#surveySetProjectTargetBtn')?.addEventListener('click',()=>showProjectTargetModal());
+$('#ptSaveBtn')?.addEventListener('click',saveProjectTarget);
+$('#ptCancelBtn')?.addEventListener('click',()=>$('#projectTargetModal').style.display='none');
+$('#ptModalClose')?.addEventListener('click',()=>$('#projectTargetModal').style.display='none');
+$('#projectTargetModal')?.addEventListener('click',e=>{if(e.target===$('#projectTargetModal'))$('#projectTargetModal').style.display='none';});
+document.addEventListener('change',e=>{if(e.target.id==='ptProject')_ptUpdateCurrentInfo(e.target.value);});
 
 // ── Import from survey ──
 async function importFromSurvey(){

@@ -129,6 +129,13 @@
     <div class="dc-head"><b>อุปกรณ์ที่อัปโหลดรายวัน</b><span id="dayRangeLbl" style="font-size:12px;color:var(--ink-soft)">14 วันล่าสุด</span></div>
     <div id="chartDaily"></div>
   </div>
+  <div class="dash-card" id="assignDashCard" style="display:none;margin-bottom:14px">
+    <div class="dc-head">
+      <b>📋 ความคืบหน้างาน Assign</b>
+      <select id="assignDashFProject" class="tin" style="width:auto;min-width:160px;font-size:12px;padding:6px 10px"><option value="">ทุกโครงการ</option></select>
+    </div>
+    <div id="assignDashChart" style="margin-top:10px"></div>
+  </div>
   <div style="text-align:center;margin-top:6px"><button class="btn btn-soft" id="dashRefresh">↻ รีเฟรชข้อมูล</button></div>
 </section>
 
@@ -203,11 +210,13 @@
         <b>📋 งานที่ได้รับมอบหมาย <span class="pill" id="assignPill">0</span></b>
         <div style="display:flex;gap:8px;align-items:center">
           <button class="btn btn-soft" id="exportAssignBtn" style="font-size:12px;padding:6px 12px">⬇ ส่งออก Excel</button>
+          <button class="btn btn-soft" id="setProjectTargetBtn" style="font-size:12px;padding:6px 12px;display:none">📅 Target</button>
           <button class="btn btn-primary" id="assignWorkBtn" style="font-size:12px;padding:6px 14px;display:none">＋ มอบหมายงาน</button>
           <button id="assignSectionToggle" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-soft)" title="แสดง/ซ่อน">▾</button>
         </div>
       </div>
-      <div id="myAssignmentsList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
+      <div id="assignStatsPanel" style="margin-top:12px"></div>
+      <div id="myAssignmentsList" style="display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
     </div>
   </div>
   <div class="saved-tools flt-toolbar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
@@ -239,11 +248,13 @@
         <b>📋 งานที่ได้รับมอบหมาย <span class="pill" id="surveyAssignPill">0</span></b>
         <div style="display:flex;gap:8px;align-items:center">
           <button class="btn btn-soft" id="surveyExportAssignBtn" style="font-size:12px;padding:6px 12px">⬇ ส่งออก Excel</button>
+          <button class="btn btn-soft" id="surveySetProjectTargetBtn" style="font-size:12px;padding:6px 12px;display:none">📅 Target</button>
           <button class="btn btn-primary" id="surveyAssignWorkBtn" style="font-size:12px;padding:6px 14px;display:none">＋ มอบหมายงาน</button>
           <button id="surveyAssignToggle" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-soft)" title="แสดง/ซ่อน">▾</button>
         </div>
       </div>
-      <div id="surveyAssignList" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
+      <div id="surveyAssignStatsPanel" style="margin-top:12px"></div>
+      <div id="surveyAssignList" style="display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
     </div>
   </div>
   <div class="flt-toolbar" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
@@ -552,10 +563,44 @@
         </div>
       </div>
       <div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">หมายเหตุ</label><input type="text" class="tin" id="awNote" placeholder="หมายเหตุ (ถ้ามี)" style="width:100%"></div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">วันที่ต้องเสร็จ <span style="font-weight:400;color:var(--ink-faint)">(ไม่บังคับ)</span></label>
+        <input type="date" class="tin" id="awTargetDate" style="width:100%">
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:3px" id="awTargetHint"></div>
+      </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-soft" id="awCancelBtn">ยกเลิก</button>
       <button class="btn btn-primary" id="awSaveBtn">มอบหมายงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PROJECT TARGET MODAL ══════ -->
+<div id="projectTargetModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(20,26,34,.5);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border-radius:18px;max-width:420px;width:100%;padding:28px;box-shadow:0 8px 40px rgba(0,0,0,.2);position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-size:17px;font-weight:700;color:var(--ink)">📅 กำหนด Target โครงการ</div>
+      <button id="ptModalClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-faint)">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">โครงการ *</label>
+        <input type="text" class="tin" id="ptProject" placeholder="พิมพ์หรือเลือกโครงการ…" autocomplete="off" style="width:100%">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">วันที่ต้องเสร็จ *</label>
+        <input type="date" class="tin" id="ptDeadline" style="width:100%">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">หมายเหตุ</label>
+        <input type="text" class="tin" id="ptNote" placeholder="หมายเหตุ (ถ้ามี)" style="width:100%">
+      </div>
+      <div id="ptCurrentInfo" style="font-size:12px;color:var(--ink-soft);background:var(--bg);border-radius:8px;padding:8px 12px;display:none"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-soft" id="ptCancelBtn">ยกเลิก</button>
+      <button class="btn btn-primary" id="ptSaveBtn">บันทึก Target</button>
     </div>
   </div>
 </div>
