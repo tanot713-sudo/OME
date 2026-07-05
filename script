@@ -1,4 +1,4 @@
-<script>
+﻿<script>
 
 /* ══════════════════════════════════════════════════════════
    LOGO MANAGER
@@ -54,7 +54,7 @@ function confirmDlg(message, okLabel, onOk){
     dlg = document.createElement('div');
     dlg.id = 'confirmDlg';
     dlg.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(20,26,34,.55);display:none;align-items:center;justify-content:center;padding:20px';
-    dlg.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:24px;box-shadow:0 12px 40px rgba(20,26,34,.18)">
+    dlg.innerHTML = `<div style="background:var(--surface);border-radius:16px;max-width:360px;width:100%;padding:24px;box-shadow:0 12px 40px rgba(20,26,34,.18)">
       <div id="confirmDlgMsg" style="font-size:15px;color:#161B22;margin-bottom:20px;line-height:1.5"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end">
         <button id="confirmDlgCancel" style="flex:1;padding:10px;border-radius:8px;background:#EBEEF2;color:#5B6573;font-weight:600;font-size:14px;cursor:pointer;border:none">ยกเลิก</button>
@@ -82,8 +82,10 @@ const ACT = {
   login:'login', verifyToken:'verifyToken', pdpaStatus:'getPdpaStatus', pdpaAccept:'acceptPdpa',
   createRecord:'createRecord', listRecords:'listRecords', deleteRecord:'deleteRecord',
   createUser:'createUser', bulkCreateUsers:'bulkCreateUsers', listUsers:'listUsers',
-  saveMaster:'saveMaster', listMaster:'listMaster', getProgress:'getProgress'
+  saveMaster:'saveMaster', listMaster:'listMaster', getProgress:'getProgress',
+  saveAssignment:'saveAssignment', listAssignments:'listAssignments', completeAssignment:'completeAssignment'
 };
+const ASSIGN_KEY='amr_assignments';
 const TOKEN_KEY='amr_token', USER_KEY='amr_user';
 let AUTH = { token:null, user:null };
 let _clientIP = '';
@@ -152,7 +154,7 @@ function doLogout(){clearSession();$('#userChip').style.display='none';$('#authU
 async function afterLogin(){
   await checkPdpa();await loadAll();await loadMasterFromBackend();
   await Promise.all([
-    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),
+    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),loadAssignments(),
     ...(AUTH.user?.role==='admin' ? [loadPagePerms()] : [])
   ]);
 }
@@ -165,6 +167,7 @@ function paintUser(){
   $('#uAvatar').textContent=(name.trim()[0]||'?').toUpperCase();
   $('#userChip').style.display='flex';
   applyRoleVisibility();
+  updateAssignBtn();
 }
 // ดูสิทธิ์หน้า/ฟีเจอร์จาก pagePerms ที่ admin ตั้งไว้ (ได้มาตอน login) — admin เห็น/ทำได้ทุกอย่างเสมอ
 function hasPagePerm(page){
@@ -268,7 +271,7 @@ const MASTER_KEY='master';
 const LEVELS=['project','system','typeloc','loc','sub','equip','serial'];
 const PROP={project:'project',system:'system',typeloc:'typeLocation',loc:'locName',sub:'subName',equip:'equipment',serial:'serial'};
 const LABEL={project:'โครงการ',system:'ระบบ',typeloc:'ประเภทสถานที่',loc:'สถานที่',sub:'สถานที่ย่อย',equip:'อุปกรณ์',serial:'Serial Number'};
-let master=[],entries=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
+let master=[],entries=[],assignments=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
 const sel={project:'',system:'',loc:'',sub:'',equip:'',serial:''};
 const combos={};
 const INSP_SEED=['สมชาย ใจดี','สมหญิง รักงาน'];
@@ -608,6 +611,7 @@ function renderMaster(){
   body.querySelectorAll('tr').forEach(tr=>{const id=tr.dataset.id;const be=tr.querySelector('[data-act="edit"]');if(be)be.onclick=()=>editMaster(id);const bd=tr.querySelector('[data-act="del"]');if(bd)bd.onclick=()=>delMaster(id);});
 }
 $('#addMasterBtn').addEventListener('click',()=>editMaster(null));
+$('#bulkDelMasterBtn')?.addEventListener('click',bulkDeleteMaster);
 function editMaster(id){
   const m=id?master.find(x=>x.id===id):{project:'',system:'',typeLocation:'',locName:'',subName:'',equipment:'',brand:'',model:'',asset:'',serial:'',order:''};
   if(!m)return;
@@ -628,7 +632,7 @@ function editMaster(id){
       <label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px">${label}${req?' <span style="color:#E2231A">*</span>':''}</label>
       <input class="tin mfield" data-k="${k}" value="${escAttr(m[k]||'')}" style="width:100%" placeholder="${label}" autocomplete="off">
     </div>`).join('');
-  dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:520px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
+  dlg.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:520px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
     <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">${id?'แก้ไขอุปกรณ์':'เพิ่มอุปกรณ์'}</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">แก้ได้เฉพาะช่องที่ต้องการ · พิมพ์แล้วเลือกจากค่าที่มีอยู่ของโครงการเดียวกันได้เลย</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px">${fields}</div>
@@ -673,6 +677,58 @@ function editMaster(id){
   };
 }
 function delMaster(id){if(!confirm('ลบอุปกรณ์นี้?'))return;master=master.filter(x=>x.id!==id);persistMaster();toast('ลบแล้ว',true);}
+function bulkDeleteMaster(){
+  const q=$('#masterSearch')?$('#masterSearch').value.trim().toLowerCase():'';
+  const fp=$('#masterFProject')?$('#masterFProject').value:'';
+  const fs=$('#masterFSystem')?$('#masterFSystem').value:'';
+  const fl=$('#masterFLoc')?$('#masterFLoc').value:'';
+  const fsub=$('#masterFSub')?$('#masterFSub').value:'';
+  const feq=$('#masterFEquip')?$('#masterFEquip').value:'';
+  if(!q&&!fp&&!fs&&!fl&&!fsub&&!feq){toast('กรุณาตั้งเงื่อนไขอย่างน้อย 1 ข้อก่อนลบ',false);return;}
+  let list=master.filter(m=>!q||[m.project,m.system,m.typeLocation,m.locName,m.subName,m.equipment,m.brand,m.model,m.asset,m.serial].join(' ').toLowerCase().includes(q));
+  if(fp)list=list.filter(m=>m.project===fp);
+  if(fs)list=list.filter(m=>m.system===fs);
+  if(fl)list=list.filter(m=>m.locName===fl);
+  if(fsub)list=list.filter(m=>m.subName===fsub);
+  if(feq)list=list.filter(m=>m.equipment===feq);
+  if(!list.length){toast('ไม่มีรายการที่ตรงเงื่อนไข',false);return;}
+  // build criteria label for dialog
+  const parts=[];
+  if(fp)parts.push('โครงการ: '+fp);
+  if(fs)parts.push('ระบบ: '+fs);
+  if(fl)parts.push('สถานที่: '+fl);
+  if(fsub)parts.push('สถานที่ย่อย: '+fsub);
+  if(feq)parts.push('อุปกรณ์: '+feq);
+  if(q)parts.push('ค้นหา: "'+q+'"');
+  const criteriaHtml=parts.map(p=>'<div style="color:#EF4444;font-weight:600;font-size:14px">'+esc(p)+'</div>').join('');
+  showConfirmDialog(
+    'ยืนยันการลบข้อมูล',
+    criteriaHtml+
+    '<div style="margin-top:10px;font-size:14px;color:#374151">จะลบ <b>'+list.length+' รายการ</b> ออกจากระบบถาวร<br><span style="color:#9CA3AF;font-size:13px">ไม่สามารถกู้คืนได้</span></div>',
+    ()=>{
+      const ids=new Set(list.map(m=>m.id));
+      master=master.filter(m=>!ids.has(m.id));
+      persistMaster();
+      toast('ลบ '+list.length+' รายการแล้ว',true);
+    }
+  );
+}
+function showConfirmDialog(title,bodyHtml,onOk){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(20,26,34,.45);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML=`<div style="background:var(--surface);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);width:100%;max-width:400px;padding:28px 28px 22px">
+    <div style="font-size:17px;font-weight:700;color:#111827;margin-bottom:14px">${esc(title)}</div>
+    <div style="margin-bottom:20px;line-height:1.6">${bodyHtml}</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button id="_cdCancel" style="padding:9px 22px;border-radius:9px;border:1px solid #D1D5DB;background:var(--surface);color:#374151;font-size:14px;cursor:pointer;font-weight:500">ยกเลิก</button>
+      <button id="_cdOk" style="padding:9px 22px;border-radius:9px;border:none;background:#EF4444;color:#fff;font-size:14px;cursor:pointer;font-weight:600">ลบ</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#_cdCancel').onclick=()=>ov.remove();
+  ov.querySelector('#_cdOk').onclick=()=>{ov.remove();onOk();};
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+}
 async function persistMaster(){await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();if(combos.project)setDisabledStates();if(AUTH.token&&AUTH.user&&AUTH.user.role==='admin'){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));api(ACT.saveMaster,{master:payload}).then(r=>{if(!(r&&r.ok))console.warn('saveMaster failed',r);});}}
 async function loadMasterFromBackend(){if(!AUTH.token)return;const r=await api(ACT.listMaster,{});if(r&&r.ok&&Array.isArray(r.master)){if(r.master.length){const ns=s=>String(s||'').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();master=r.master.map(m=>({id:m.id,project:ns(m.project),system:ns(m.system),typeLocation:ns(m.typeLocation),locName:ns(m.location),subName:ns(m.sublocation),equipment:ns(m.equipment),brand:ns(m.brand),model:ns(m.model),asset:ns(m.asset),serial:ns(m.serial),order:m.order||''}));await sSet(MASTER_KEY,JSON.stringify(master));refreshDerived();renderMaster();}else if(AUTH.user&&AUTH.user.role==='admin'&&master.length){const payload=master.map(m=>({id:m.id,project:m.project,system:m.system,typeLocation:m.typeLocation,location:m.locName,sublocation:m.subName,equipment:m.equipment,brand:m.brand,model:m.model,asset:m.asset,serial:m.serial,order:m.order||''}));await api(ACT.saveMaster,{master:payload});}}}
 
@@ -866,7 +922,6 @@ async function generateWordTemplate(){
       const CELL_DXA_HALF=CONTENT_DXA/2, CELL_DXA_FULL=CONTENT_DXA; // ครึ่งหน้า/เต็มหน้า เป็น twips (1/20pt) พอดีความกว้างเนื้อหาจริง (A4 - margin) — เกินแล้ว Google Docs จะเลื่อนตารางออกนอกจอ
       const cellFor=(slot,wide)=>new TableCell({borders:noBorders(),columnSpan:wide?2:1,width:{size:wide?CELL_DXA_FULL:CELL_DXA_HALF,type:WidthType.DXA},children:[
         new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:slot.buf,transformation:{width:wide?420:300,height:wide?315:225}})]}),
-        new Paragraph({alignment:AlignmentType.CENTER,children:[T(slot.cap,{size:18,color:GREY})]})
       ]});
       // มีรูปเท่าไหร่แสดงเท่านั้น — ไม่เติมช่องว่างแทนรูปที่ไม่มี (ตามตัวอย่างจริง)
       const rows=[];
@@ -905,7 +960,7 @@ async function generateWordTemplate(){
       for(let li=0;li<locNames.length;li++){
         const lname=locNames[li];const litems=sortItemsByOrder(locGroups[lname]);
         bodyKids.push(P(T(`${ti+1}.${li+1} ${lname}`,{size:30,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_2,align:AlignmentType.CENTER}));
-        bodyKids.push(P(T(`จำนวน ${litems.length} รายการ`,{size:26,color:GREY})));
+        bodyKids.push(new Paragraph({}));
         for(let i=0;i<litems.length;i++) await pushEquipmentBlock(litems[i], i+1);
       }
     }
@@ -916,7 +971,7 @@ async function generateWordTemplate(){
     for(let gi=0;gi<groupNames.length;gi++){
       const gname=groupNames[gi];const items=sortItemsByOrder(groups[gname]);
       bodyKids.push(P(T(`${gi+1}. ${gname}`,{size:30,bold:true,color:DARK}),{heading:HeadingLevel.HEADING_2}));
-      bodyKids.push(P(T(`จำนวน ${items.length} รายการ`,{size:26,color:GREY})));
+      bodyKids.push(new Paragraph({}));
       for(let i=0;i<items.length;i++) await pushEquipmentBlock(items[i], i+1);
     }
   }
@@ -934,11 +989,15 @@ async function generateWordTemplate(){
   ]});
   // เพิ่ม paragraph เปล่า 1 บรรทัดต่อจากตาราง header กันเนื้อหาหน้าถัดไปดูติดกับหัวกระดาษเกินไป
   const header=new Header({children:[new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[HDR_DXA_LOGO,HDR_DXA_TEXT],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({children:[hdrLeft,hdrRight]})]}),new Paragraph({})]});
-  const footer=new Footer({children:[new Paragraph({tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],children:[
-    T(`ชื่อรายงาน : ${reportName}`,{size:22}),
-    new TextRun({text:'\t',font:FONT}),
-    new TextRun({children:['หน้าที่ ',PageNumber.CURRENT,' of ',PageNumber.TOTAL_PAGES],font:FONT,size:22})
-  ]})]});
+  const footer=new Footer({children:[new Table({width:{size:CONTENT_DXA,type:WidthType.DXA},columnWidths:[Math.round(CONTENT_DXA*0.7),Math.round(CONTENT_DXA*0.3)],layout:TableLayoutType.FIXED,borders:noBorders(),rows:[new TableRow({children:[
+    new TableCell({borders:noBorders(),width:{size:Math.round(CONTENT_DXA*0.7),type:WidthType.DXA},children:[new Paragraph({children:[T(`ชื่อรายงาน : ${reportName}`,{size:22})]})]}),
+    new TableCell({borders:noBorders(),width:{size:Math.round(CONTENT_DXA*0.3),type:WidthType.DXA},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[
+      new TextRun({text:'หน้าที่ ',font:FONT,size:22}),
+      new TextRun({children:[PageNumber.CURRENT],font:FONT,size:22}),
+      new TextRun({text:' of ',font:FONT,size:22}),
+      new TextRun({children:[PageNumber.TOTAL_PAGES],font:FONT,size:22})
+    ]})]})
+  ]})]})]})
 
   setWgProgress(92,'กำลังบีบอัดไฟล์...');
   const doc=new Document({styles:{default:{document:{run:{font:FONT}}}},sections:[
@@ -1272,7 +1331,7 @@ function openPdfReportDialog(list){
     dlg=document.createElement('div');
     dlg.id='pdfReportDlg';
     dlg.style.cssText='position:fixed;inset:0;z-index:500;background:rgba(20,26,34,.55);display:flex;align-items:center;justify-content:center;padding:20px';
-    dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:480px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
+    dlg.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:480px;width:100%;padding:24px;box-shadow:var(--shadow-lift);max-height:90vh;overflow:auto">
       <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">สร้างรายงาน PDF</h3>
       <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">ใช้รายการที่กรองอยู่ในตารางตอนนี้ (<span id="pdfDlgCount">0</span> รายการ) · พิมพ์แล้วเลือกจากค่าที่เคยกรอกไว้ได้เลย</div>
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -1541,7 +1600,7 @@ function openEditUser(username){
     d.id='editUserDlg';
     d.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(20,26,34,.6);display:none;align-items:center;justify-content:center;padding:16px';
     const projectOptions=uniq([...master.map(m=>m.project),...(window._userList||[]).map(x=>x.project)]).filter(Boolean);
-    d.innerHTML=`<div style="background:#fff;border-radius:18px;padding:28px;width:400px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+    d.innerHTML=`<div style="background:var(--surface);border-radius:18px;padding:28px;width:400px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,.18)">
       <h3 style="margin:0 0 18px;font-size:17px;font-weight:700">✏️ แก้ไขผู้ใช้</h3>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div><label style="font-size:12px;font-weight:600;color:#6B7C93;display:block;margin-bottom:4px">Username</label>
@@ -1720,7 +1779,7 @@ if($('#tmplAddBtn')) $('#tmplAddBtn').addEventListener('click', ()=>{
   if(!dlg){
     dlg=document.createElement('div');dlg.id='tmplAddDlg';
     dlg.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(20,26,34,.45);display:flex;align-items:center;justify-content:center;padding:20px';
-    dlg.innerHTML=`<div style="background:#fff;border-radius:16px;width:100%;max-width:460px;padding:28px 28px 22px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+    dlg.innerHTML=`<div style="background:var(--surface);border-radius:16px;width:100%;max-width:460px;padding:28px 28px 22px;box-shadow:0 8px 40px rgba(0,0,0,.18)">
       <div style="font-size:17px;font-weight:700;margin-bottom:18px">เพิ่ม Report Template</div>
       <div style="margin-bottom:14px">
         <label style="font-size:12px;font-weight:600;display:block;margin-bottom:5px">ชื่อ Template <span style="color:#E2231A">*</span></label>
@@ -1813,7 +1872,7 @@ function openReportInfoBulkDialog(){
     dlg=document.createElement('div');
     dlg.id='reportInfoBulkDlg';
     dlg.style.cssText='position:fixed;inset:0;z-index:500;background:rgba(20,26,34,.55);display:flex;align-items:center;justify-content:center;padding:20px';
-    dlg.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:440px;width:100%;padding:24px;box-shadow:var(--shadow-lift)">
+    dlg.innerHTML=`<div style="background:var(--surface);border-radius:16px;max-width:440px;width:100%;padding:24px;box-shadow:var(--shadow-lift)">
       <h3 style="font-size:17px;font-weight:700;margin-bottom:4px">จัดการข้อมูลสัญญาเป็นชุด</h3>
       <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:16px">อัปโหลด Excel เพื่อเพิ่ม/แก้ไขข้อมูลสัญญาของหลายโครงการพร้อมกัน — ถ้าชื่อโครงการซ้ำกับที่มีอยู่ จะเขียนทับข้อมูลเดิม (เช่น ต่อสัญญาใหม่ เลขที่เก่าจะหายไป) · คอลัมน์โลโก้ลูกค้าต้องเป็น<b>ลิงก์ Google Drive ของรูปภาพ</b> (Share เป็น "Anyone with link" ก่อน)</div>
       <button class="btn btn-soft" id="riOpenLogoFolder" style="width:100%;margin-bottom:10px">📁 เปิดโฟลเดอร์เก็บรูปโลโก้ลูกค้า</button>
@@ -1887,6 +1946,261 @@ if($('#reportInfoBulkBtn'))$('#reportInfoBulkBtn').addEventListener('click',open
     }
   }, 500);
 })();
+
+/* ══════════════════════════════════════════════════════════
+   DARK MODE
+══════════════════════════════════════════════════════════ */
+function applyDark(on){
+  document.documentElement.setAttribute('data-theme',on?'dark':'light');
+  const btn=$('#darkToggleBtn');if(btn)btn.textContent=on?'☀️':'🌙';
+  localStorage.setItem('darkMode',on?'1':'0');
+}
+{const _dm=localStorage.getItem('darkMode');if(_dm==='1')applyDark(true);}
+$('#darkToggleBtn')?.addEventListener('click',()=>applyDark(document.documentElement.getAttribute('data-theme')!=='dark'));
+
+
+/* ══════════════════════════════════════════════════════════
+   ASSIGN WORK
+══════════════════════════════════════════════════════════ */
+async function loadAssignments(){
+  const local=await sGet(ASSIGN_KEY);
+  if(local){try{assignments=JSON.parse(local);}catch(e){assignments=[];}}
+  if(AUTH.token){
+    const r=await api(ACT.listAssignments,{});
+    if(r&&r.ok&&Array.isArray(r.assignments)){
+      assignments=r.assignments;
+      await sSet(ASSIGN_KEY,JSON.stringify(assignments));
+    }
+  }
+  renderMyAssignments();
+}
+
+function canAssign(){
+  const role=AUTH.user?.role||'';
+  return role==='admin'||role==='manager'||role==='leader';
+}
+
+function renderMyAssignments(){
+  const me=AUTH.user?.username||'';
+  const role=AUTH.user?.role||'';
+  const section=$('#myAssignmentsSection');
+  const list=$('#myAssignmentsList');
+  const pill=$('#assignPill');
+  if(!section||!list)return;
+  // Show section for inspectors/leaders who have pending assignments
+  const mine=assignments.filter(a=>a.assignedTo===me&&a.status==='pending');
+  if(mine.length===0&&!canAssign()){section.style.display='none';return;}
+  // Assign button visibility
+  const btn=$('#assignWorkBtn');
+  if(btn)btn.style.display=canAssign()?'':'none';
+  if(mine.length===0){section.style.display='none';if(pill)pill.textContent='0';return;}
+  section.style.display='block';
+  if(pill)pill.textContent=mine.length;
+  list.innerHTML=mine.map(a=>{
+    const scopeLabel=a.scopeType==='project'?a.project
+      :a.scopeType==='loc'?a.locName
+      :a.scopeType==='sub'?(a.locName+' › '+a.subName)
+      :a.scopeType==='equip'?(a.subName+' › '+a.equipment)
+      :('กรอกข้อมูลขาด: '+(a.equipment||''));
+    return `<div class="assign-card">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">${esc(scopeLabel)}</div>
+        <div style="font-size:12px;color:var(--ink-soft)">โครงการ: ${esc(a.project)}${a.note?' · '+esc(a.note):''}</div>
+        <div style="font-size:11px;color:var(--ink-faint);margin-top:2px">มอบหมายโดย ${esc(a.assignedBy)} · ${fmtDate(a.createdAt)}</div>
+      </div>
+      <span class="assign-badge-pending">รอดำเนินการ</span>
+      ${a.scopeType==='missing'?`<button onclick="openFillData('${a.id}')" style="padding:7px 14px;border-radius:8px;border:none;background:#6366F1;color:#fff;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap">กรอกข้อมูล</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── Assign button visibility after login ──
+function updateAssignBtn(){
+  const btn=$('#assignWorkBtn');
+  if(btn)btn.style.display=canAssign()?'':'none';
+}
+
+// ── Show assign modal ──
+function showAssignModal(){
+  const modal=$('#assignModal');if(!modal)return;
+  modal.style.display='flex';
+  // Populate project dropdown based on role
+  const awProj=$('#awProject');
+  awProj.innerHTML='<option value="">— เลือกโครงการ —</option>';
+  const role=AUTH.user?.role||'';
+  const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+  let projs=uniq(master.map(m=>m.project)).sort((a,b)=>a.localeCompare(b,'th'));
+  if((role==='leader')&&userProjs.length)projs=projs.filter(p=>userProjs.includes(p));
+  projs.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;awProj.appendChild(o);});
+  // Populate assignee dropdown
+  refreshAssigneeList();
+  // Reset scope
+  document.querySelector('input[name="awScope"][value="project"]').checked=true;
+  awScopeChange();
+  $('#awNote').value='';
+}
+
+function refreshAssigneeList(proj){
+  const role=AUTH.user?.role||'';
+  const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+  const sel=$('#awAssignee');
+  sel.innerHTML='<option value="">— เลือกผู้รับงาน —</option>';
+  const targetRoles=role==='admin'||role==='manager'?['leader','inspector']:['inspector'];
+  let users=usersCache.filter(u=>targetRoles.includes(u.role)&&u.active!=='false'&&u.active!==false);
+  if(role==='leader'&&userProjs.length)users=users.filter(u=>(u.project||'').split(',').map(p=>p.trim()).some(p=>userProjs.includes(p)));
+  const filterProj=proj||$('#awProject')?.value;
+  if(filterProj)users=users.filter(u=>!u.project||(u.project||'').split(',').map(p=>p.trim()).includes(filterProj));
+  users.forEach(u=>{const o=document.createElement('option');o.value=u.username;o.textContent=(u.name||u.username)+' ('+u.role+')';sel.appendChild(o);});
+}
+
+function awScopeChange(){
+  const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
+  $('#awLocRow').style.display=(scope==='loc'||scope==='sub'||scope==='equip')?'block':'none';
+  $('#awSubRow').style.display=(scope==='sub'||scope==='equip')?'block':'none';
+  $('#awEquipRow').style.display=(scope==='equip')?'block':'none';
+  $('#awMissingRow').style.display=(scope==='missing')?'block':'none';
+  if(scope==='missing')renderMissingTable();
+  if(scope==='loc'||scope==='sub'||scope==='equip')refreshAwCascade();
+}
+
+function refreshAwCascade(){
+  const proj=$('#awProject').value;
+  const locSel=$('#awLoc');const subSel=$('#awSub');const equipSel=$('#awEquip');
+  let rows=master.filter(m=>m.project===proj);
+  // Locs
+  const locs=uniq(rows.map(m=>m.locName)).sort((a,b)=>a.localeCompare(b,'th'));
+  locSel.innerHTML='<option value="">— เลือกสถานที่ —</option>';
+  locs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;locSel.appendChild(o);});
+  // Sub
+  const loc=locSel.value;
+  const subs=uniq(rows.filter(m=>!loc||m.locName===loc).map(m=>m.subName)).sort((a,b)=>a.localeCompare(b,'th'));
+  subSel.innerHTML='<option value="">— เลือกสถานที่ย่อย —</option>';
+  subs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;subSel.appendChild(o);});
+  // Equip
+  const sub=subSel.value;
+  const equips=uniq(rows.filter(m=>(!loc||m.locName===loc)&&(!sub||m.subName===sub)).map(m=>m.equipment)).sort((a,b)=>a.localeCompare(b,'th'));
+  equipSel.innerHTML='<option value="">— เลือกอุปกรณ์ —</option>';
+  equips.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;equipSel.appendChild(o);});
+}
+
+function renderMissingTable(){
+  const proj=$('#awProject').value;
+  const rows=master.filter(m=>(!proj||m.project===proj)&&(!m.brand||!m.model||!m.serial));
+  const body=$('#awMissingBody');
+  const count=$('#awMissingCount');
+  if(count)count.textContent='('+rows.length+' รายการ)';
+  body.innerHTML=rows.map(m=>{
+    const missing=[!m.brand&&'ยี่ห้อ',!m.model&&'รุ่น',!m.serial&&'Serial'].filter(Boolean).join(', ');
+    return `<tr>
+      <td style="padding:6px 10px"><input type="checkbox" class="aw-missing-chk" data-id="${m.id}"></td>
+      <td style="padding:6px 8px;font-size:12.5px">${esc(m.subName)}</td>
+      <td style="padding:6px 8px;font-size:12.5px">${esc(m.equipment)}</td>
+      <td style="padding:6px 8px;font-size:12px;color:#EF4444">${esc(missing)}</td>
+    </tr>`;
+  }).join('');
+  const sa=$('#awMissingSelectAll');
+  if(sa)sa.onchange=e=>body.querySelectorAll('.aw-missing-chk').forEach(c=>c.checked=e.target.checked);
+}
+
+async function saveAssignment(){
+  const proj=$('#awProject').value;
+  const assignee=$('#awAssignee').value;
+  if(!proj){toast('กรุณาเลือกโครงการ',false);return;}
+  if(!assignee){toast('กรุณาเลือกผู้รับงาน',false);return;}
+  const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
+  const note=$('#awNote').value.trim();
+  const by=AUTH.user?.username||'';
+  let newItems=[];
+  if(scope==='missing'){
+    const chks=[...document.querySelectorAll('.aw-missing-chk:checked')];
+    if(!chks.length){toast('กรุณาเลือกรายการที่ต้องการให้กรอก',false);return;}
+    chks.forEach(c=>{
+      const m=master.find(x=>x.id===c.dataset.id);if(!m)return;
+      const mf=[!m.brand&&'brand',!m.model&&'model',!m.serial&&'serial'].filter(Boolean);
+      newItems.push({id:uid(),project:proj,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:assignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
+    });
+  } else {
+    const locName=$('#awLoc').value||'';const subName=$('#awSub').value||'';const equipment=$('#awEquip').value||'';
+    newItems.push({id:uid(),project:proj,scopeType:scope,locName,subName,equipment,masterId:'',missingFields:[],assignedTo:assignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
+  }
+  assignments.push(...newItems);
+  await sSet(ASSIGN_KEY,JSON.stringify(assignments));
+  if(AUTH.token){
+    for(const a of newItems)await api(ACT.saveAssignment,{assignment:a});
+  }
+  $('#assignModal').style.display='none';
+  renderMyAssignments();
+  toast('มอบหมายงาน '+newItems.length+' รายการแล้ว',true);
+}
+
+// ── Fill missing data (inspector) ──
+let _fillingAssignId=null;
+function openFillData(assignId){
+  const a=assignments.find(x=>x.id===assignId);if(!a)return;
+  const m=master.find(x=>x.id===a.masterId);
+  _fillingAssignId=assignId;
+  const info=$('#fillDataInfo');
+  const fields=$('#fillDataFields');
+  if(info)info.innerHTML=`<b>${esc(a.equipment)}</b><br><span style="color:var(--ink-faint)">${esc(a.subName)} · ${esc(a.locName)} · ${esc(a.project)}</span>`;
+  if(fields){
+    fields.innerHTML=(a.missingFields||[]).map(f=>{
+      const label={brand:'ยี่ห้อ',model:'รุ่น',serial:'Serial Number'}[f]||f;
+      const cur=m?m[f]||'':'';
+      return `<div><label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:4px">${esc(label)}</label><input type="text" class="tin" data-field="${f}" value="${esc(cur)}" placeholder="${esc(label)}…" style="width:100%"></div>`;
+    }).join('');
+  }
+  const modal=$('#fillDataModal');if(modal)modal.style.display='flex';
+}
+
+async function saveFillData(){
+  if(!_fillingAssignId)return;
+  const a=assignments.find(x=>x.id===_fillingAssignId);if(!a)return;
+  const doneData={};
+  $('#fillDataFields').querySelectorAll('input[data-field]').forEach(inp=>{doneData[inp.dataset.field]=inp.value.trim();});
+  a.status='done';a.doneAt=Date.now();a.doneData=doneData;
+  // Update master record with filled data
+  const m=master.find(x=>x.id===a.masterId);
+  if(m){Object.assign(m,doneData);await persistMaster();}
+  await sSet(ASSIGN_KEY,JSON.stringify(assignments));
+  if(AUTH.token)await api(ACT.completeAssignment,{id:a.id,doneData});
+  $('#fillDataModal').style.display='none';
+  renderMyAssignments();
+  toast('บันทึกข้อมูลแล้ว',true);
+}
+
+// ── Export assign data as Excel ──
+function exportAssignData(){
+  const done=assignments.filter(a=>a.scopeType==='missing'&&a.status==='done');
+  if(!done.length){toast('ยังไม่มีงานที่เสร็จสมบูรณ์',false);return;}
+  const header=['ลำดับ','โครงการ','ระบบ','ประเภทสถานที่','สถานที่','สถานที่ย่อย','ประเภทอุปกรณ์','อุปกรณ์','ยี่ห้อ','รุ่น','Serial Number'];
+  const rows=done.map(a=>{
+    const m=master.find(x=>x.id===a.masterId)||{};
+    return [m.order||'',a.project,m.system||'',m.typeLocation||'',a.locName,a.subName,m.asset||'',a.equipment,a.doneData.brand||m.brand||'',a.doneData.model||m.model||'',a.doneData.serial||m.serial||''];
+  });
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'AssignData');
+  XLSX.writeFile(wb,'assign_data_'+fileStamp(Date.now())+'.xlsx');
+  toast('ดาวน์โหลด '+done.length+' รายการแล้ว',true);
+}
+
+// ── Wire up events ──
+$('#assignWorkBtn')?.addEventListener('click',showAssignModal);
+$('#assignModalClose')?.addEventListener('click',()=>$('#assignModal').style.display='none');
+$('#awCancelBtn')?.addEventListener('click',()=>$('#assignModal').style.display='none');
+$('#assignModal')?.addEventListener('click',e=>{if(e.target===$('#assignModal'))$('#assignModal').style.display='none';});
+$('#awProject')?.addEventListener('change',()=>{refreshAssigneeList();refreshAwCascade();renderMissingTable();});
+$('#awLoc')?.addEventListener('change',()=>refreshAwCascade());
+$('#awSub')?.addEventListener('change',()=>refreshAwCascade());
+document.querySelectorAll('input[name="awScope"]').forEach(r=>r.addEventListener('change',awScopeChange));
+$('#awSaveBtn')?.addEventListener('click',saveAssignment);
+$('#fillDataClose')?.addEventListener('click',()=>$('#fillDataModal').style.display='none');
+$('#fillDataCancel')?.addEventListener('click',()=>$('#fillDataModal').style.display='none');
+$('#fillDataModal')?.addEventListener('click',e=>{if(e.target===$('#fillDataModal'))$('#fillDataModal').style.display='none';});
+$('#fillDataSave')?.addEventListener('click',saveFillData);
+$('#exportAssignBtn')?.addEventListener('click',exportAssignData);
+$('#assignSectionToggle')?.addEventListener('click',()=>{
+  const l=$('#myAssignmentsList');if(l)l.style.display=l.style.display==='none'?'flex':'none';
+});
 
 initAuth();
 

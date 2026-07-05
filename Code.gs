@@ -24,6 +24,7 @@ const CONFIG = {
     RECORDS: 'Records',
     MASTER:  'Master',
     SURVEY:  'Survey',
+    ASSIGNMENTS: 'Assignments',
     PDPA:    'PDPA',
     TOKENS:  'Tokens',
     LOGS:    'Logs'
@@ -120,6 +121,10 @@ function route(action, payload) {
     case 'saveMaster':        return actionSaveMaster(payload);
     case 'listMaster':        return actionListMaster(payload);
     case 'getProgress':       return actionGetProgress(payload);
+    // Assignments
+    case 'saveAssignment':    return actionSaveAssignment(payload);
+    case 'listAssignments':   return actionListAssignments(payload);
+    case 'completeAssignment':return actionCompleteAssignment(payload);
     // Survey
     case 'createSurvey':      return actionCreateSurvey(payload);
     case 'listSurvey':        return actionListSurvey(payload);
@@ -1482,4 +1487,87 @@ function testAllActions() {
 }
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/* ================================================================
+   ASSIGNMENTS
+   ================================================================ */
+const ASSIGN_HEADERS = [
+  'id','project','scopeType','locName','subName','equipment',
+  'masterId','missingFields','assignedTo','assignedBy','note',
+  'status','createdAt','doneAt','doneData'
+];
+
+function actionSaveAssignment({ assignment, _user }) {
+  if (!assignment || !assignment.id) return { ok: false, message: 'No assignment' };
+  const sh = getSheet(CONFIG.SHEETS.ASSIGNMENTS);
+  ensureHeaders(sh, ASSIGN_HEADERS);
+  // Overwrite if exists, else append
+  const data = sh.getDataRange().getValues();
+  const hdr = data[0] || [];
+  const idCol = hdr.indexOf('id');
+  let found = false;
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === assignment.id) {
+      ASSIGN_HEADERS.forEach((h, i) => {
+        let v = assignment[h];
+        if (h === 'missingFields' || h === 'doneData') v = JSON.stringify(v || (h === 'doneData' ? {} : []));
+        sh.getRange(r + 1, i + 1).setValue(v == null ? '' : v);
+      });
+      found = true; break;
+    }
+  }
+  if (!found) {
+    const row = ASSIGN_HEADERS.map(h => {
+      let v = assignment[h];
+      if (h === 'missingFields' || h === 'doneData') v = JSON.stringify(v || (h === 'doneData' ? {} : []));
+      return v == null ? '' : v;
+    });
+    sh.appendRow(row);
+  }
+  return { ok: true };
+}
+
+function actionListAssignments({ _user }) {
+  const role = (_user && _user.role) || '';
+  const username = (_user && _user.username) || '';
+  const userProjs = (_user && _user.project ? _user.project.split(',').map(p => p.trim()).filter(Boolean) : []);
+  const sh = getSheet(CONFIG.SHEETS.ASSIGNMENTS);
+  ensureHeaders(sh, ASSIGN_HEADERS);
+  const data = sh.getDataRange().getValues();
+  if (data.length < 2) return { ok: true, assignments: [] };
+  const hdr = data[0];
+  const rows = data.slice(1).map(r => {
+    const obj = {};
+    hdr.forEach((h, i) => {
+      let v = r[i];
+      if (h === 'missingFields' || h === 'doneData') { try { v = JSON.parse(v || (h === 'doneData' ? '{}' : '[]')); } catch(e) { v = h === 'doneData' ? {} : []; } }
+      obj[h] = v;
+    });
+    return obj;
+  }).filter(a => a.id);
+  // Filter by role
+  if (role === 'admin' || role === 'manager') return { ok: true, assignments: rows };
+  if (role === 'leader') return { ok: true, assignments: rows.filter(a => userProjs.includes(a.project) || a.assignedBy === username || a.assignedTo === username) };
+  return { ok: true, assignments: rows.filter(a => a.assignedTo === username) };
+}
+
+function actionCompleteAssignment({ id, doneData, _user }) {
+  if (!id) return { ok: false, message: 'No id' };
+  const sh = getSheet(CONFIG.SHEETS.ASSIGNMENTS);
+  const data = sh.getDataRange().getValues();
+  const hdr = data[0] || [];
+  const idCol = hdr.indexOf('id');
+  const statusCol = hdr.indexOf('status');
+  const doneAtCol = hdr.indexOf('doneAt');
+  const doneDataCol = hdr.indexOf('doneData');
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === id) {
+      sh.getRange(r + 1, statusCol + 1).setValue('done');
+      sh.getRange(r + 1, doneAtCol + 1).setValue(Date.now());
+      sh.getRange(r + 1, doneDataCol + 1).setValue(JSON.stringify(doneData || {}));
+      return { ok: true };
+    }
+  }
+  return { ok: false, message: 'Not found' };
 }

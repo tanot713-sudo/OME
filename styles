@@ -411,6 +411,84 @@ body:not(.can-survey) [data-tab="survey"]{display:none !important}
 .ro-banner{display:none;background:#EEF2F6;border:1px solid var(--line);border-radius:9px;padding:9px 14px;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px}
 body.readonly .ro-banner{display:block}
 
+/* ─── DARK MODE ─────────────────────────────────────────── */
+/* โหมดมืด — สลับด้วยปุ่ม 🌙/☀️ (ไม่ใช้ค่า OS อัตโนมัติ กันปัญหาสีเพี้ยน) */
+:root[data-theme="dark"]{
+  --bg:#1c1b22;--surface:#24232b;--ink:#f3f1f8;--ink-soft:#b6b0c4;--ink-faint:#7c7690;
+  --line:#38363f;--line-soft:#2e2c36;--steel:#0f0e14;--steel-2:#1c1b22;
+  --accent:#ff9a3c;--accent-deep:#ff8020;--accent-wash:#2a1f10;
+  --ok:#34d399;--danger:#f87171;
+  --shadow:rgba(0,0,0,.5) 0 10px 15px -3px,rgba(0,0,0,.3) 0 4px 6px -2px;
+  --shadow-lift:0 12px 40px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .io-card,
+:root[data-theme="dark"] .dash-card,
+:root[data-theme="dark"] .kpi-card,
+:root[data-theme="dark"] .prog-card,
+:root[data-theme="dark"] .wg-step{background:#24232b;border-color:#38363f}
+:root[data-theme="dark"] .card-h{background:#1c1b22}
+:root[data-theme="dark"] .auth-card{background:#24232b;border-color:#38363f}
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea{background:#1c1b22 !important;color:#f3f1f8;border-color:#38363f}
+:root[data-theme="dark"] .tin{background:#1c1b22 !important;color:#f3f1f8 !important;border-color:#38363f !important}
+:root[data-theme="dark"] table thead tr{background:#0f0e14;color:#b6b0c4}
+:root[data-theme="dark"] table tbody tr:hover{background:rgba(255,255,255,.04)}
+:root[data-theme="dark"] td,:root[data-theme="dark"] th{border-color:#38363f !important}
+:root[data-theme="dark"] .combo-list{background:#24232b !important;border-color:#38363f}
+:root[data-theme="dark"] .combo-opt,
+:root[data-theme="dark"] .combo-new,
+:root[data-theme="dark"] .combo-empty{background:#24232b !important;color:#f3f1f8}
+:root[data-theme="dark"] .combo-opt:hover{background:#38363f !important}
+:root[data-theme="dark"] .btn-soft{background:#38363f;color:#f3f1f8}
+:root[data-theme="dark"] .ghost-btn{background:#24232b;color:#b6b0c4;border-color:#38363f}
+:root[data-theme="dark"] .icon-btn{background:#24232b;color:#b6b0c4;border-color:#38363f}
+:root[data-theme="dark"] .sdlg-panel{background:#24232b}
+:root[data-theme="dark"] .flt-toolbar input{background:#24232b !important}
+:root[data-theme="dark"] .eyebrow{color:#c285ff}
+:root[data-theme="dark"] .import-drop{background:#24232b;border-color:#38363f;color:#7c7690}
+:root[data-theme="dark"] .ic-grid span{background:#1c1b22;border-color:#38363f;color:#7c7690}
+:root[data-theme="dark"] .assign-card{background:#24232b;border-color:#38363f}
+:root[data-theme="dark"] #pagePermContainer{background:#24232b !important}
+:root[data-theme="dark"] .prog-c{background:#24232b;border-color:#38363f;color:#f3f1f8}
+:root[data-theme="dark"] .prog-c .v{color:#ff9a3c}
+/* bm-box (brand/model auto) */
+:root[data-theme="dark"] .bm-box{background:#24232b;border-color:#38363f}
+/* survey dialog */
+:root[data-theme="dark"] .sdlg{background:#24232b}
+/* table header — override the per-cell rule */
+:root[data-theme="dark"] thead th{background:#0f0e14 !important;color:#b6b0c4 !important}
+/* ─── LOGIN PAGE — unaffected by dark mode ─────────────────
+   Force every element inside #authGate back to light appearance
+   using !important to beat the global dark-mode overrides      */
+:root[data-theme="dark"] #authGate .auth-card{
+  background:#ffffff !important;border-color:#E2E8F0 !important;
+  color:#1A2332 !important;
+}
+:root[data-theme="dark"] #authGate .auth-brand{border-color:#E2E8F0 !important}
+:root[data-theme="dark"] #authGate label{color:#4A5568 !important}
+:root[data-theme="dark"] #authGate .auth-err{color:#EF4444 !important}
+:root[data-theme="dark"] #authGate .auth-foot{color:#718096 !important}
+:root[data-theme="dark"] #authGate .eye{color:#718096 !important}
+:root[data-theme="dark"] #authGate input,
+:root[data-theme="dark"] #authGate select,
+:root[data-theme="dark"] #authGate textarea,
+:root[data-theme="dark"] #authGate .tin{
+  background:#F7F9FB !important;color:#1A2332 !important;border-color:#CBD5E0 !important;
+}
+
+/* ─── ASSIGN WORK CARDS ──────────────────────────────────── */
+.assign-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.assign-badge-pending{background:#FEF3C7;color:#D97706;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.assign-badge-done{background:#D1FAE5;color:#059669;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+body.dark .assign-badge-pending{background:#292524;color:#F59E0B}
+body.dark .assign-badge-done{background:#022C22;color:#34D399}
+/* ─── HEADER CONTROLS ────────────────────────────────────── */
+.hdr-ctrl-btn{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;padding:6px 12px;transition:background .15s}
+.hdr-ctrl-btn:hover{background:rgba(255,255,255,.22)}
+
 /* ─── RESPONSIVE ─────────────────────────────────────────── */
 @media(max-width:760px){
   .cascade,.bm-row,.imgs,.io-cols,.wg-row,.kpi-row,.prog-cards,.user-cols{grid-template-columns:1fr}
@@ -431,6 +509,12 @@ body.readonly .ro-banner{display:block}
   .user-chip .un{font-size:12.5px}
   .user-chip .ur{font-size:9px}
   .user-chip .logout{padding:6px 10px;font-size:11.5px}
+  /* ปุ่ม dark/lang บน header */
+  .hdr-ctrl-btn{font-size:11px;padding:5px 8px}
+  #darkToggleBtn{width:30px;font-size:16px;padding:5px 0}
+  /* assign card */
+  .assign-card{flex-wrap:wrap}
+  #assignModal>div{margin-top:10px}
 }
 
 </style>
