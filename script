@@ -1982,24 +1982,8 @@ function canAssign(){
 
 function renderMyAssignments(){
   const me=AUTH.user?.username||'';
-  const role=AUTH.user?.role||'';
-  const section=$('#myAssignmentsSection');
-  const list=$('#myAssignmentsList');
-  const pill=$('#assignPill');
-  if(!section||!list)return;
-  // Show section for inspectors/leaders who have pending assignments
   const mine=assignments.filter(a=>a.assignedTo===me&&a.status==='pending');
-  if(mine.length===0&&!canAssign()){section.style.display='none';return;}
-  // Assign button visibility
-  const btn=$('#assignWorkBtn');
-  if(btn)btn.style.display=canAssign()?'':'none';
-  if(mine.length===0){
-    if(canAssign()){section.style.display='block';if(pill)pill.textContent='0';list.innerHTML='';return;}
-    section.style.display='none';return;
-  }
-  section.style.display='block';
-  if(pill)pill.textContent=mine.length;
-  list.innerHTML=mine.map(a=>{
+  const cardHTML=mine.map(a=>{
     const scopeLabel=a.scopeType==='project'?a.project
       :a.scopeType==='loc'?a.locName
       :a.scopeType==='sub'?(a.locName+' › '+a.subName)
@@ -2015,12 +1999,26 @@ function renderMyAssignments(){
       ${a.scopeType==='missing'?`<button onclick="openFillData('${a.id}')" style="padding:7px 14px;border-radius:8px;border:none;background:#6366F1;color:#fff;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap">กรอกข้อมูล</button>`:''}
     </div>`;
   }).join('');
+  // render into panel-saved section
+  const sec1=$('#myAssignmentsSection'),list1=$('#myAssignmentsList'),pill1=$('#assignPill'),btn1=$('#assignWorkBtn');
+  if(sec1&&list1){
+    if(mine.length===0&&!canAssign()){sec1.style.display='none';}
+    else{sec1.style.display='block';list1.innerHTML=cardHTML;if(pill1)pill1.textContent=mine.length;if(btn1)btn1.style.display=canAssign()?'':'none';}
+  }
+  // render into panel-survey section
+  const sec2=$('#surveyAssignSection'),list2=$('#surveyAssignList'),pill2=$('#surveyAssignPill'),btn2=$('#surveyAssignWorkBtn');
+  if(sec2&&list2){
+    if(mine.length===0&&!canAssign()){sec2.style.display='none';}
+    else{sec2.style.display='block';list2.innerHTML=cardHTML;if(pill2)pill2.textContent=mine.length;if(btn2)btn2.style.display=canAssign()?'':'none';}
+  }
 }
 
 // ── Assign button visibility after login ──
 function updateAssignBtn(){
   const btn=$('#assignWorkBtn');
   if(btn)btn.style.display=canAssign()?'':'none';
+  const btn2=$('#surveyAssignWorkBtn');
+  if(btn2)btn2.style.display=canAssign()?'':'none';
 }
 
 // ── Show assign modal ──
@@ -2204,6 +2202,31 @@ $('#exportAssignBtn')?.addEventListener('click',exportAssignData);
 $('#assignSectionToggle')?.addEventListener('click',()=>{
   const l=$('#myAssignmentsList');if(l)l.style.display=l.style.display==='none'?'flex':'none';
 });
+
+// ── Survey assign section wiring ──
+$('#surveyAssignWorkBtn')?.addEventListener('click',showAssignModal);
+$('#surveyExportAssignBtn')?.addEventListener('click',exportAssignData);
+$('#surveyAssignToggle')?.addEventListener('click',()=>{
+  const l=$('#surveyAssignList');if(l)l.style.display=l.style.display==='none'?'flex':'none';
+});
+
+// ── Import from survey ──
+async function importFromSurvey(){
+  if(!surveyCache||!surveyCache.length){toast('ไม่มีข้อมูลสำรวจภาคสนาม',false);return;}
+  const prev=$('#importPreview');
+  const rows=surveyCache.filter(s=>s.project&&s.equipment);
+  if(!rows.length){if(prev)prev.innerHTML=`<div class="empty">ไม่พบข้อมูลในสำรวจภาคสนาม</div>`;return;}
+  let added=0;
+  rows.forEach(s=>{
+    const dup=master.some(m=>m.project===s.project&&m.locName===s.locName&&m.subName===s.subName&&m.equipment===s.equipment);
+    if(!dup){master.push({id:uid(),project:s.project||'',system:s.system||'',typeLocation:s.typeLocation||'',locName:s.locName||'',subName:s.subName||'',equipment:s.equipment||'',brand:s.brand||'',model:s.model||'',asset:s.asset||'',serial:s.serial||'',order:''});added++;}
+  });
+  if(!added){if(prev)prev.innerHTML=`<div class="empty" style="color:var(--ink-soft)">ไม่มีรายการใหม่ (ซ้ำทั้งหมด ${rows.length} รายการ)</div>`;toast('ไม่มีรายการใหม่ (ซ้ำกับข้อมูลหลักทั้งหมด)',false);return;}
+  await persistMaster();
+  if(prev)prev.innerHTML=`<div class="empty" style="color:var(--ok)">นำเข้า Master Data จากสำรวจภาคสนาม ${added} รายการ (ข้าม ${rows.length-added} รายการที่ซ้ำ)</div>`;
+  toast(`นำเข้าจากสำรวจภาคสนาม ${added} รายการ`,true);
+}
+$('#importFromSurveyBtn')?.addEventListener('click',importFromSurvey);
 
 initAuth();
 
