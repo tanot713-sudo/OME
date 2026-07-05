@@ -2022,38 +2022,54 @@ function updateAssignBtn(){
 }
 
 // ── Show assign modal ──
+function _awClearComboVal(id){
+  const inp=document.getElementById(id);if(!inp)return;
+  inp.value='';const wrap=inp.closest('.combo');if(wrap)wrap.classList.remove('has-val');
+  inp.dispatchEvent(new Event('change',{bubbles:true}));
+}
 function showAssignModal(){
   const modal=$('#assignModal');if(!modal)return;
   modal.style.display='flex';
-  // Populate project datalist based on role
+  // Upgrade inputs to custom combo on first open
   const role=AUTH.user?.role||'';
   const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
-  let projs=uniq(master.map(m=>m.project)).sort((a,b)=>a.localeCompare(b,'th'));
-  if(role==='leader'&&userProjs.length)projs=projs.filter(p=>userProjs.includes(p));
-  const dlProj=$('#dl_awProject');
-  if(dlProj)dlProj.innerHTML=projs.map(p=>`<option value="${escAttr(p)}">`).join('');
-  // Reset inputs
-  $('#awProject').value='';$('#awAssignee').value='';
-  $('#awLoc').value='';$('#awSub').value='';$('#awEquip').value='';
-  // Populate assignee datalist
-  refreshAssigneeList();
+  upgradeToCombo('awProject',()=>{
+    let projs=uniq(master.map(m=>m.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+    if(role==='leader'&&userProjs.length)projs=projs.filter(p=>userProjs.includes(p));
+    return projs;
+  });
+  upgradeToCombo('awAssignee',()=>{
+    const r=AUTH.user?.role||'';
+    const ups=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    const targetRoles=r==='admin'||r==='manager'?['leader','inspector']:['inspector'];
+    let users=usersCache.filter(u=>targetRoles.includes(u.role)&&u.active!=='false'&&u.active!==false);
+    if(r==='leader'&&ups.length)users=users.filter(u=>(u.project||'').split(',').map(p=>p.trim()).some(p=>ups.includes(p)));
+    const fp=$('#awProject')?.value;
+    if(fp)users=users.filter(u=>!u.project||(u.project||'').split(',').map(p=>p.trim()).includes(fp));
+    return users.map(u=>(u.name||u.username)+' ('+u.role+')');
+  });
+  upgradeToCombo('awLoc',()=>{
+    const proj=$('#awProject')?.value||'';
+    return uniq(master.filter(m=>!proj||m.project===proj).map(m=>m.locName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  });
+  upgradeToCombo('awSub',()=>{
+    const proj=$('#awProject')?.value||'',loc=$('#awLoc')?.value||'';
+    return uniq(master.filter(m=>(!proj||m.project===proj)&&(!loc||m.locName===loc)).map(m=>m.subName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  });
+  upgradeToCombo('awEquip',()=>{
+    const proj=$('#awProject')?.value||'',loc=$('#awLoc')?.value||'',sub=$('#awSub')?.value||'';
+    return uniq(master.filter(m=>(!proj||m.project===proj)&&(!loc||m.locName===loc)&&(!sub||m.subName===sub)).map(m=>m.equipment)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  });
+  // Reset values
+  _awClearComboVal('awProject');_awClearComboVal('awAssignee');
+  _awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');
   // Reset scope
   document.querySelector('input[name="awScope"][value="project"]').checked=true;
   awScopeChange();
   $('#awNote').value='';
 }
 
-function refreshAssigneeList(proj){
-  const role=AUTH.user?.role||'';
-  const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
-  const dl=$('#dl_awAssignee');if(!dl)return;
-  const targetRoles=role==='admin'||role==='manager'?['leader','inspector']:['inspector'];
-  let users=usersCache.filter(u=>targetRoles.includes(u.role)&&u.active!=='false'&&u.active!==false);
-  if(role==='leader'&&userProjs.length)users=users.filter(u=>(u.project||'').split(',').map(p=>p.trim()).some(p=>userProjs.includes(p)));
-  const filterProj=proj||$('#awProject')?.value;
-  if(filterProj)users=users.filter(u=>!u.project||(u.project||'').split(',').map(p=>p.trim()).includes(filterProj));
-  dl.innerHTML=users.map(u=>`<option value="${escAttr(u.username)}">${esc((u.name||u.username)+' ('+u.role+')')}`).join('');
-}
+function refreshAssigneeList(){}  // no-op: options are live via upgradeToCombo getOptionsFn
 
 function awScopeChange(){
   const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
@@ -2062,35 +2078,10 @@ function awScopeChange(){
   $('#awEquipRow').style.display=(scope==='equip')?'block':'none';
   $('#awMissingRow').style.display=(scope==='missing')?'block':'none';
   if(scope==='missing')renderMissingTable();
-  if(scope==='loc'||scope==='sub'||scope==='equip')refreshAwCascade();
+  if(scope==='loc'||scope==='sub'||scope==='equip'){_awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');}
 }
 
-function refreshAwLocs(){
-  const proj=$('#awProject').value;
-  const rows=master.filter(m=>m.project===proj);
-  const locs=uniq(rows.map(m=>m.locName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
-  const dl=$('#dl_awLoc');if(dl)dl.innerHTML=locs.map(v=>`<option value="${escAttr(v)}">`).join('');
-  // clear downstream
-  $('#awLoc').value='';$('#awSub').value='';$('#awEquip').value='';
-  const ds=$('#dl_awSub');if(ds)ds.innerHTML='';
-  const de=$('#dl_awEquip');if(de)de.innerHTML='';
-}
-function refreshAwSubs(){
-  const proj=$('#awProject').value;const loc=$('#awLoc').value;
-  const rows=master.filter(m=>m.project===proj&&(!loc||m.locName===loc));
-  const subs=uniq(rows.map(m=>m.subName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
-  const dl=$('#dl_awSub');if(dl)dl.innerHTML=subs.map(v=>`<option value="${escAttr(v)}">`).join('');
-  $('#awSub').value='';$('#awEquip').value='';
-  const de=$('#dl_awEquip');if(de)de.innerHTML='';
-}
-function refreshAwEquips(){
-  const proj=$('#awProject').value;const loc=$('#awLoc').value;const sub=$('#awSub').value;
-  const rows=master.filter(m=>m.project===proj&&(!loc||m.locName===loc)&&(!sub||m.subName===sub));
-  const equips=uniq(rows.map(m=>m.equipment)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
-  const dl=$('#dl_awEquip');if(dl)dl.innerHTML=equips.map(v=>`<option value="${escAttr(v)}">`).join('');
-  $('#awEquip').value='';
-}
-function refreshAwCascade(){refreshAwLocs();}
+function refreshAwCascade(){}  // no-op: cascade via upgradeToCombo live options
 
 function renderMissingTable(){
   const proj=$('#awProject').value;
@@ -2199,12 +2190,11 @@ $('#assignWorkBtn')?.addEventListener('click',showAssignModal);
 $('#assignModalClose')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#awCancelBtn')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#assignModal')?.addEventListener('click',e=>{if(e.target===$('#assignModal'))$('#assignModal').style.display='none';});
-$('#awProject')?.addEventListener('change',()=>{refreshAssigneeList();refreshAwLocs();renderMissingTable();});
-$('#awProject')?.addEventListener('input',()=>{refreshAssigneeList();renderMissingTable();});
-$('#awLoc')?.addEventListener('change',()=>refreshAwSubs());
-$('#awLoc')?.addEventListener('input',()=>refreshAwSubs());
-$('#awSub')?.addEventListener('change',()=>refreshAwEquips());
-$('#awSub')?.addEventListener('input',()=>refreshAwEquips());
+document.addEventListener('change',e=>{
+  if(e.target.id==='awProject'){_awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');renderMissingTable();}
+  if(e.target.id==='awLoc'){_awClearComboVal('awSub');_awClearComboVal('awEquip');}
+  if(e.target.id==='awSub'){_awClearComboVal('awEquip');}
+});
 document.querySelectorAll('input[name="awScope"]').forEach(r=>r.addEventListener('change',awScopeChange));
 $('#awSaveBtn')?.addEventListener('click',saveAssignment);
 $('#fillDataClose')?.addEventListener('click',()=>$('#fillDataModal').style.display='none');
