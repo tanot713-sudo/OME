@@ -1993,7 +1993,10 @@ function renderMyAssignments(){
   // Assign button visibility
   const btn=$('#assignWorkBtn');
   if(btn)btn.style.display=canAssign()?'':'none';
-  if(mine.length===0){section.style.display='none';if(pill)pill.textContent='0';return;}
+  if(mine.length===0){
+    if(canAssign()){section.style.display='block';if(pill)pill.textContent='0';list.innerHTML='';return;}
+    section.style.display='none';return;
+  }
   section.style.display='block';
   if(pill)pill.textContent=mine.length;
   list.innerHTML=mine.map(a=>{
