@@ -273,6 +273,7 @@ const LEVELS=['project','system','typeloc','loc','sub','equip','serial'];
 const PROP={project:'project',system:'system',typeloc:'typeLocation',loc:'locName',sub:'subName',equip:'equipment',serial:'serial'};
 const LABEL={project:'โครงการ',system:'ระบบ',typeloc:'ประเภทสถานที่',loc:'สถานที่',sub:'สถานที่ย่อย',equip:'อุปกรณ์',serial:'Serial Number'};
 let master=[],entries=[],assignments=[],assignStats=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
+let awSelProjs=[],awSelLocs=[],awSelSubs=[],awSelEquips=[];
 const sel={project:'',system:'',loc:'',sub:'',equip:'',serial:''};
 const combos={};
 const INSP_SEED=['สมชาย ใจดี','สมหญิง รักงาน'];
@@ -2157,6 +2158,26 @@ function updateAssignBtn(){
   if(tBtn2)tBtn2.style.display=canAssign()?'':'none';
 }
 
+// ── Assign modal multi-select helpers ──
+function renderAwChips(containerId,arr){
+  const box=document.getElementById(containerId);if(!box)return;
+  box.innerHTML=arr.map((v,i)=>`<span class="chip">${esc(v)}<span class="chip-x" data-i="${i}">×</span></span>`).join('');
+  box.querySelectorAll('.chip-x').forEach(x=>{
+    x.onclick=()=>{arr.splice(parseInt(x.dataset.i,10),1);renderAwChips(containerId,arr);};
+  });
+}
+function initAwMultiCombo(inputId,chipsId,arr,getOptionsFn){
+  upgradeToCombo(inputId,()=>getOptionsFn().filter(v=>!arr.includes(v)));
+  const inp=document.getElementById(inputId);
+  if(!inp||inp.dataset.multiComboInited)return;
+  inp.dataset.multiComboInited='1';
+  inp.addEventListener('change',()=>{
+    const v=inp.value.trim();
+    if(v&&!arr.includes(v)){arr.push(v);renderAwChips(chipsId,arr);}
+    _awClearComboVal(inputId);
+  });
+}
+
 // ── Show assign modal ──
 function _awClearComboVal(id){
   const inp=document.getElementById(id);if(!inp)return;
@@ -2166,10 +2187,16 @@ function _awClearComboVal(id){
 function showAssignModal(){
   const modal=$('#assignModal');if(!modal)return;
   modal.style.display='flex';
-  // Upgrade inputs to custom combo on first open
   const role=AUTH.user?.role||'';
   const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
-  upgradeToCombo('awProject',()=>{
+  // Reset multi-select arrays + chips
+  awSelProjs.length=0;awSelLocs.length=0;awSelSubs.length=0;awSelEquips.length=0;
+  renderAwChips('awProjectChips',awSelProjs);
+  renderAwChips('awLocChips',awSelLocs);
+  renderAwChips('awSubChips',awSelSubs);
+  renderAwChips('awEquipChips',awSelEquips);
+  // Init multi combos
+  initAwMultiCombo('awProject','awProjectChips',awSelProjs,()=>{
     let projs=uniq(master.map(m=>m.project)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
     if(role==='leader'&&userProjs.length)projs=projs.filter(p=>userProjs.includes(p));
     return projs;
@@ -2180,25 +2207,20 @@ function showAssignModal(){
     const targetRoles=r==='admin'||r==='manager'?['leader','inspector']:['inspector'];
     let users=usersCache.filter(u=>targetRoles.includes(u.role)&&u.active!=='false'&&u.active!==false);
     if(r==='leader'&&ups.length)users=users.filter(u=>(u.project||'').split(',').map(p=>p.trim()).some(p=>ups.includes(p)));
-    const fp=$('#awProject')?.value;
-    if(fp)users=users.filter(u=>!u.project||(u.project||'').split(',').map(p=>p.trim()).includes(fp));
+    if(awSelProjs.length)users=users.filter(u=>awSelProjs.every(p=>(u.project||'').split(',').map(x=>x.trim()).includes(p)));
     return users.map(u=>(u.name||u.username)+' ('+u.role+')');
   });
-  upgradeToCombo('awLoc',()=>{
-    const proj=$('#awProject')?.value||'';
-    return uniq(master.filter(m=>!proj||m.project===proj).map(m=>m.locName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  initAwMultiCombo('awLoc','awLocChips',awSelLocs,()=>{
+    return uniq(master.filter(m=>!awSelProjs.length||awSelProjs.includes(m.project)).map(m=>m.locName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
   });
-  upgradeToCombo('awSub',()=>{
-    const proj=$('#awProject')?.value||'',loc=$('#awLoc')?.value||'';
-    return uniq(master.filter(m=>(!proj||m.project===proj)&&(!loc||m.locName===loc)).map(m=>m.subName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  initAwMultiCombo('awSub','awSubChips',awSelSubs,()=>{
+    return uniq(master.filter(m=>(!awSelProjs.length||awSelProjs.includes(m.project))&&(!awSelLocs.length||awSelLocs.includes(m.locName))).map(m=>m.subName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
   });
-  upgradeToCombo('awEquip',()=>{
-    const proj=$('#awProject')?.value||'',loc=$('#awLoc')?.value||'',sub=$('#awSub')?.value||'';
-    return uniq(master.filter(m=>(!proj||m.project===proj)&&(!loc||m.locName===loc)&&(!sub||m.subName===sub)).map(m=>m.equipment)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  initAwMultiCombo('awEquip','awEquipChips',awSelEquips,()=>{
+    return uniq(master.filter(m=>(!awSelProjs.length||awSelProjs.includes(m.project))&&(!awSelLocs.length||awSelLocs.includes(m.locName))&&(!awSelSubs.length||awSelSubs.includes(m.subName))).map(m=>m.equipment)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
   });
-  // Reset values
-  _awClearComboVal('awProject');_awClearComboVal('awAssignee');
-  _awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');
+  // Reset single-select
+  _awClearComboVal('awAssignee');
   // Reset scope
   document.querySelector('input[name="awScope"][value="project"]').checked=true;
   awScopeChange();
@@ -2275,8 +2297,7 @@ function awScopeChange(){
 function refreshAwCascade(){}  // no-op: cascade via upgradeToCombo live options
 
 function renderMissingTable(){
-  const proj=$('#awProject').value;
-  const rows=master.filter(m=>(!proj||m.project===proj)&&(!m.brand||!m.model||!m.serial));
+  const rows=master.filter(m=>(!awSelProjs.length||awSelProjs.includes(m.project))&&(!m.brand||!m.model||!m.serial));
   const body=$('#awMissingBody');
   const count=$('#awMissingCount');
   if(count)count.textContent='('+rows.length+' รายการ)';
@@ -2294,17 +2315,20 @@ function renderMissingTable(){
 }
 
 async function saveAssignment(){
-  const proj=$('#awProject').value;
+  if(!awSelProjs.length){toast('กรุณาเลือกโครงการอย่างน้อย 1 โครงการ',false);return;}
   const assignee=$('#awAssignee').value;
-  if(!proj){toast('กรุณาเลือกโครงการ',false);return;}
   if(!assignee){toast('กรุณาเลือกผู้รับงาน',false);return;}
   const validUser=usersCache.find(u=>u.username===assignee||((u.name||u.username)+' ('+u.role+')')===assignee);
   const resolvedAssignee=validUser?validUser.username:assignee;
+  if(validUser&&['leader','inspector'].includes(validUser.role)){
+    const userProjList=(validUser.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    const invalid=awSelProjs.filter(p=>!userProjList.includes(p));
+    if(invalid.length){toast('ผู้รับงานไม่ได้อยู่โครงการ: '+invalid.join(', ')+' — กรุณาแก้ในหน้าจัดการผู้ใช้งาน',false);return;}
+  }
   const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
   const note=$('#awNote').value.trim();
   const targetDate=$('#awTargetDate')?.value||'';
-  const projDL=getProjectDeadline(proj);
-  if(targetDate&&projDL&&targetDate>projDL){toast('วันที่ต้องเสร็จต้องไม่เกิน deadline โครงการ ('+projDL+')',false);return;}
+  for(const proj of awSelProjs){const projDL=getProjectDeadline(proj);if(targetDate&&projDL&&targetDate>projDL){toast('วันที่ต้องเสร็จต้องไม่เกิน deadline โครงการ '+proj+' ('+projDL+')',false);return;}}
   const by=AUTH.user?.username||'';
   let newItems=[];
   if(scope==='missing'){
@@ -2313,19 +2337,29 @@ async function saveAssignment(){
     chks.forEach(c=>{
       const m=master.find(x=>x.id===c.dataset.id);if(!m)return;
       const mf=[!m.brand&&'brand',!m.model&&'model',!m.serial&&'serial'].filter(Boolean);
-      newItems.push({id:uid(),project:proj,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate});
+      newItems.push({id:uid(),project:m.project,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate});
     });
-  } else {
-    const locName=$('#awLoc').value||'';const subName=$('#awSub').value||'';const equipment=$('#awEquip').value||'';
-    newItems.push({id:uid(),project:proj,scopeType:scope,locName,subName,equipment,masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate});
+  } else if(scope==='project'){
+    awSelProjs.forEach(proj=>newItems.push({id:uid(),project:proj,scopeType:'project',locName:'',subName:'',equipment:'',masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate}));
+  } else if(scope==='loc'){
+    if(!awSelLocs.length){toast('กรุณาเลือกสถานที่อย่างน้อย 1 รายการ',false);return;}
+    awSelProjs.forEach(proj=>awSelLocs.forEach(loc=>newItems.push({id:uid(),project:proj,scopeType:'loc',locName:loc,subName:'',equipment:'',masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate})));
+  } else if(scope==='sub'){
+    if(!awSelSubs.length){toast('กรุณาเลือกสถานที่ย่อยอย่างน้อย 1 รายการ',false);return;}
+    const locs=awSelLocs.length?awSelLocs:[''];
+    awSelProjs.forEach(proj=>locs.forEach(loc=>awSelSubs.forEach(sub=>newItems.push({id:uid(),project:proj,scopeType:'sub',locName:loc,subName:sub,equipment:'',masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate}))));
+  } else if(scope==='equip'){
+    if(!awSelEquips.length){toast('กรุณาเลือกอุปกรณ์อย่างน้อย 1 รายการ',false);return;}
+    const locs=awSelLocs.length?awSelLocs:[''];const subs=awSelSubs.length?awSelSubs:[''];
+    awSelProjs.forEach(proj=>locs.forEach(loc=>subs.forEach(sub=>awSelEquips.forEach(eq=>newItems.push({id:uid(),project:proj,scopeType:'equip',locName:loc,subName:sub,equipment:eq,masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate})))));
   }
+  if(!newItems.length){toast('ไม่มีรายการให้บันทึก',false);return;}
   assignments.push(...newItems);
   await sSet(ASSIGN_KEY,JSON.stringify(assignments));
-  if(AUTH.token){
-    for(const a of newItems)await api(ACT.saveAssignment,{assignment:a});
-  }
+  if(AUTH.token){for(const a of newItems)await api(ACT.saveAssignment,{assignment:a});}
   $('#assignModal').style.display='none';
   renderMyAssignments();
+  await loadAssignStats();
   toast('มอบหมายงาน '+newItems.length+' รายการแล้ว',true);
 }
 
@@ -2386,12 +2420,14 @@ $('#awCancelBtn')?.addEventListener('click',()=>$('#assignModal').style.display=
 $('#assignModal')?.addEventListener('click',e=>{if(e.target===$('#assignModal'))$('#assignModal').style.display='none';});
 document.addEventListener('change',e=>{
   if(e.target.id==='awProject'){
-    _awClearComboVal('awLoc');_awClearComboVal('awSub');_awClearComboVal('awEquip');renderMissingTable();
-    const dl=getProjectDeadline(e.target.value);
-    const hint=$('#awTargetHint');if(hint)hint.innerHTML=dl?`📅 deadline โครงการ: <b>${dl}</b>`:'';
+    // awProject is now multi-combo; hint updated based on all selected projects
+    const hint=$('#awTargetHint');
+    if(hint){
+      const dls=awSelProjs.map(p=>getProjectDeadline(p)).filter(Boolean);
+      hint.innerHTML=dls.length?`📅 deadline โครงการ: <b>${dls.join(', ')}</b>`:'';
+    }
+    renderMissingTable();
   }
-  if(e.target.id==='awLoc'){_awClearComboVal('awSub');_awClearComboVal('awEquip');}
-  if(e.target.id==='awSub'){_awClearComboVal('awEquip');}
 });
 document.querySelectorAll('input[name="awScope"]').forEach(r=>r.addEventListener('change',awScopeChange));
 $('#awSaveBtn')?.addEventListener('click',saveAssignment);

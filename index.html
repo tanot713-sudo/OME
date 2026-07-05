@@ -525,7 +525,8 @@
     <div style="display:flex;flex-direction:column;gap:14px">
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">โครงการ *</label>
-        <input type="text" class="tin" id="awProject" placeholder="พิมพ์หรือเลือกโครงการ…" autocomplete="off" style="width:100%">
+        <div id="awProjectChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+        <input type="text" class="tin" id="awProject" placeholder="เพิ่มโครงการ…" autocomplete="off" style="width:100%">
       </div>
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">ผู้รับงาน *</label>
@@ -543,15 +544,18 @@
       </div>
       <div id="awLocRow" style="display:none">
         <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">สถานที่</label>
-        <input type="text" class="tin" id="awLoc" placeholder="พิมพ์หรือเลือกสถานที่…" autocomplete="off" style="width:100%">
+        <div id="awLocChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+        <input type="text" class="tin" id="awLoc" placeholder="เพิ่มสถานที่…" autocomplete="off" style="width:100%">
       </div>
       <div id="awSubRow" style="display:none">
         <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">สถานที่ย่อย</label>
-        <input type="text" class="tin" id="awSub" placeholder="พิมพ์หรือเลือกสถานที่ย่อย…" autocomplete="off" style="width:100%">
+        <div id="awSubChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+        <input type="text" class="tin" id="awSub" placeholder="เพิ่มสถานที่ย่อย…" autocomplete="off" style="width:100%">
       </div>
       <div id="awEquipRow" style="display:none">
         <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px">อุปกรณ์</label>
-        <input type="text" class="tin" id="awEquip" placeholder="พิมพ์หรือเลือกอุปกรณ์…" autocomplete="off" style="width:100%">
+        <div id="awEquipChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+        <input type="text" class="tin" id="awEquip" placeholder="เพิ่มอุปกรณ์…" autocomplete="off" style="width:100%">
       </div>
       <div id="awMissingRow" style="display:none">
         <label style="font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:8px">รายการที่ขาดข้อมูล <span id="awMissingCount"></span></label>
