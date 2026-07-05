@@ -2025,15 +2025,17 @@ function updateAssignBtn(){
 function showAssignModal(){
   const modal=$('#assignModal');if(!modal)return;
   modal.style.display='flex';
-  // Populate project dropdown based on role
-  const awProj=$('#awProject');
-  awProj.innerHTML='<option value="">— เลือกโครงการ —</option>';
+  // Populate project datalist based on role
   const role=AUTH.user?.role||'';
   const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
   let projs=uniq(master.map(m=>m.project)).sort((a,b)=>a.localeCompare(b,'th'));
-  if((role==='leader')&&userProjs.length)projs=projs.filter(p=>userProjs.includes(p));
-  projs.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;awProj.appendChild(o);});
-  // Populate assignee dropdown
+  if(role==='leader'&&userProjs.length)projs=projs.filter(p=>userProjs.includes(p));
+  const dlProj=$('#dl_awProject');
+  if(dlProj)dlProj.innerHTML=projs.map(p=>`<option value="${escAttr(p)}">`).join('');
+  // Reset inputs
+  $('#awProject').value='';$('#awAssignee').value='';
+  $('#awLoc').value='';$('#awSub').value='';$('#awEquip').value='';
+  // Populate assignee datalist
   refreshAssigneeList();
   // Reset scope
   document.querySelector('input[name="awScope"][value="project"]').checked=true;
@@ -2044,14 +2046,13 @@ function showAssignModal(){
 function refreshAssigneeList(proj){
   const role=AUTH.user?.role||'';
   const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
-  const sel=$('#awAssignee');
-  sel.innerHTML='<option value="">— เลือกผู้รับงาน —</option>';
+  const dl=$('#dl_awAssignee');if(!dl)return;
   const targetRoles=role==='admin'||role==='manager'?['leader','inspector']:['inspector'];
   let users=usersCache.filter(u=>targetRoles.includes(u.role)&&u.active!=='false'&&u.active!==false);
   if(role==='leader'&&userProjs.length)users=users.filter(u=>(u.project||'').split(',').map(p=>p.trim()).some(p=>userProjs.includes(p)));
   const filterProj=proj||$('#awProject')?.value;
   if(filterProj)users=users.filter(u=>!u.project||(u.project||'').split(',').map(p=>p.trim()).includes(filterProj));
-  users.forEach(u=>{const o=document.createElement('option');o.value=u.username;o.textContent=(u.name||u.username)+' ('+u.role+')';sel.appendChild(o);});
+  dl.innerHTML=users.map(u=>`<option value="${escAttr(u.username)}">${esc((u.name||u.username)+' ('+u.role+')')}`).join('');
 }
 
 function awScopeChange(){
@@ -2064,25 +2065,32 @@ function awScopeChange(){
   if(scope==='loc'||scope==='sub'||scope==='equip')refreshAwCascade();
 }
 
-function refreshAwCascade(){
+function refreshAwLocs(){
   const proj=$('#awProject').value;
-  const locSel=$('#awLoc');const subSel=$('#awSub');const equipSel=$('#awEquip');
-  let rows=master.filter(m=>m.project===proj);
-  // Locs
-  const locs=uniq(rows.map(m=>m.locName)).sort((a,b)=>a.localeCompare(b,'th'));
-  locSel.innerHTML='<option value="">— เลือกสถานที่ —</option>';
-  locs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;locSel.appendChild(o);});
-  // Sub
-  const loc=locSel.value;
-  const subs=uniq(rows.filter(m=>!loc||m.locName===loc).map(m=>m.subName)).sort((a,b)=>a.localeCompare(b,'th'));
-  subSel.innerHTML='<option value="">— เลือกสถานที่ย่อย —</option>';
-  subs.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;subSel.appendChild(o);});
-  // Equip
-  const sub=subSel.value;
-  const equips=uniq(rows.filter(m=>(!loc||m.locName===loc)&&(!sub||m.subName===sub)).map(m=>m.equipment)).sort((a,b)=>a.localeCompare(b,'th'));
-  equipSel.innerHTML='<option value="">— เลือกอุปกรณ์ —</option>';
-  equips.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;equipSel.appendChild(o);});
+  const rows=master.filter(m=>m.project===proj);
+  const locs=uniq(rows.map(m=>m.locName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  const dl=$('#dl_awLoc');if(dl)dl.innerHTML=locs.map(v=>`<option value="${escAttr(v)}">`).join('');
+  // clear downstream
+  $('#awLoc').value='';$('#awSub').value='';$('#awEquip').value='';
+  const ds=$('#dl_awSub');if(ds)ds.innerHTML='';
+  const de=$('#dl_awEquip');if(de)de.innerHTML='';
 }
+function refreshAwSubs(){
+  const proj=$('#awProject').value;const loc=$('#awLoc').value;
+  const rows=master.filter(m=>m.project===proj&&(!loc||m.locName===loc));
+  const subs=uniq(rows.map(m=>m.subName)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  const dl=$('#dl_awSub');if(dl)dl.innerHTML=subs.map(v=>`<option value="${escAttr(v)}">`).join('');
+  $('#awSub').value='';$('#awEquip').value='';
+  const de=$('#dl_awEquip');if(de)de.innerHTML='';
+}
+function refreshAwEquips(){
+  const proj=$('#awProject').value;const loc=$('#awLoc').value;const sub=$('#awSub').value;
+  const rows=master.filter(m=>m.project===proj&&(!loc||m.locName===loc)&&(!sub||m.subName===sub));
+  const equips=uniq(rows.map(m=>m.equipment)).filter(Boolean).sort((a,b)=>a.localeCompare(b,'th'));
+  const dl=$('#dl_awEquip');if(dl)dl.innerHTML=equips.map(v=>`<option value="${escAttr(v)}">`).join('');
+  $('#awEquip').value='';
+}
+function refreshAwCascade(){refreshAwLocs();}
 
 function renderMissingTable(){
   const proj=$('#awProject').value;
@@ -2108,6 +2116,8 @@ async function saveAssignment(){
   const assignee=$('#awAssignee').value;
   if(!proj){toast('กรุณาเลือกโครงการ',false);return;}
   if(!assignee){toast('กรุณาเลือกผู้รับงาน',false);return;}
+  const validUser=usersCache.find(u=>u.username===assignee||((u.name||u.username)+' ('+u.role+')')===assignee);
+  const resolvedAssignee=validUser?validUser.username:assignee;
   const scope=document.querySelector('input[name="awScope"]:checked')?.value||'project';
   const note=$('#awNote').value.trim();
   const by=AUTH.user?.username||'';
@@ -2118,11 +2128,11 @@ async function saveAssignment(){
     chks.forEach(c=>{
       const m=master.find(x=>x.id===c.dataset.id);if(!m)return;
       const mf=[!m.brand&&'brand',!m.model&&'model',!m.serial&&'serial'].filter(Boolean);
-      newItems.push({id:uid(),project:proj,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:assignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
+      newItems.push({id:uid(),project:proj,scopeType:'missing',locName:m.locName,subName:m.subName,equipment:m.equipment,masterId:m.id,missingFields:mf,assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
     });
   } else {
     const locName=$('#awLoc').value||'';const subName=$('#awSub').value||'';const equipment=$('#awEquip').value||'';
-    newItems.push({id:uid(),project:proj,scopeType:scope,locName,subName,equipment,masterId:'',missingFields:[],assignedTo:assignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
+    newItems.push({id:uid(),project:proj,scopeType:scope,locName,subName,equipment,masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{}});
   }
   assignments.push(...newItems);
   await sSet(ASSIGN_KEY,JSON.stringify(assignments));
@@ -2189,9 +2199,12 @@ $('#assignWorkBtn')?.addEventListener('click',showAssignModal);
 $('#assignModalClose')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#awCancelBtn')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#assignModal')?.addEventListener('click',e=>{if(e.target===$('#assignModal'))$('#assignModal').style.display='none';});
-$('#awProject')?.addEventListener('change',()=>{refreshAssigneeList();refreshAwCascade();renderMissingTable();});
-$('#awLoc')?.addEventListener('change',()=>refreshAwCascade());
-$('#awSub')?.addEventListener('change',()=>refreshAwCascade());
+$('#awProject')?.addEventListener('change',()=>{refreshAssigneeList();refreshAwLocs();renderMissingTable();});
+$('#awProject')?.addEventListener('input',()=>{refreshAssigneeList();renderMissingTable();});
+$('#awLoc')?.addEventListener('change',()=>refreshAwSubs());
+$('#awLoc')?.addEventListener('input',()=>refreshAwSubs());
+$('#awSub')?.addEventListener('change',()=>refreshAwEquips());
+$('#awSub')?.addEventListener('input',()=>refreshAwEquips());
 document.querySelectorAll('input[name="awScope"]').forEach(r=>r.addEventListener('change',awScopeChange));
 $('#awSaveBtn')?.addEventListener('click',saveAssignment);
 $('#fillDataClose')?.addEventListener('click',()=>$('#fillDataModal').style.display='none');
