@@ -84,9 +84,11 @@ const ACT = {
   createUser:'createUser', bulkCreateUsers:'bulkCreateUsers', listUsers:'listUsers',
   saveMaster:'saveMaster', listMaster:'listMaster', getProgress:'getProgress',
   saveAssignment:'saveAssignment', listAssignments:'listAssignments', completeAssignment:'completeAssignment',
+  saveSurveyAssignment:'saveSurveyAssignment', listSurveyAssignments:'listSurveyAssignments', completeSurveyAssignment:'completeSurveyAssignment',
   getAssignStats:'getAssignStats', saveTarget:'saveTarget', listTargets:'listTargets'
 };
 const ASSIGN_KEY='amr_assignments';
+const SURVEY_ASSIGN_KEY='amr_survey_assignments';
 const TOKEN_KEY='amr_token', USER_KEY='amr_user';
 let AUTH = { token:null, user:null };
 let _clientIP = '';
@@ -155,7 +157,7 @@ function doLogout(){clearSession();$('#userChip').style.display='none';$('#authU
 async function afterLogin(){
   await checkPdpa();await loadAll();await loadMasterFromBackend();
   await Promise.all([
-    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),loadAssignments(),loadAssignStats(),
+    loadRecords(),loadProgress(),loadSurvey(),loadTargets(),loadReportPresets(),loadReportInfo(),loadAssignments(),loadSurveyAssignments(),loadAssignStats(),
     ...(AUTH.user?.role==='admin' ? [loadPagePerms()] : [])
   ]);
 }
@@ -272,8 +274,9 @@ const MASTER_KEY='master';
 const LEVELS=['project','system','typeloc','loc','sub','equip','serial'];
 const PROP={project:'project',system:'system',typeloc:'typeLocation',loc:'locName',sub:'subName',equip:'equipment',serial:'serial'};
 const LABEL={project:'โครงการ',system:'ระบบ',typeloc:'ประเภทสถานที่',loc:'สถานที่',sub:'สถานที่ย่อย',equip:'อุปกรณ์',serial:'Serial Number'};
-let master=[],entries=[],assignments=[],assignStats=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
+let master=[],entries=[],assignments=[],surveyAssignments=[],assignStats=[],editingId=null,imgMain='',imgSticker='',img3='',img4='';
 let awSelProjs=[],awSelLocs=[],awSelSubs=[],awSelEquips=[];
+let _awCtx='record'; // 'record' | 'survey'
 const sel={project:'',system:'',loc:'',sub:'',equip:'',serial:''};
 const combos={};
 const INSP_SEED=['สมชาย ใจดี','สมหญิง รักงาน'];
@@ -2107,16 +2110,26 @@ async function loadAssignments(){
   }
   renderMyAssignments();
 }
+async function loadSurveyAssignments(){
+  const local=await sGet(SURVEY_ASSIGN_KEY);
+  if(local){try{surveyAssignments=JSON.parse(local);}catch(e){surveyAssignments=[];}}
+  if(AUTH.token){
+    const r=await api(ACT.listSurveyAssignments,{});
+    if(r&&r.ok&&Array.isArray(r.assignments)){
+      surveyAssignments=r.assignments;
+      await sSet(SURVEY_ASSIGN_KEY,JSON.stringify(surveyAssignments));
+    }
+  }
+  renderSurveyAssignments();
+}
 
 function canAssign(){
   const role=AUTH.user?.role||'';
   return role==='admin'||role==='manager'||role==='leader';
 }
 
-function renderMyAssignments(){
-  const me=AUTH.user?.username||'';
-  const mine=assignments.filter(a=>a.assignedTo===me&&a.status==='pending');
-  const cardHTML=mine.map(a=>{
+function _buildAssignCards(list){
+  return list.map(a=>{
     const scopeLabel=a.scopeType==='project'?a.project
       :a.scopeType==='loc'?a.locName
       :a.scopeType==='sub'?(a.locName+' › '+a.subName)
@@ -2132,17 +2145,23 @@ function renderMyAssignments(){
       ${a.scopeType==='missing'?`<button onclick="openFillData('${a.id}')" style="padding:7px 14px;border-radius:8px;border:none;background:#6366F1;color:#fff;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap">กรอกข้อมูล</button>`:''}
     </div>`;
   }).join('');
-  // render into panel-saved section
-  const sec1=$('#myAssignmentsSection'),list1=$('#myAssignmentsList'),pill1=$('#assignPill'),btn1=$('#assignWorkBtn');
-  if(sec1&&list1){
-    if(mine.length===0&&!canAssign()){sec1.style.display='none';}
-    else{sec1.style.display='block';list1.innerHTML=cardHTML;if(pill1)pill1.textContent=mine.length;if(btn1)btn1.style.display=canAssign()?'':'none';}
+}
+function renderMyAssignments(){
+  const me=AUTH.user?.username||'';
+  const mine=assignments.filter(a=>a.assignedTo===me&&a.status==='pending');
+  const sec=$('#myAssignmentsSection'),list=$('#myAssignmentsList'),pill=$('#assignPill'),btn=$('#assignWorkBtn');
+  if(sec&&list){
+    if(mine.length===0&&!canAssign()){sec.style.display='none';}
+    else{sec.style.display='block';list.innerHTML=_buildAssignCards(mine);if(pill)pill.textContent=mine.length;if(btn)btn.style.display=canAssign()?'':'none';}
   }
-  // render into panel-survey section
-  const sec2=$('#surveyAssignSection'),list2=$('#surveyAssignList'),pill2=$('#surveyAssignPill'),btn2=$('#surveyAssignWorkBtn');
-  if(sec2&&list2){
-    if(mine.length===0&&!canAssign()){sec2.style.display='none';}
-    else{sec2.style.display='block';list2.innerHTML=cardHTML;if(pill2)pill2.textContent=mine.length;if(btn2)btn2.style.display=canAssign()?'':'none';}
+}
+function renderSurveyAssignments(){
+  const me=AUTH.user?.username||'';
+  const mine=surveyAssignments.filter(a=>a.assignedTo===me&&a.status==='pending');
+  const sec=$('#surveyAssignSection'),list=$('#surveyAssignList'),pill=$('#surveyAssignPill'),btn=$('#surveyAssignWorkBtn');
+  if(sec&&list){
+    if(mine.length===0&&!canAssign()){sec.style.display='none';}
+    else{sec.style.display='block';list.innerHTML=_buildAssignCards(mine);if(pill)pill.textContent=mine.length;if(btn)btn.style.display=canAssign()?'':'none';}
   }
 }
 
@@ -2184,8 +2203,12 @@ function _awClearComboVal(id){
   inp.value='';const wrap=inp.closest('.combo');if(wrap)wrap.classList.remove('has-val');
   inp.dispatchEvent(new Event('change',{bubbles:true}));
 }
-function showAssignModal(){
+function showAssignModal(ctx){
+  _awCtx=ctx||'record';
   const modal=$('#assignModal');if(!modal)return;
+  // Update modal title to show context
+  const titleEl=modal.querySelector('[style*="font-size:17px"]');
+  if(titleEl)titleEl.textContent=_awCtx==='survey'?'มอบหมายงานสำรวจภาคสนาม':'มอบหมายงานรายการบันทึก';
   modal.style.display='flex';
   const role=AUTH.user?.role||'';
   const userProjs=(AUTH.user?.project||'').split(',').map(p=>p.trim()).filter(Boolean);
@@ -2354,11 +2377,19 @@ async function saveAssignment(){
     awSelProjs.forEach(proj=>locs.forEach(loc=>subs.forEach(sub=>awSelEquips.forEach(eq=>newItems.push({id:uid(),project:proj,scopeType:'equip',locName:loc,subName:sub,equipment:eq,masterId:'',missingFields:[],assignedTo:resolvedAssignee,assignedBy:by,note,status:'pending',createdAt:Date.now(),doneAt:null,doneData:{},targetDate})))));
   }
   if(!newItems.length){toast('ไม่มีรายการให้บันทึก',false);return;}
-  assignments.push(...newItems);
-  await sSet(ASSIGN_KEY,JSON.stringify(assignments));
-  if(AUTH.token){for(const a of newItems)await api(ACT.saveAssignment,{assignment:a});}
-  $('#assignModal').style.display='none';
-  renderMyAssignments();
+  if(_awCtx==='survey'){
+    surveyAssignments.push(...newItems);
+    await sSet(SURVEY_ASSIGN_KEY,JSON.stringify(surveyAssignments));
+    if(AUTH.token){for(const a of newItems)await api(ACT.saveSurveyAssignment,{assignment:a});}
+    $('#assignModal').style.display='none';
+    renderSurveyAssignments();
+  } else {
+    assignments.push(...newItems);
+    await sSet(ASSIGN_KEY,JSON.stringify(assignments));
+    if(AUTH.token){for(const a of newItems)await api(ACT.saveAssignment,{assignment:a});}
+    $('#assignModal').style.display='none';
+    renderMyAssignments();
+  }
   await loadAssignStats();
   toast('มอบหมายงาน '+newItems.length+' รายการแล้ว',true);
 }
@@ -2414,7 +2445,7 @@ function exportAssignData(){
 }
 
 // ── Wire up events ──
-$('#assignWorkBtn')?.addEventListener('click',showAssignModal);
+$('#assignWorkBtn')?.addEventListener('click',()=>showAssignModal('record'));
 $('#assignModalClose')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#awCancelBtn')?.addEventListener('click',()=>$('#assignModal').style.display='none');
 $('#assignModal')?.addEventListener('click',e=>{if(e.target===$('#assignModal'))$('#assignModal').style.display='none';});
@@ -2441,7 +2472,7 @@ $('#assignSectionToggle')?.addEventListener('click',()=>{
 });
 
 // ── Survey assign section wiring ──
-$('#surveyAssignWorkBtn')?.addEventListener('click',showAssignModal);
+$('#surveyAssignWorkBtn')?.addEventListener('click',()=>showAssignModal('survey'));
 $('#surveyExportAssignBtn')?.addEventListener('click',exportAssignData);
 $('#surveyAssignToggle')?.addEventListener('click',()=>{
   const l=$('#surveyAssignList');if(l)l.style.display=l.style.display==='none'?'flex':'none';

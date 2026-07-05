@@ -25,6 +25,7 @@ const CONFIG = {
     MASTER:  'Master',
     SURVEY:  'Survey',
     ASSIGNMENTS: 'Assignments',
+    SURVEY_ASSIGNMENTS: 'SurveyAssignments',
     PDPA:    'PDPA',
     TOKENS:  'Tokens',
     LOGS:    'Logs'
@@ -121,10 +122,14 @@ function route(action, payload) {
     case 'saveMaster':        return actionSaveMaster(payload);
     case 'listMaster':        return actionListMaster(payload);
     case 'getProgress':       return actionGetProgress(payload);
-    // Assignments
+    // Assignments (รายการบันทึก)
     case 'saveAssignment':    return actionSaveAssignment(payload);
     case 'listAssignments':   return actionListAssignments(payload);
     case 'completeAssignment':return actionCompleteAssignment(payload);
+    // Survey Assignments (สำรวจภาคสนาม)
+    case 'saveSurveyAssignment':    return actionSaveSurveyAssignment(payload);
+    case 'listSurveyAssignments':   return actionListSurveyAssignments(payload);
+    case 'completeSurveyAssignment':return actionCompleteSurveyAssignment(payload);
     // Survey
     case 'createSurvey':      return actionCreateSurvey(payload);
     case 'listSurvey':        return actionListSurvey(payload);
@@ -154,8 +159,9 @@ function route(action, payload) {
     case 'bulkSaveReportInfo':  return actionBulkSaveReportInfo(payload);
     case 'getCustomerLogoFolderUrl': return actionGetCustomerLogoFolderUrl(payload);
      // Switch-case
-    case 'saveTarget':   return actionSaveTarget(payload);
-    case 'listTargets':  return actionListTargets(payload);
+    case 'saveTarget':      return actionSaveTarget(payload);
+    case 'listTargets':     return actionListTargets(payload);
+    case 'getAssignStats':  return actionGetAssignStats(payload);
     // PDF Report
     case 'generateReport':    return actionGenerateReport(payload, payload._user);
     // Image proxy (สำหรับ Word export — แก้ปัญหา CORS)
@@ -812,11 +818,14 @@ const SURVEY_HEADERS = [
    ================================================================ */
 const TARGET_HEADERS = ['project','username','deadline','note','updatedAt'];
 
-function actionSaveTarget({ project, deadline, note, _user }) {
+function actionSaveTarget({ project, username, deadline, note, _user }) {
   if (!['admin','manager','leader'].includes(_user.role))
     return { ok: false, message: 'ไม่มีสิทธิ์' };
   if (!project || !deadline)
     return { ok: false, message: 'ต้องมีโครงการและวันเสร็จ' };
+
+  // ถ้าไม่ได้ระบุ username ให้ใช้ username ของผู้เรียก
+  const targetUser = username || _user.username;
 
   const sh   = getSheet('Targets');
   ensureHeaders(sh, TARGET_HEADERS);
@@ -825,15 +834,18 @@ function actionSaveTarget({ project, deadline, note, _user }) {
   const uCol = data[0].indexOf('username');
 
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][pCol]) === project && String(data[i][uCol]) === _user.username) {
+    if (String(data[i][pCol]) === project && String(data[i][uCol]) === targetUser) {
+      // project-level target (__project__) — เฉพาะ admin/manager เปลี่ยนได้หลังตั้งแล้ว
+      if (targetUser === '__project__' && !['admin','manager'].includes(_user.role))
+        return { ok: false, message: 'เฉพาะ admin/manager เท่านั้นเปลี่ยน project target ได้' };
       sh.getRange(i+1, 1, 1, TARGET_HEADERS.length).setValues([[
-        project, _user.username, deadline, note||'', new Date().toISOString()
+        project, targetUser, deadline, note||'', new Date().toISOString()
       ]]);
       return { ok: true, action: 'updated' };
     }
   }
   appendRow(sh, TARGET_HEADERS, {
-    project, username: _user.username,
+    project, username: targetUser,
     deadline, note: note||'',
     updatedAt: new Date().toISOString()
   });
@@ -849,9 +861,68 @@ function actionListTargets({ _user }) {
   let rows = sheetToObjects(sh);
 
   if (_user.role === 'leader') {
-    rows = rows.filter(r => r.username === _user.username);
+    const userProjs = (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+    // leader เห็น: target ของตัวเอง + project-level targets ของโครงการตัวเอง
+    rows = rows.filter(r => r.username === _user.username ||
+      (r.username === '__project__' && userProjs.includes(r.project)));
   }
   return { ok: true, targets: rows };
+}
+
+function actionGetAssignStats({ _user }) {
+  const role = _user.role, uname = _user.username;
+  const userProjs = (_user.project||'').split(',').map(p=>p.trim()).filter(Boolean);
+
+  // Load assignments filtered by role
+  const assignSh = getSheet(CONFIG.SHEETS.ASSIGNMENTS);
+  ensureHeaders(assignSh, ASSIGN_HEADERS);
+  let assigns = sheetToObjects(assignSh).filter(a => a.id);
+  if (role === 'inspector') {
+    assigns = assigns.filter(a => a.assignedTo === uname);
+  } else if (role === 'leader') {
+    assigns = assigns.filter(a => userProjs.includes(a.project) || a.assignedBy === uname || a.assignedTo === uname);
+  }
+
+  // Load project-level targets
+  const tSh = getSheet('Targets');
+  ensureHeaders(tSh, TARGET_HEADERS);
+  const projTargets = sheetToObjects(tSh).filter(t => t.username === '__project__');
+
+  // Load user display names
+  const userSh = getSheet(CONFIG.SHEETS.USERS);
+  const usersData = sheetToObjects(userSh);
+  const nameMap = {};
+  usersData.forEach(u => { nameMap[u.username] = u.name || u.username; });
+
+  // Group by project → inspector
+  const projMap = {};
+  assigns.forEach(a => {
+    if (!a.assignedTo || !a.project) return;
+    if (!projMap[a.project]) projMap[a.project] = {};
+    const ins = a.assignedTo;
+    if (!projMap[a.project][ins]) projMap[a.project][ins] = { total:0, done:0, dates:[] };
+    projMap[a.project][ins].total++;
+    if (a.status === 'done') projMap[a.project][ins].done++;
+    if (a.targetDate) projMap[a.project][ins].dates.push(String(a.targetDate));
+  });
+
+  const stats = Object.entries(projMap).map(([project, insMap]) => {
+    const pt = projTargets.find(t => t.project === project);
+    return {
+      project,
+      projectDeadline: pt ? String(pt.deadline) : '',
+      inspectors: Object.entries(insMap).map(([u, d]) => ({
+        username: u,
+        name: nameMap[u] || u,
+        total: d.total,
+        done: d.done,
+        remaining: d.total - d.done,
+        earliestTargetDate: d.dates.length ? d.dates.sort()[0] : ''
+      }))
+    };
+  });
+
+  return { ok: true, stats };
 }
 
 function actionCreateSurvey({ record, images, _user }) {
@@ -1495,7 +1566,7 @@ function include(filename) {
 const ASSIGN_HEADERS = [
   'id','project','scopeType','locName','subName','equipment',
   'masterId','missingFields','assignedTo','assignedBy','note',
-  'status','createdAt','doneAt','doneData'
+  'status','createdAt','doneAt','doneData','targetDate'
 ];
 
 function actionSaveAssignment({ assignment, _user }) {
@@ -1555,6 +1626,81 @@ function actionListAssignments({ _user }) {
 function actionCompleteAssignment({ id, doneData, _user }) {
   if (!id) return { ok: false, message: 'No id' };
   const sh = getSheet(CONFIG.SHEETS.ASSIGNMENTS);
+  const data = sh.getDataRange().getValues();
+  const hdr = data[0] || [];
+  const idCol = hdr.indexOf('id');
+  const statusCol = hdr.indexOf('status');
+  const doneAtCol = hdr.indexOf('doneAt');
+  const doneDataCol = hdr.indexOf('doneData');
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === id) {
+      sh.getRange(r + 1, statusCol + 1).setValue('done');
+      sh.getRange(r + 1, doneAtCol + 1).setValue(Date.now());
+      sh.getRange(r + 1, doneDataCol + 1).setValue(JSON.stringify(doneData || {}));
+      return { ok: true };
+    }
+  }
+  return { ok: false, message: 'Not found' };
+}
+
+/* ================================================================
+   SURVEY ASSIGNMENTS — แยกจาก Assignments (รายการบันทึก)
+   ================================================================ */
+function actionSaveSurveyAssignment({ assignment, _user }) {
+  if (!assignment || !assignment.id) return { ok: false, message: 'No assignment' };
+  const sh = getSheet(CONFIG.SHEETS.SURVEY_ASSIGNMENTS);
+  ensureHeaders(sh, ASSIGN_HEADERS);
+  const data = sh.getDataRange().getValues();
+  const hdr = data[0] || [];
+  const idCol = hdr.indexOf('id');
+  let found = false;
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === assignment.id) {
+      ASSIGN_HEADERS.forEach((h, i) => {
+        let v = assignment[h];
+        if (h === 'missingFields' || h === 'doneData') v = JSON.stringify(v || (h === 'doneData' ? {} : []));
+        sh.getRange(r + 1, i + 1).setValue(v == null ? '' : v);
+      });
+      found = true; break;
+    }
+  }
+  if (!found) {
+    const row = ASSIGN_HEADERS.map(h => {
+      let v = assignment[h];
+      if (h === 'missingFields' || h === 'doneData') v = JSON.stringify(v || (h === 'doneData' ? {} : []));
+      return v == null ? '' : v;
+    });
+    sh.appendRow(row);
+  }
+  return { ok: true };
+}
+
+function actionListSurveyAssignments({ _user }) {
+  const role = (_user && _user.role) || '';
+  const username = (_user && _user.username) || '';
+  const userProjs = (_user && _user.project ? _user.project.split(',').map(p => p.trim()).filter(Boolean) : []);
+  const sh = getSheet(CONFIG.SHEETS.SURVEY_ASSIGNMENTS);
+  ensureHeaders(sh, ASSIGN_HEADERS);
+  const data = sh.getDataRange().getValues();
+  if (data.length < 2) return { ok: true, assignments: [] };
+  const hdr = data[0];
+  const rows = data.slice(1).map(r => {
+    const obj = {};
+    hdr.forEach((h, i) => {
+      let v = r[i];
+      if (h === 'missingFields' || h === 'doneData') { try { v = JSON.parse(v || (h === 'doneData' ? '{}' : '[]')); } catch(e) { v = h === 'doneData' ? {} : []; } }
+      obj[h] = v;
+    });
+    return obj;
+  }).filter(a => a.id);
+  if (role === 'admin' || role === 'manager') return { ok: true, assignments: rows };
+  if (role === 'leader') return { ok: true, assignments: rows.filter(a => userProjs.includes(a.project) || a.assignedBy === username || a.assignedTo === username) };
+  return { ok: true, assignments: rows.filter(a => a.assignedTo === username) };
+}
+
+function actionCompleteSurveyAssignment({ id, doneData, _user }) {
+  if (!id) return { ok: false, message: 'No id' };
+  const sh = getSheet(CONFIG.SHEETS.SURVEY_ASSIGNMENTS);
   const data = sh.getDataRange().getValues();
   const hdr = data[0] || [];
   const idCol = hdr.indexOf('id');
