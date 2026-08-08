@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s*)",
+      "mcp__github__actions_list",
+      "mcp__github__actions_get",
+      "Bash(git -C /workspace/my-web-app rev-parse *)",
+      "mcp__github__get_file_contents",
+      "mcp__github__list_pull_requests",
+      "Bash(git -C /workspace/my-web-app status)",
+      "mcp__github__search_repositories",
+      "Bash(npm view *)"
+    ]
+  }
+}
