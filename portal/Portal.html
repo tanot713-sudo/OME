@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OMA Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6fa; --card:#fff; --ink:#152033; --muted:#6b7a90; --line:#e3e8f0;
+  --brand:#1f4fd8; --brand-soft:#eaf0ff; --danger:#d63b4a; --ok:#18915f;
+  --radius:14px; --shadow:0 10px 30px rgba(21,32,51,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;font-size:14px}
+button,input,select{font-family:inherit;font-size:inherit}
+.hidden{display:none !important}
+
+/* ── LOGIN ─────────────────────────────────────────── */
+#login,#pwGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#1b2b4b,#0e1626);padding:20px;z-index:50}
+.auth-card{width:100%;max-width:380px;background:var(--card);border-radius:18px;padding:28px;box-shadow:var(--shadow)}
+.auth-card h2{margin:0 0 4px;font-size:20px}
+.auth-card .sub{color:var(--muted);margin-bottom:20px}
+.auth-card label{display:block;margin:12px 0 6px;font-weight:500}
+.auth-card input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;outline:none}
+.auth-card input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.btn{display:inline-flex;align-items:center;gap:6px;justify-content:center;padding:10px 16px;border:none;border-radius:10px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--danger)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.auth-card .btn{width:100%;margin-top:18px;padding:12px}
+.msg{margin-top:10px;color:var(--danger);min-height:18px;font-size:13px}
+.msg.ok{color:var(--ok)}
+
+/* ── SHELL ─────────────────────────────────────────── */
+#app{display:flex;min-height:100vh}
+#sidebar{width:246px;flex:0 0 246px;background:#0e1626;color:#c9d4e6;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:.5px}
+.brand span{font-size:12px;color:#7e8da5}
+.nav{flex:1;overflow:auto;padding:12px 10px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#c9d4e6;text-decoration:none;cursor:pointer;margin-bottom:2px}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a.active{background:var(--brand);color:#fff}
+.nav a i{font-size:16px}
+.side-foot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:#8ea0ba}
+.side-foot b{display:block;color:#fff;font-size:13px}
+#main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.topbar h1{margin:0;font-size:16px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;max-width:220px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-weight:600;font-size:12px}
+.icon-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;padding:6px}
+#content{flex:1;position:relative;background:var(--bg)}
+.frame-wrap{position:absolute;inset:0}
+.frame-wrap iframe{width:100%;height:100%;border:none;background:#fff}
+.pane{position:absolute;inset:0;overflow:auto;padding:20px}
+
+/* ── SETTINGS ──────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.card h3{margin:0 0 4px;font-size:15px}
+.card .hint{color:var(--muted);font-size:13px;margin-bottom:14px}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:500}
+.tabs button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+td.center,th.center{text-align:center}
+.table-scroll{overflow-x:auto}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef2f8;color:var(--muted);font-size:12px;margin:1px 2px 1px 0}
+.tag.on{background:#e6f6ee;color:var(--ok)}
+.tag.off{background:#fdecee;color:var(--danger)}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.bar .spacer{flex:1}
+input[type=text],input[type=email],input[type=password],select.cell{padding:8px 10px;border:1px solid var(--line);border-radius:9px;width:100%;background:#fff}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;margin-top:6px}
+.checks label{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;cursor:pointer}
+.checks label.locked{opacity:.5;cursor:not-allowed}
+
+/* ── MODAL ─────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(14,22,38,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow:auto;padding:22px;box-shadow:var(--shadow)}
+.modal h3{margin:0 0 16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-weight:500;margin-bottom:6px}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.empty{padding:26px;text-align:center;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#152033;color:#fff;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
+#toast.show{opacity:1}
+
+@media(max-width:820px){
+  #sidebar{position:fixed;left:0;top:0;z-index:30;transform:translateX(-100%);transition:transform .2s}
+  #sidebar.open{transform:none}
+  .topbar select{max-width:150px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login">
+  <form class="auth-card" id="loginForm">
+    <h2>OMA Portal</h2>
+    <div class="sub">เข้าสู่ระบบเพื่อดูแดชบอร์ดตามสิทธิ์ของคุณ</div>
+    <label for="email">อีเมล</label>
+    <input id="email" type="email" autocomplete="username" placeholder="name@company.com" required>
+    <label for="password">รหัสผ่าน</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+    <div class="msg" id="loginMsg"></div>
+    <button class="btn" id="loginBtn" type="submit">เข้าสู่ระบบ</button>
+  </form>
+</div>
+
+<!-- ══════════════ FIRST LOGIN — เปลี่ยนรหัสผ่าน ══════════════ -->
+<div id="pwGate" class="hidden">
+  <form class="auth-card" id="pwForm">
+    <h2>ตั้งรหัสผ่านใหม่</h2>
+    <div class="sub">เข้าสู่ระบบครั้งแรก กรุณาตั้งรหัสผ่านของคุณเอง</div>
+    <label for="pw1">รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label>
+    <input id="pw1" type="password" autocomplete="new-password" required>
+    <label for="pw2">ยืนยันรหัสผ่านใหม่</label>
+    <input id="pw2" type="password" autocomplete="new-password" required>
+    <div class="msg" id="pwMsg"></div>
+    <button class="btn" type="submit">บันทึกรหัสผ่าน</button>
+  </form>
+</div>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div id="app" class="hidden">
+  <aside id="sidebar">
+    <div class="brand"><b>OMA PORTAL</b><span>Operation Management</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <b id="sideName">—</b>
+      <span id="sideRole">—</span>
+      <div id="sideScope" style="margin-top:4px"></div>
+    </div>
+  </aside>
+
+  <div id="main">
+    <header class="topbar">
+      <button class="icon-btn" id="burger" title="เมนู"><i class="bi bi-list"></i></button>
+      <h1 id="pageTitle">—</h1>
+      <select id="projectSelect" title="ขอบเขตโครงการ"></select>
+      <span class="chip" id="userChip">—</span>
+      <button class="icon-btn" id="logoutBtn" title="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i></button>
+    </header>
+    <div id="content"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIG — URL ของ Auth service (ฝัง URL ของ deployment ตัวเองอัตโนมัติ)
+   ถ้าเปิดไฟล์นี้จากที่อื่น (GitHub Pages ฯลฯ) ให้ใส่ /exec URL ตรง ๆ แทน
+   ================================================================ */
+const API_URL = '<?= ScriptApp.getService().getUrl() ?>';
+
+const state = {
+  token: sessionStorage.getItem('oma_token') || '',
+  user: null,
+  menus: [],
+  projects: [],
+  project: sessionStorage.getItem('oma_project') || '',
+  current: '',
+  frames: {},
+  settings: null
+};
+
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(action, payload) {
+  const body = JSON.stringify(Object.assign({ action: action, token: state.token }, payload || {}));
+  const res  = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    redirect: 'follow',
+    body: body
+  });
+  const json = await res.json();
+  if (json && json.code === 'INVALID_TOKEN') { logout(true); throw new Error(json.message); }
+  return json;
+}
+
+function toast(text, isError) {
+  const t = $('#toast');
+  t.textContent = text;
+  t.style.background = isError ? '#d63b4a' : '#152033';
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ================================================================
+   LOGIN
+   ================================================================ */
+$('#loginForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const btn = $('#loginBtn');
+  $('#loginMsg').textContent = '';
+  btn.disabled = true; btn.textContent = 'กำลังตรวจสอบ…';
+  try {
+    const r = await api('login', { email: $('#email').value.trim(), password: $('#password').value });
+    if (!r.success) { $('#loginMsg').textContent = r.message || 'เข้าสู่ระบบไม่สำเร็จ'; return; }
+    state.token = r.token;
+    sessionStorage.setItem('oma_token', r.token);
+    applySession(r);
+    if (r.isFirstLogin) { $('#login').classList.add('hidden'); $('#pwGate').classList.remove('hidden'); return; }
+    startApp();
+  } catch (err) {
+    $('#loginMsg').textContent = 'เชื่อมต่อระบบไม่ได้: ' + err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
+  }
+});
+
+$('#pwForm').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const p1 = $('#pw1').value, p2 = $('#pw2').value;
+  if (p1.length < 8)  { $('#pwMsg').textContent = 'รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร'; return; }
+  if (p1 !== p2)      { $('#pwMsg').textContent = 'รหัสผ่านทั้งสองช่องไม่ตรงกัน'; return; }
+  const r = await api('changePassword', { newPassword: p1 });
+  if (!r.success) { $('#pwMsg').textContent = r.message || 'บันทึกไม่สำเร็จ'; return; }
+  $('#pwGate').classList.add('hidden');
+  startApp();
+  toast('ตั้งรหัสผ่านใหม่เรียบร้อย');
+});
+
+function applySession(r) {
+  state.user     = r.user;
+  state.menus    = r.menus || [];
+  state.projects = r.projects || [];
+  if (state.user.projectScope === 'own') {
+    const codes = state.projects.map(p => p.code);
+    if (codes.indexOf(state.project) === -1) state.project = codes[0] || '';
+  }
+}
+
+function logout(silent) {
+  if (!silent && state.token) api('logout', {}).catch(() => {});
+  state.token = ''; state.user = null;
+  sessionStorage.removeItem('oma_token');
+  $('#app').classList.add('hidden');
+  $('#pwGate').classList.add('hidden');
+  $('#login').classList.remove('hidden');
+  $('#content').innerHTML = '';
+  state.frames = {};
+}
+$('#logoutBtn').addEventListener('click', () => logout());
+$('#burger').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
+
+/* ================================================================
+   SHELL
+   ================================================================ */
+function startApp() {
+  $('#login').classList.add('hidden');
+  $('#app').classList.remove('hidden');
+
+  const u = state.user;
+  $('#userChip').textContent  = u.name || u.email;
+  $('#sideName').textContent  = u.name || u.email;
+  $('#sideRole').textContent  = u.roleLabel || u.role;
+  $('#sideScope').innerHTML   = u.projectScope === 'all'
+    ? '<span class="tag on">ทุกโครงการ</span>'
+    : state.projects.map(p => '<span class="tag">' + esc(p.code) + '</span>').join('');
+
+  renderNav();
+  renderProjectSelect();
+  openMenu(state.menus[0] && state.menus[0].id);
+}
+
+function renderNav() {
+  $('#nav').innerHTML = state.menus.map(m =>
+    '<a data-id="' + esc(m.id) + '"><i class="bi ' + esc(m.icon || 'bi-app') + '"></i><span>' + esc(m.label) + '</span></a>'
+  ).join('');
+  $$('#nav a').forEach(a => a.addEventListener('click', () => {
+    openMenu(a.dataset.id);
+    $('#sidebar').classList.remove('open');
+  }));
+}
+
+function renderProjectSelect() {
+  const sel = $('#projectSelect');
+  const opts = [];
+  if (state.user.projectScope === 'all') opts.push('<option value="">ทุกโครงการ</option>');
+  state.projects.forEach(p => {
+    opts.push('<option value="' + esc(p.code) + '">' + esc(p.name || p.code) + '</option>');
+  });
+  sel.innerHTML = opts.join('');
+  sel.value = state.project;
+  // ถ้ามีโครงการเดียวก็ไม่ต้องโชว์ตัวเลือกให้รก
+  sel.classList.toggle('hidden', opts.length <= 1);
+  sel.onchange = () => {
+    state.project = sel.value;
+    sessionStorage.setItem('oma_project', state.project);
+    reloadScopedFrames();
+  };
+}
+
+/* ส่งขอบเขตสิทธิ์เข้าไปกับ iframe เพื่อให้แอปลูกกรองข้อมูลตามสิทธิ์เดียวกัน
+   (แอปลูกต้องเรียก verify กลับมาที่ hub เพื่อยืนยัน token ก่อนเชื่อค่าเหล่านี้) */
+function frameSrc(menu) {
+  const q = [
+    'portalToken=' + encodeURIComponent(state.token),
+    'portalUser='  + encodeURIComponent(state.user.email),
+    'role='        + encodeURIComponent(state.user.role),
+    'scope='       + encodeURIComponent(state.user.projectScope),
+    'projects='    + encodeURIComponent(state.user.projectScope === 'all' ? 'ALL' : state.projects.map(p => p.code).join(','))
+  ];
+  if (menu.scoped && state.project) q.push('project=' + encodeURIComponent(state.project));
+  return menu.src + (menu.src.indexOf('?') === -1 ? '?' : '&') + q.join('&');
+}
+
+function openMenu(id) {
+  if (!id) { $('#content').innerHTML = '<div class="empty">ยังไม่มีหน้าที่คุณมีสิทธิ์เข้าถึง</div>'; return; }
+  const menu = state.menus.find(m => m.id === id);
+  if (!menu) return;
+
+  state.current = id;
+  $('#pageTitle').textContent = menu.label;
+  $$('#nav a').forEach(a => a.classList.toggle('active', a.dataset.id === id));
+  $$('#content > *').forEach(el => el.classList.add('hidden'));
+
+  if (menu.id === 'sec-settings') { openSettings(); return; }
+  if (!menu.isIframe) return;
+
+  if (!state.frames[id]) {
+    const wrap = document.createElement('div');
+    wrap.className = 'frame-wrap';
+    wrap.dataset.frame = id;
+    wrap.innerHTML = '<iframe title="' + esc(menu.label) + '" src="' + esc(frameSrc(menu)) + '" allow="clipboard-write"></iframe>';
+    $('#content').appendChild(wrap);
+    state.frames[id] = wrap;
+  }
+  state.frames[id].classList.remove('hidden');
+
+  const sel = $('#projectSelect');
+  const showSelect = menu.scoped && (state.projects.length + (state.user.projectScope === 'all' ? 1 : 0)) > 1;
+  sel.classList.toggle('hidden', !showSelect);
+}
+
+function reloadScopedFrames() {
+  Object.keys(state.frames).forEach(id => {
+    const menu = state.menus.find(m => m.id === id);
+    if (menu && menu.scoped) $('iframe', state.frames[id]).src = frameSrc(menu);
+  });
+}
+
+/* ================================================================
+   SETTINGS — เฉพาะ Admin
+   ================================================================ */
+let settingsPane = null;
+let activeTab = 'users';
+
+async function openSettings() {
+  if (!settingsPane) {
+    settingsPane = document.createElement('div');
+    settingsPane.className = 'pane';
+    settingsPane.dataset.pane = 'settings';
+    $('#content').appendChild(settingsPane);
+  }
+  settingsPane.classList.remove('hidden');
+  $('#projectSelect').classList.add('hidden');
+  settingsPane.innerHTML = '<div class="empty">กำลังโหลดข้อมูลสิทธิ์…</div>';
+
+  const r = await api('getSettings', {});
+  if (!r.success) { settingsPane.innerHTML = '<div class="empty">' + esc(r.message) + '</div>'; return; }
+  state.settings = r;
+  renderSettings();
+}
+
+function renderSettings() {
+  settingsPane.innerHTML =
+    '<div class="tabs">' +
+      tabBtn('users', 'ผู้ใช้งาน') + tabBtn('roles', 'สิทธิ์ตามตำแหน่ง') + tabBtn('projects', 'โครงการ') +
+    '</div><div id="tabBody"></div>';
+  $$('.tabs button', settingsPane).forEach(b => b.addEventListener('click', () => { activeTab = b.dataset.tab; renderSettings(); }));
+  ({ users: renderUsersTab, roles: renderRolesTab, projects: renderProjectsTab })[activeTab]();
+}
+function tabBtn(id, label) {
+  return '<button data-tab="' + id + '" class="' + (activeTab === id ? 'active' : '') + '">' + label + '</button>';
+}
+
+/* ── ผู้ใช้งาน ─────────────────────────────────── */
+function renderUsersTab() {
+  const s = state.settings;
+  const rows = s.users.map(u => {
+    const roleLabel = (s.roles.find(r => r.role === u.role) || {}).label || u.role;
+    const scope = (s.roles.find(r => r.role === u.role) || {}).projectScope === 'all'
+      ? '<span class="tag on">ทุกโครงการ</span>'
+      : (u.projects.length ? u.projects.map(p => '<span class="tag">' + esc(p) + '</span>').join('') : '<span class="tag off">ยังไม่ผูกโครงการ</span>');
+    const pages = u.allowedMenus
+      ? '<span class="tag">กำหนดเอง ' + countSpec(u.allowedMenus) + ' หน้า</span>'
+      : '<span class="tag">ตามตำแหน่ง</span>';
+    return '<tr>' +
+      '<td>' + esc(u.email) + (u.firstLogin === 'Y' ? ' <span class="tag off">ยังไม่เปลี่ยนรหัส</span>' : '') + '</td>' +
+      '<td>' + esc(u.name) + '</td>' +
+      '<td>' + esc(roleLabel) + '</td>' +
+      '<td>' + scope + '</td>' +
+      '<td>' + pages + '</td>' +
+      '<td class="center">' + (u.active ? '<span class="tag on">ใช้งาน</span>' : '<span class="tag off">ปิด</span>') + '</td>' +
+      '<td><div class="row-actions">' +
+        '<button class="btn ghost sm" data-edit="' + esc(u.email) + '">แก้ไข</button>' +
+        '<button class="btn danger sm" data-del="' + esc(u.email) + '">ลบ</button>' +
+      '</div></td></tr>';
+  }).join('');
+
+  $('#tabBody').innerHTML =
+    '<div class="card"><h3>ผู้ใช้งานทั้งหมด</h3>' +
+    '<div class="hint">กำหนดตำแหน่ง (role) และโครงการที่ผู้ใช้แต่ละคนเข้าถึงได้ · หน้าไหนเห็นได้บ้างมาจากตำแหน่ง เว้นแต่จะกำหนดเองรายคน</div>' +
+    '<div class="bar"><div class="spacer"></div><button class="btn" id="addUser"><i class="bi bi-plus-lg"></i> เพิ่มผู้ใช้</button></div>' +
+    '<div class="table-scroll"><table><thead><tr><th>อีเมล</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>โครงการที่เห็น</th><th>หน้าที่เห็น</th><th class="center">สถานะ</th><th></th></tr></thead>' +
+    '<tbody>' + (rows || '<tr><td colspan="7" class="empty">ยังไม่มีผู้ใช้</td></tr>') + '</tbody></table></div></div>';
+
+  $('#addUser').addEventListener('click', () => userModal(null));
+  $$('[data-edit]', settingsPane).forEach(b => b.addEventListener('click', () =>
+    userModal(state.settings.users.find(u => u.email === b.dataset.edit))));
+  $$('[data-del]', settingsPane).forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('ลบผู้ใช้ ' + b.dataset.del + ' ?')) return;
+    const r = await api('deleteUser', { email: b.dataset.del });
+    if (!r.success) return toast(r.message, true);
+    toast('ลบผู้ใช้แล้ว'); openSettings();
+  }));
+}
+
+function countSpec(spec) {
+  const s = String(spec).toLowerCase();
+  if (s === 'all') return state.settings.menus.length;
+  if (s === 'allexceptsettings') return state.settings.menus.filter(m => !m.adminOnly).length;
+  return spec.split(',').filter(Boolean).length;
+}
+
+function userModal(user) {
+  const s      = state.settings;
+  const isNew  = !user;
+  const u      = user || { email: '', name: '', role: 'engineer', projects: [], allowedMenus: '', active: true };
+  const custom = !!u.allowedMenus;
+  const picked = custom ? expandSpecIds(u.allowedMenus) : [];
+
+  const html =
+    '<div class="modal">' +
+    '<h3>' + (isNew ? 'เพิ่มผู้ใช้' : 'แก้ไขผู้ใช้') + '</h3>' +
+    '<div class="field"><label>อีเมล</label><input type="email" id="mEmail" value="' + esc(u.email) + '" ' + (isNew ? '' : 'readonly') + '></div>' +
+    '<div class="field"><label>ชื่อ-นามสกุล</label><input type="text" id="mName" value="' + esc(u.name) + '"></div>' +
+    '<div class="field"><label>ตำแหน่ง (role)</label><select class="cell" id="mRole">' +
+      s.roles.filter(r => r.active).map(r => '<option value="' + esc(r.role) + '"' + (r.role === u.role ? ' selected' : '') + '>' + esc(r.label) + '</option>').join('') +
+    '</select></div>' +
+    '<div class="field" id="mProjWrap"><label>โครงการที่เข้าถึงได้</label><div class="checks" id="mProjects">' +
+      (s.projects.length ? s.projects.filter(p => p.active).map(p =>
+        '<label><input type="checkbox" value="' + esc(p.code) + '"' + (u.projects.indexOf(p.code) !== -1 ? ' checked' : '') + '> ' + esc(p.name || p.code) + '</label>').join('')
+        : '<span class="hint">ยังไม่มีโครงการ — เพิ่มได้ที่แท็บ “โครงการ”</span>') +
+    '</div></div>' +
+    '<div class="field"><label><input type="checkbox" id="mCustom"' + (custom ? ' checked' : '') + '> กำหนดหน้าที่เห็นเองรายคน (ไม่ใช้ค่าของตำแหน่ง)</label>' +
+      '<div class="checks" id="mMenus">' + s.menus.map(m =>
+        '<label class="' + (m.adminOnly ? 'locked' : '') + '"><input type="checkbox" value="' + esc(m.id) + '"' +
+        (picked.indexOf(m.id) !== -1 ? ' checked' : '') + (m.adminOnly ? ' disabled' : '') + '> ' + esc(m.label) + '</label>').join('') +
+      '</div></div>' +
+    '<div class="field"><label>' + (isNew ? 'รหัสผ่านเริ่มต้น' : 'ตั้งรหัสผ่านใหม่ (เว้นว่าง = ไม่เปลี่ยน)') + '</label>' +
+      '<input type="password" id="mPass" autocomplete="new-password"></div>' +
+    '<div class="field"><label><input type="checkbox" id="mActive"' + (u.active ? ' checked' : '') + '> เปิดใช้งานบัญชีนี้</label></div>' +
+    '<div class="modal-foot"><button class="btn ghost" id="mCancel">ยกเลิก</button><button class="btn" id="mSave">บันทึก</button></div>' +
+    '</div>';
+
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = html;
+  document.body.appendChild(ov);
+
+  const syncScope = () => {
+    const role = $('#mRole', ov).value;
+    const cfg  = s.roles.find(r => r.role === role);
+    const all  = cfg && cfg.projectScope === 'all';
+    $('#mProjWrap', ov).style.display = all ? 'none' : '';
+  };
+  const syncMenus = () => { $('#mMenus', ov).style.display = $('#mCustom', ov).checked ? '' : 'none'; };
+  $('#mRole', ov).addEventListener('change', syncScope);
+  $('#mCustom', ov).addEventListener('change', syncMenus);
+  syncScope(); syncMenus();
+
+  $('#mCancel', ov).addEventListener('click', () => ov.remove());
+  $('#mSave', ov).addEventListener('click', async () => {
+    const payload = {
+      email: $('#mEmail', ov).value.trim(),
+      name:  $('#mName', ov).value.trim(),
+      role:  $('#mRole', ov).value,
+      projects: $$('#mProjects input:checked', ov).map(i => i.value),
+      allowedMenus: $('#mCustom', ov).checked ? $$('#mMenus input:checked', ov).map(i => i.value) : [],
+      active: $('#mActive', ov).checked
+    };
+    const pass = $('#mPass', ov).value;
+    if (pass) payload.password = pass;
+    const r = await api('saveUser', { user: payload });
+    if (!r.success) return toast(r.message, true);
+    ov.remove(); toast('บันทึกผู้ใช้แล้ว'); openSettings();
+  });
+}
+
+function expandSpecIds(spec) {
+  const s = String(spec).toLowerCase();
+  if (s === 'all') return state.settings.menus.map(m => m.id);
+  if (s === 'allexceptsettings') return state.settings.menus.filter(m => !m.adminOnly).map(m => m.id);
+  return String(spec).split(',').map(x => x.trim()).filter(Boolean);
+}
+
+/* ── สิทธิ์ตามตำแหน่ง (role × page) ───────────── */
+function renderRolesTab() {
+  const s = state.settings;
+  const head = '<tr><th>ตำแหน่ง</th><th>ขอบเขตโครงการ</th>' +
+    s.menus.map(m => '<th class="center">' + esc(m.label) + '</th>').join('') + '<th class="center">ใช้งาน</th></tr>';
+
+  const body = s.roles.map(r => {
+    const locked = r.role === 'admin';
+    const ids = r.menuIds || [];
+    return '<tr data-role="' + esc(r.role) + '">' +
+      '<td><b>' + esc(r.label) + '</b><div class="hint" style="margin:0">' + esc(r.role) + '</div></td>' +
+      '<td><select class="cell" data-scope ' + (locked ? 'disabled' : '') + '>' +
+        '<option value="own"' + (r.projectScope === 'own' ? ' selected' : '') + '>เฉพาะโครงการของตัวเอง</option>' +
+        '<option value="all"' + (r.projectScope === 'all' ? ' selected' : '') + '>ทุกโครงการ</option>' +
+      '</select></td>' +
+      s.menus.map(m => {
+        const disabled = locked || (m.adminOnly && r.role !== 'admin');
+        const checked  = locked ? true : ids.indexOf(m.id) !== -1;
+        return '<td class="center"><input type="checkbox" data-menu="' + esc(m.id) + '"' +
+               (checked ? ' checked' : '') + (disabled ? ' disabled' : '') + '></td>';
+      }).join('') +
+      '<td class="center"><input type="checkbox" data-active' + (r.active ? ' checked' : '') + (locked ? ' disabled' : '') + '></td>' +
+      '</tr>';
+  }).join('');
+
+  $('#tabBody').innerHTML =
+    '<div class="card"><h3>สิทธิ์การเข้าถึงตามตำแหน่ง</h3>' +
+    '<div class="hint">ติ๊กว่าตำแหน่งไหนเห็นหน้าไหนได้บ้าง และเห็นได้ทุกโครงการหรือเฉพาะโครงการที่ถูกผูกไว้ · ' +
+    'หน้า “ตั้งค่าสิทธิ์” ถูกล็อกไว้ให้ Admin เท่านั้นเสมอ และ Admin จะถูกล็อกให้เห็นทุกอย่าง</div>' +
+    '<div class="table-scroll"><table><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+    '<div class="bar" style="margin-top:14px"><div class="spacer"></div><button class="btn" id="saveRoles">บันทึกสิทธิ์</button></div></div>';
+
+  $('#saveRoles').addEventListener('click', async () => {
+    const roles = $$('#tabBody tbody tr').map(tr => {
+      const role = tr.dataset.role;
+      const src  = state.settings.roles.find(r => r.role === role);
+      return {
+        role: role,
+        label: src.label,
+        menuIds: $$('[data-menu]', tr).filter(c => c.checked).map(c => c.dataset.menu),
+        projectScope: $('[data-scope]', tr).value,
+        active: $('[data-active]', tr).checked
+      };
+    });
+    const r = await api('saveRoles', { roles: roles });
+    if (!r.success) return toast(r.message, true);
+    toast('บันทึกสิทธิ์ตามตำแหน่งแล้ว'); openSettings();
+  });
+}
+
+/* ── โครงการ ──────────────────────────────────── */
+function renderProjectsTab() {
+  const rows = state.settings.projects.map(p => projectRow(p)).join('');
+  $('#tabBody').innerHTML =
+    '<div class="card"><h3>โครงการ</h3>' +
+    '<div class="hint">รายชื่อโครงการที่ใช้ผูกกับผู้ใช้ · รหัสโครงการ (code) จะถูกส่งเข้าไปให้แดชบอร์ดลูกกรองข้อมูล</div>' +
+    '<div class="table-scroll"><table><thead><tr><th style="width:180px">รหัส</th><th>ชื่อโครงการ</th><th class="center" style="width:90px">ใช้งาน</th><th style="width:60px"></th></tr></thead>' +
+    '<tbody id="projBody">' + rows + '</tbody></table></div>' +
+    '<div class="bar" style="margin-top:14px"><button class="btn ghost" id="addProj"><i class="bi bi-plus-lg"></i> เพิ่มแถว</button>' +
+    '<div class="spacer"></div><button class="btn" id="saveProj">บันทึกโครงการ</button></div></div>';
+
+  const bind = () => $$('[data-delrow]', settingsPane).forEach(b => b.onclick = () => b.closest('tr').remove());
+  bind();
+  $('#addProj').addEventListener('click', () => {
+    $('#projBody').insertAdjacentHTML('beforeend', projectRow({ code: '', name: '', active: true }));
+    bind();
+  });
+  $('#saveProj').addEventListener('click', async () => {
+    const projects = $$('#projBody tr').map(tr => ({
+      code:   $('[data-code]', tr).value.trim(),
+      name:   $('[data-name]', tr).value.trim(),
+      active: $('[data-act]', tr).checked
+    })).filter(p => p.code);
+    const r = await api('saveProjects', { projects: projects });
+    if (!r.success) return toast(r.message, true);
+    toast('บันทึกโครงการแล้ว'); openSettings();
+  });
+}
+
+function projectRow(p) {
+  return '<tr>' +
+    '<td><input type="text" data-code value="' + esc(p.code) + '" placeholder="เช่น A"></td>' +
+    '<td><input type="text" data-name value="' + esc(p.name) + '" placeholder="ชื่อโครงการ"></td>' +
+    '<td class="center"><input type="checkbox" data-act' + (p.active ? ' checked' : '') + '></td>' +
+    '<td><button class="btn danger sm" data-delrow>ลบ</button></td></tr>';
+}
+
+/* ================================================================
+   AUTO RESUME — ถ้ามี token ค้างอยู่ใน session ก็เข้าใช้งานต่อได้เลย
+   ================================================================ */
+(async function boot() {
+  if (!state.token) return;
+  try {
+    const r = await api('verify', {});
+    if (!r.success) return;
+    applySession({
+      user: {
+        email: r.email, name: r.name, role: r.role, roleLabel: r.roleLabel,
+        projectScope: r.projectScope, projects: r.projects, isAdmin: r.isAdmin
+      },
+      menus: r.menus,
+      projects: r.projectList
+    });
+    startApp();
+  } catch (err) { /* เงียบไว้ ให้ผู้ใช้ล็อกอินใหม่ */ }
+})();
+</script>
+</body>
+</html>
