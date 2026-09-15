@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบติดตามการล้างรถ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Sarabun', sans-serif; background: #f3f4f6; }</style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+  <div class="w-full mx-auto">
+
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 gap-4">
+      <div class="text-center md:text-left">
+        <h2 class="text-2xl font-bold text-blue-600 flex items-center justify-center md:justify-start gap-2"><span>💦</span> ระบบติดตามการล้างรถ</h2>
+        <p class="text-sm text-gray-500 mt-1">เป้าหมาย: ล้างทำความสะอาดรถทุกคันอย่างน้อย 1 ครั้ง/เดือน</p>
+      </div>
+      <a href="<?= scriptUrl ?>" target="_top" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold transition-colors w-full md:w-auto text-center">กลับหน้าหลัก</a>
+    </div>
+
+    <div id="vehicleContainer"></div>
+  </div>
+
+  <div id="uploadModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <h3 class="text-xl font-bold mb-2">📷 อัปเดตการล้างรถ</h3>
+      <p id="modalCarName" class="text-gray-600 font-bold mb-4 bg-gray-50 p-2 rounded-lg text-center"></p>
+
+      <input type="hidden" id="modalVehicleId">
+
+      <label class="block text-sm font-bold text-gray-700 mb-1">วันที่ล้างรถ <span class="text-red-500">*</span></label>
+      <input type="date" id="washDate" class="w-full border border-gray-300 rounded-lg p-2.5 mb-4 outline-none focus:border-blue-500" required>
+
+      <label class="block text-sm font-bold text-gray-700 mb-1">รูปถ่าย (ถ้ามี)</label>
+      <input type="file" id="washPhoto" accept="image/*" class="w-full border border-gray-300 rounded-lg p-2 mb-6 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+
+      <div class="flex gap-2">
+        <button onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold transition-colors">ยกเลิก</button>
+        <button onclick="uploadData()" id="uploadBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-md transition-colors">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var scriptUrl = "<?= scriptUrl ?>";
+    var portalToken = <?!= JSON.stringify(portalToken || '') ?>;
+    var vehicles = JSON.parse(<?= vehiclesData ?>);
+
+    function renderGrid() {
+      var container = document.getElementById('vehicleContainer');
+      var html = '';
+      var today = new Date();
+
+      var groupedVehicles = {};
+      vehicles.forEach(function(v) {
+        var type = v.type || ' ';
+        if (!groupedVehicles[type]) {
+          groupedVehicles[type] = [];
+        }
+        groupedVehicles[type].push(v);
+      });
+
+      for (var type in groupedVehicles) {
+        html += `
+          <div class="mb-10">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 border-l-4 border-blue-500 pl-3 flex items-center gap-2">
+              🚘 ${type}
+              <span class="text-sm font-normal text-gray-500 bg-gray-100 px-3 py-1 rounded-full">${groupedVehicles[type].length} คัน</span>
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 min-[1920px]:grid-cols-6 gap-4 md:gap-6">
+        `;
+
+        groupedVehicles[type].forEach(function(v) {
+          var lastDateText = "ยังไม่มีประวัติ";
+          var nextDateText = "-";
+          var statusColor = "bg-gray-100 text-gray-600 border-gray-200";
+          var badgeText = "รอตรวจสอบ";
+          var isOverdue = false;
+
+          if (v.lastWash) {
+            var lDate = new Date(v.lastWash);
+            lastDateText = lDate.toLocaleDateString('th-TH');
+
+            var nDate = new Date(lDate);
+            nDate.setDate(nDate.getDate() + 30);
+            nextDateText = nDate.toLocaleDateString('th-TH');
+
+            var daysDiff = Math.floor((today - lDate) / (1000 * 60 * 60 * 24));
+
+            if (daysDiff <= 25) {
+              statusColor = "bg-green-50 text-green-700 border-green-200";
+              badgeText = "✅ สะอาด (" + daysDiff + " วันที่แล้ว)";
+            } else if (daysDiff <= 30) {
+              statusColor = "bg-yellow-50 text-yellow-700 border-yellow-300";
+              badgeText = "⚠️ ใกล้ถึงกำหนด";
+            } else {
+              statusColor = "bg-red-50 text-red-700 border-red-300";
+              badgeText = "🚨 เลยกำหนดล้าง!";
+              isOverdue = true;
+            }
+          } else {
+             statusColor = "bg-red-50 text-red-700 border-red-300";
+             badgeText = "🚨 ยังไม่เคยล้าง!";
+             isOverdue = true;
+          }
+
+          var finalPhotoUrl = v.photo;
+          if (finalPhotoUrl) {
+            var fileId = "";
+            if (finalPhotoUrl.indexOf('file/d/') !== -1) {
+               fileId = finalPhotoUrl.split('file/d/')[1].split('/')[0];
+            } else if (finalPhotoUrl.indexOf('id=') !== -1) {
+               fileId = finalPhotoUrl.split('id=')[1].split('&')[0];
+            }
+            if (fileId) {
+               finalPhotoUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w800";
+            }
+          }
+
+          var photoArea = finalPhotoUrl
+            ? '<a href="' + finalPhotoUrl + '" target="_blank"><div class="h-48 bg-gray-100 mb-4 bg-cover bg-center" style="background-image: url(' + finalPhotoUrl + ')"></div></a>'
+            : '<div class="h-48 bg-gray-50 mb-4 flex items-center justify-center text-gray-400 border-b border-gray-100">📷 ไม่มีรูปภาพ</div>';
+
+          var cardClass = isOverdue ? "border-red-400 shadow-md shadow-red-100" : "border-gray-200 shadow-sm hover:shadow-md";
+
+          html += `
+          <div class="bg-white border rounded-2xl overflow-hidden transition-all ${cardClass}">
+            ${photoArea}
+            <div class="px-5 pb-5">
+              <h3 class="font-bold text-xl text-gray-800">${v.plate}</h3>
+              <p class="text-sm font-medium text-blue-500 mb-3 flex items-center gap-1">👤 ผู้ดูแล: ${v.responsible}</p>
+
+              <div class="${statusColor} border px-3 py-1.5 rounded-lg inline-block text-sm font-bold mb-4 shadow-sm w-full text-center">${badgeText}</div>
+
+              <div class="space-y-1 text-sm mb-5 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <div class="flex justify-between"><span class="text-gray-500 text-sm">ล้างล่าสุด</span><span class="font-bold text-gray-700">${lastDateText}</span></div>
+                <div class="flex justify-between"><span class="text-gray-500 text-sm">รอบถัดไป</span><span class="font-bold ${isOverdue ? 'text-red-600' : 'text-gray-700'}">${nextDateText}</span></div>
+              </div>
+
+              <button onclick="openModal('${v.id}', '${v.plate} - ${v.brand}')" class="w-full bg-white border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-200 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm">📷 อัปเดตข้อมูล</button>
+            </div>
+          </div>`;
+        });
+
+        html += `</div></div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function openModal(id, name) {
+      document.getElementById('modalVehicleId').value = id;
+      document.getElementById('modalCarName').innerText = name;
+      document.getElementById('washDate').valueAsDate = new Date();
+      document.getElementById('washPhoto').value = '';
+      document.getElementById('uploadModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('uploadModal').style.display = 'none';
+    }
+
+    function uploadData() {
+      var fileInput = document.getElementById('washPhoto');
+      var dateVal = document.getElementById('washDate').value;
+      var vId = document.getElementById('modalVehicleId').value;
+
+      if(!dateVal) return alert('กรุณาเลือกวันที่ล้างรถค่ะ');
+
+      var btn = document.getElementById('uploadBtn');
+      btn.innerHTML = '⏳ กำลังบันทึก...';
+      btn.disabled = true;
+      btn.classList.add('opacity-70');
+
+      if(fileInput.files.length > 0) {
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var data = e.target.result.split(',')[1];
+          google.script.run.withSuccessHandler(onSuccess).saveCarWashRecord(portalToken, vId, dateVal, data, file.name, file.type);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        google.script.run.withSuccessHandler(onSuccess).saveCarWashRecord(portalToken, vId, dateVal, null, null, null);
+      }
+    }
+
+    function onSuccess(res) {
+      alert('อัปเดตข้อมูลสำเร็จเรียบร้อยค่ะ! 🎉');
+
+      var btn = document.getElementById('uploadBtn');
+      btn.innerHTML = '🔄 กำลังรีเฟรชหน้าจอ...';
+
+      google.script.run.withSuccessHandler(function(newHtml) {
+        document.open();
+        document.write(newHtml);
+        document.close();
+      }).createCarWashHTML(portalToken);
+    }
+
+    window.onload = renderGrid;
+  </script>
+</body>
+</html>

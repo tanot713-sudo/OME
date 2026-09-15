@@ -1,0 +1,23 @@
+<div id="custom-alert-modal" class="fixed inset-0 z-[99999] hidden relative" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"></div>
+  <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+    </div>
+</div>
+
+<script>
+  // เก็บฟังก์ชัน alert เดิมไว้ (เผื่อฉุกเฉิน)
+  const originalAlert = window.alert;
+
+  // เขียนทับคำสั่ง alert เดิมของ Browser
+  window.alert = function(message) {
+      // ... วางโค้ด Script Custom Alert ของคุณตรงนี้ ...
+  };
+
+  // ฟังก์ชันปิด Modal
+  function closeCustomAlert() {
+    const modal = document.getElementById('custom-alert-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+</script>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AMR Vehicle Management</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- login เกิดขึ้นที่ OMA Portal (Hub) เพียงจุดเดียวแล้ว — window.PORTAL คือสิทธิ์
+         ที่ Hub ยืนยันแล้ว ฝังมาจาก doGet ของ Main.js -->
+    <script>window.PORTAL = <?!= portalBootstrap ?>;</script>
+
+    <?!= include('Styles'); ?>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <?!= include('CustomAlert'); ?>
+
+    <?!= include('ReactApp'); ?>
+  </body>
+</html>
