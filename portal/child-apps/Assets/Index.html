@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AMR ASIA — Asset</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════════════════
+   AMR ASIA — LIQUID GLASS · MINIMALIST · RED / WHITE / GRAY
+══════════════════════════════════════════════════════════ */
+:root{
+  --red:#D62828; --red-d:#A01919; --red-l:#F05050; --red-bg:rgba(214,40,40,.08); --red-rim:rgba(214,40,40,.18);
+  --bg:#F5F5F7; --glass:rgba(255,255,255,.72); --glass2:rgba(255,255,255,.55); --glass3:rgba(255,255,255,.38);
+  --surface:#FFFFFF; --surf2:rgba(245,245,247,.9); --surf3:rgba(235,235,240,.6);
+  --line:rgba(0,0,0,.08); --line2:rgba(0,0,0,.14); --line-r:rgba(214,40,40,.22);
+  --ink:#1A1A1A; --ink2:#444444; --ink3:#777777; --ink4:#AAAAAA;
+  --green:#1A7F4B; --green-bg:rgba(26,127,75,.08); --amber:#B45309; --amber-bg:rgba(180,83,9,.08);
+  --blue:#1D4ED8; --blue-bg:rgba(29,78,216,.08); --blue-rim:rgba(29,78,216,.2);
+  --r:10px; --rl:14px; --rx:20px;
+  --font:'Noto Sans Thai','DM Sans',sans-serif; --mono:'IBM Plex Mono',monospace; --display:'DM Sans',sans-serif;
+  --glow:0 0 0 1px rgba(255,255,255,.6) inset,0 2px 12px rgba(0,0,0,.06);
+  --glow-r:0 0 0 1px rgba(214,40,40,.25) inset,0 4px 16px rgba(214,40,40,.12);
+  --shadow:0 2px 8px rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.04);
+  --sw:216px; --th:54px; --ease:.2s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;
+  background-image:radial-gradient(ellipse 900px 600px at 10% 0%,rgba(214,40,40,.06) 0%,transparent 60%),
+    radial-gradient(ellipse 700px 500px at 95% 100%,rgba(214,40,40,.04) 0%,transparent 60%),
+    radial-gradient(ellipse 600px 400px at 50% 50%,rgba(200,200,210,.08) 0%,transparent 70%);
+  background-attachment:fixed;}
+button,input,select{font-family:var(--font)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:rgba(214,40,40,.3)}
+
+/* ══ FILTER BAR ══ */
+.filter-bar{background:var(--glass);backdrop-filter:blur(20px);border-bottom:1px solid var(--line);
+  padding:8px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:10;}
+.filter-bar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(214,40,40,.12),transparent);}
+.active-chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center;flex:1;min-width:0;}
+.fchip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 9px;border-radius:99px;
+  font-size:10px;font-weight:600;border:1px solid var(--line2);background:var(--surf2);color:var(--ink2);white-space:nowrap;transition:var(--ease);}
+.fchip.proj{background:var(--red-bg);color:var(--red-d);border-color:var(--red-rim)}
+.fchip.type{background:rgba(71,85,105,.07);color:#334155;border-color:rgba(71,85,105,.2)}
+.fchip.asset{background:rgba(26,127,75,.07);color:#166534;border-color:rgba(26,127,75,.2)}
+.fchip.dealer{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-rim)}
+.fchip-x{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;background:rgba(0,0,0,.08);font-size:9px;line-height:1;transition:var(--ease);flex-shrink:0;}
+.fchip-x:hover{background:rgba(214,40,40,.2);color:var(--red)}
+.no-filter{font-size:11px;color:var(--ink4);font-style:italic}
+.filter-trigger{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:var(--r);
+  border:1px solid var(--line2);background:var(--glass2);color:var(--ink3);font-size:11px;
+  cursor:pointer;transition:var(--ease);white-space:nowrap;backdrop-filter:blur(8px);font-family:var(--font);}
+.filter-trigger:hover{border-color:var(--red-rim);color:var(--red);background:var(--red-bg)}
+.filter-trigger.active{border-color:var(--red-rim);color:var(--red);background:var(--red-bg)}
+.filter-trigger svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.filter-trigger .ft-badge{background:var(--red);color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;}
+.clear-all-btn{display:flex;align-items:center;gap:4px;padding:5px 9px;border-radius:var(--r);
+  border:1px solid var(--line2);background:transparent;color:var(--ink4);font-size:10px;cursor:pointer;
+  transition:var(--ease);white-space:nowrap;font-family:var(--font);}
+.clear-all-btn:hover{border-color:var(--red-rim);color:var(--red)}
+
+/* ── DROPDOWN ── */
+.dd-panel{position:fixed;background:var(--surface);border:1px solid var(--line2);border-radius:var(--rl);
+  box-shadow:0 8px 40px rgba(0,0,0,.14),0 2px 8px rgba(0,0,0,.08),0 0 0 1px rgba(255,255,255,.6) inset;
+  z-index:9990;overflow:hidden;animation:ddIn .18s cubic-bezier(.4,0,.2,1) both;min-width:260px;max-width:320px;}
+@keyframes ddIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.dd-head{padding:10px 13px 8px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.dd-title{font-size:11px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:5px}
+.dd-title svg{width:12px;height:12px;stroke:var(--red);fill:none;stroke-width:2}
+.dd-sel-all{font-size:10px;color:var(--red);cursor:pointer;font-weight:600;padding:2px 6px;border-radius:5px;transition:var(--ease);background:transparent;border:none;font-family:var(--font);}
+.dd-sel-all:hover{background:var(--red-bg)}
+.dd-search{margin:8px 10px 4px;display:flex;align-items:center;gap:5px;background:var(--surf2);border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;}
+.dd-search svg{width:11px;height:11px;stroke:var(--ink4);fill:none;stroke-width:2;flex-shrink:0}
+.dd-search input{border:none;background:transparent;outline:none;font-size:11px;color:var(--ink);width:100%;font-family:var(--font);}
+.dd-search input::placeholder{color:var(--ink4)}
+.dd-list{max-height:240px;overflow-y:auto;padding:4px 6px 8px}
+.dd-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:var(--r);cursor:pointer;transition:var(--ease);user-select:none;}
+.dd-opt:hover{background:var(--surf3)}
+.dd-opt.checked{background:var(--red-bg)}
+.dd-cb{width:15px;height:15px;min-width:15px;border-radius:4px;border:1.5px solid var(--line2);background:var(--surface);display:flex;align-items:center;justify-content:center;transition:var(--ease);flex-shrink:0;}
+.dd-opt.checked .dd-cb{background:var(--red);border-color:var(--red)}
+.dd-cb-check{width:9px;height:9px;stroke:#fff;fill:none;stroke-width:2.5;stroke-dasharray:12;stroke-dashoffset:12;transition:stroke-dashoffset .15s ease;}
+.dd-opt.checked .dd-cb-check{stroke-dashoffset:0}
+.dd-opt-icon{width:22px;height:22px;min-width:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--surf3);}
+.dd-opt-icon svg{width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:1.8}
+.dd-opt.checked .dd-opt-icon{background:var(--red-bg)}
+.dd-opt.checked .dd-opt-icon svg{stroke:var(--red)}
+.dd-opt-lbl{flex:1;font-size:11px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd-opt.checked .dd-opt-lbl{color:var(--ink);font-weight:600}
+.dd-opt-cnt{font-size:9px;color:var(--ink4);flex-shrink:0;font-family:var(--mono)}
+.dd-empty{padding:20px;text-align:center;font-size:11px;color:var(--ink4)}
+.dd-step{display:flex;align-items:center;gap:4px;padding:6px 13px;background:var(--surf2);border-top:1px solid var(--line);font-size:10px;color:var(--ink3);}
+.dd-step-dot{width:6px;height:6px;border-radius:50%;background:var(--line2);flex-shrink:0;}
+.dd-step-dot.done{background:var(--red)}
+.dd-step-dot.active{background:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
+
+/* ══ SHELL ══ */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:var(--sw);min-width:var(--sw);background:var(--glass);backdrop-filter:blur(28px) saturate(1.4);
+  -webkit-backdrop-filter:blur(28px) saturate(1.4);border-right:1px solid var(--line2);
+  display:flex;flex-direction:column;z-index:20;transition:width var(--ease),min-width var(--ease);
+  overflow:hidden;box-shadow:2px 0 20px rgba(0,0,0,.06);}
+.sidebar.col{width:52px;min-width:52px}
+.sb-brand{height:var(--th);min-height:var(--th);display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);overflow:hidden;}
+.sb-logo-wrap{width:30px;height:30px;min-width:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-texts{overflow:hidden;white-space:nowrap}
+.sb-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.2px}
+.sb-sub{font-size:10px;color:var(--ink3);font-weight:400}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto;overflow-x:hidden}
+.nav-sect{font-size:9px;font-weight:700;color:var(--ink4);letter-spacing:.9px;text-transform:uppercase;padding:10px 8px 4px;white-space:nowrap;overflow:hidden;}
+.sidebar.col .nav-sect{opacity:0}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);cursor:pointer;
+  transition:var(--ease);white-space:nowrap;overflow:hidden;color:var(--ink3);margin-bottom:2px;position:relative;}
+.ni:hover{background:var(--surf3);color:var(--ink)}
+.ni.on{background:var(--red-bg);color:var(--red);box-shadow:var(--glow-r);}
+.ni.on::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:2.5px;border-radius:99px;background:var(--red);}
+.ni-ic{width:28px;height:28px;min-width:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:var(--ease);background:transparent;}
+.ni.on .ni-ic{background:rgba(214,40,40,.1)}
+.ni-ic svg{width:16px;height:16px;stroke-width:1.8;fill:none;stroke:currentColor}
+.ni-lbl{font-size:12px;font-weight:500;letter-spacing:.1px}
+.ni-badge{margin-left:auto;font-size:9px;font-weight:700;padding:2px 6px;border-radius:99px;background:var(--red);color:#fff;flex-shrink:0;box-shadow:0 1px 4px rgba(214,40,40,.35);}
+.sidebar.col .ni-lbl,.sidebar.col .ni-badge{display:none}
+.sb-foot{padding:8px;border-top:1px solid var(--line)}
+.sb-tog{width:100%;padding:8px;border-radius:var(--r);border:none;background:transparent;color:var(--ink4);cursor:pointer;transition:var(--ease);display:flex;align-items:center;justify-content:center;font-size:11px;}
+.sb-tog:hover{background:var(--surf3);color:var(--ink)}
+
+/* ══ MAIN ══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:visible;min-width:0;position:relative}
+.topbar{height:var(--th);min-height:var(--th);background:var(--glass);backdrop-filter:blur(28px) saturate(1.3);
+  -webkit-backdrop-filter:blur(28px) saturate(1.3);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;padding:0 20px;overflow:visible;
+  box-shadow:0 1px 0 rgba(0,0,0,.04);position:relative;z-index:200;}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1.5px;
+  background:linear-gradient(90deg,var(--red) 0%,transparent 60%);opacity:.35;}
+.filter-trigger[disabled]{cursor:not-allowed}
+.filter-trigger[disabled]:hover{border-color:var(--line2)!important;color:var(--ink3)!important;background:var(--glass2)!important}
+.tb-title{font-family:var(--display);font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;letter-spacing:.1px;}
+.srch{display:flex;align-items:center;gap:6px;background:var(--glass2);border:1px solid var(--line2);border-radius:var(--r);padding:6px 10px;transition:var(--ease);backdrop-filter:blur(10px);}
+.srch:focus-within{border-color:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
+.srch input{background:transparent;border:none;outline:none;color:var(--ink);font-size:11px;width:150px;}
+.srch input::placeholder{color:var(--ink4)}
+.srch-ic{color:var(--ink4);display:flex;align-items:center}
+.srch-ic svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.reload-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r);background:var(--glass2);border:1px solid var(--line2);color:var(--ink3);font-size:11px;cursor:pointer;transition:var(--ease);white-space:nowrap;backdrop-filter:blur(10px);}
+.reload-btn:hover{border-color:var(--red-rim);color:var(--red);background:var(--red-bg)}
+.reload-btn.spinning .ri{display:inline-block;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.reload-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+/* ══ CONTENT ══ */
+.content{flex:1;overflow:hidden;position:relative;z-index:1}
+.tab{position:absolute;inset:0;overflow-y:auto;padding:18px;display:none}
+.tab.on{display:block}
+#tab-tree{padding:0;overflow:hidden;display:none}
+#tab-tree.on{display:flex}
+
+/* ══ LOADING ══ */
+.loader-ov{position:fixed;inset:0;background:rgba(245,245,247,.88);backdrop-filter:blur(16px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:9999;}
+.loader-ov.off{display:none}
+.dots{display:flex;gap:8px}
+.dots span{width:8px;height:8px;border-radius:50%;animation:pop .8s ease-in-out infinite;}
+.dots span:nth-child(1){background:var(--red);animation-delay:0s}
+.dots span:nth-child(2){background:var(--ink3);animation-delay:.15s}
+.dots span:nth-child(3){background:var(--red-l);animation-delay:.3s}
+@keyframes pop{0%,80%,100%{transform:scale(.65);opacity:.35}40%{transform:scale(1.1);opacity:1}}
+.load-txt{color:var(--ink3);font-size:12px}
+
+/* ══ DASHBOARD ══ */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--glass);border:1px solid var(--line);border-radius:var(--rl);padding:14px;display:flex;gap:10px;backdrop-filter:blur(20px);box-shadow:var(--glow);transition:var(--ease);position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--red))}
+.kpi:hover{box-shadow:var(--shadow),0 0 0 1px rgba(214,40,40,.1);transform:translateY(-1px)}
+.kpi-ic{width:36px;height:36px;min-width:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--kb,var(--red-bg));}
+.kpi-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+.kpi-txt{flex:1}
+.kpi-l{font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.kpi-v{font-family:var(--display);font-size:24px;font-weight:700;color:var(--ink);line-height:1}
+.kpi-m{font-size:9px;color:var(--ink4);margin-top:2px}
+.c2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:var(--rl);backdrop-filter:blur(20px);box-shadow:var(--glow);overflow:hidden;}
+.card-h{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.card-t{font-family:var(--display);font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px;}
+.card-t svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;color:var(--red)}
+.card-b{padding:12px 14px}
+.cbadge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-rim);}
+.tg{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:7px;padding:10px 14px}
+.tc{padding:10px;border-radius:var(--r);border:1px solid var(--line);cursor:pointer;transition:var(--ease);background:var(--surf2);position:relative;overflow:hidden;}
+.tc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--tc,var(--red));opacity:.35;transition:var(--ease)}
+.tc:hover,.tc.sel{border-color:var(--tc,var(--red));background:var(--glass);box-shadow:0 0 0 1px var(--tc,var(--red)) inset}
+.tc:hover::after,.tc.sel::after{opacity:1;height:2.5px}
+.tc-i{width:26px;height:26px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:var(--red-bg);}
+.tc-i svg{width:14px;height:14px;stroke:var(--red);fill:none;stroke-width:1.8}
+.tc-n{font-size:11px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tc-c{font-size:10px;color:var(--ink3)}
+.tc-bar{height:2px;background:var(--line2);border-radius:99px;margin-top:7px;overflow:hidden}
+.tc-bf{height:100%;border-radius:99px;background:var(--tc,var(--red));transition:width .8s ease}
+.bc{display:flex;flex-direction:column;gap:7px}
+.br{display:flex;align-items:center;gap:8px}
+.bl{font-size:10px;color:var(--ink2);min-width:88px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.bt{flex:1;height:18px;background:var(--surf3);border-radius:5px;overflow:hidden;cursor:pointer;transition:var(--ease)}
+.bt:hover{filter:brightness(1.06)}
+.bf{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 7px;font-size:9px;font-weight:700;color:rgba(255,255,255,.9);transition:width .75s ease;min-width:24px;white-space:nowrap;}
+.bn{font-size:10px;color:var(--ink3);min-width:20px;font-weight:600}
+.dw{display:flex;align-items:center;gap:14px}
+.dsv{width:110px;height:110px;min-width:110px}
+.dl-wrap{flex:1;display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:120px}
+.dl{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 5px;border-radius:6px;transition:var(--ease)}
+.dl:hover{background:var(--surf3)}
+.dd{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.dn{font-size:10px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv{font-size:10px;font-weight:700;color:var(--ink)}
+.dp{font-size:9px;color:var(--ink4);margin-left:2px}
+.tw{overflow-x:auto}
+.at{width:100%;border-collapse:collapse}
+.at th{padding:8px 12px;text-align:left;font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.6px;background:var(--surf2);border-bottom:1px solid var(--line2);white-space:nowrap;}
+.at td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:11px}
+.at tbody tr{cursor:pointer;transition:var(--ease)}
+.at tbody tr:hover td{background:var(--red-bg)}
+.at tbody tr:last-child td{border-bottom:none}
+.mc{font-family:var(--mono);font-size:10px;color:var(--red)}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700}
+.b-ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(26,127,75,.15)}
+.b-warn{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.15)}
+.b-exp{background:var(--red-bg);color:var(--red);border:1px solid var(--red-rim)}
+.b-neu{background:var(--surf3);color:var(--ink4)}
+.b-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-rim)}
+
+/* ══ ASSET TREE ══ */
+.tree-wrap{display:flex;width:100%;height:100%;overflow:hidden}
+.tree-left{width:290px;min-width:290px;border-right:1px solid var(--line2);display:flex;flex-direction:column;background:var(--glass);backdrop-filter:blur(20px);}
+.tree-search{padding:9px 12px;border-bottom:1px solid var(--line);background:var(--surf2);display:flex;align-items:center;gap:7px;}
+.tree-search svg{width:12px;height:12px;stroke:var(--ink4);fill:none;stroke-width:2;flex-shrink:0}
+.tree-search input{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-size:11px}
+.tree-search input::placeholder{color:var(--ink4)}
+.tree-nodes{flex:1;overflow-y:auto;padding:6px}
+.tr-row{display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:var(--r);cursor:pointer;transition:var(--ease);user-select:none;}
+.tr-row:hover{background:var(--surf3)}
+.tr-row.on{background:var(--red-bg);color:var(--red);box-shadow:0 0 0 1px var(--red-rim) inset}
+.tr-row.on .tr-lbl{color:var(--red);font-weight:600}
+.tr-tog{width:14px;height:14px;min-width:14px;display:flex;align-items:center;justify-content:center;transition:var(--ease)}
+.tr-tog svg{width:8px;height:8px;stroke:var(--ink4);fill:none;stroke-width:2.5}
+.tr-tog.open svg{transform:rotate(90deg)}
+.tr-ic{width:20px;height:20px;min-width:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surf3);}
+.tr-ic svg{width:11px;height:11px;stroke:var(--ink3);fill:none;stroke-width:2}
+.tr-row.on .tr-ic{background:var(--red-bg)}
+.tr-row.on .tr-ic svg{stroke:var(--red)}
+.tr-lbl{font-size:11px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-bdg{font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--surf3);color:var(--ink4);}
+.tr-kids{padding-left:14px}
+.detail-right{flex:1;overflow-y:auto;background:var(--bg)}
+.dp-inner{padding:18px;display:flex;flex-direction:column;gap:12px}
+.dp-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--ink4);}
+.dp-empty-ic{opacity:.15}
+.dp-empty-ic svg{width:52px;height:52px;stroke:var(--ink3);fill:none;stroke-width:1}
+.dp-hero{border-radius:var(--rl);padding:18px;color:#fff;background:linear-gradient(135deg,var(--h1,var(--red-d)),var(--h2,var(--red)));position:relative;overflow:hidden;}
+.dp-hero::before{content:'';position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.07);}
+.dp-hero::after{content:'';position:absolute;left:-20px;bottom:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.04);}
+.dp-hero-i{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;backdrop-filter:blur(4px);}
+.dp-hero-i svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.8}
+.dp-hero-n{font-family:var(--display);font-size:15px;font-weight:700;position:relative;margin-bottom:2px}
+.dp-hero-id{font-family:var(--mono);font-size:9px;opacity:.6;position:relative}
+.dp-hero-tag{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.15);font-size:10px;font-weight:600;position:relative;backdrop-filter:blur(4px);}
+.dp-hero-tag svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2}
+.dps{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(16px);overflow:hidden;}
+.dps-h{padding:8px 13px;border-bottom:1px solid var(--line);font-size:9px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.7px;background:var(--surf2);display:flex;align-items:center;gap:5px;}
+.dps-h svg{width:11px;height:11px;stroke:var(--red);fill:none;stroke-width:2}
+.dps-b{padding:10px 13px;display:flex;flex-direction:column;gap:5px}
+.dp-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:2px 0}
+.dp-k{font-size:10px;color:var(--ink4);font-weight:500;min-width:80px;flex-shrink:0}
+.dp-v{font-size:11px;color:var(--ink);font-weight:600;text-align:right;word-break:break-all}
+.wb{height:4px;background:var(--surf3);border-radius:99px;overflow:hidden;margin-top:3px}
+.wf{height:100%;border-radius:99px;transition:width .8s ease}
+.wf-ok{background:var(--green)}
+.wf-warn{background:var(--amber)}
+.wf-exp{background:var(--red)}
+.ch-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 13px}
+.ch-c{padding:8px 10px;border-radius:var(--r);border:1px solid var(--line);cursor:pointer;transition:var(--ease);background:var(--surf2);}
+.ch-c:hover{border-color:var(--red-rim);background:var(--glass);box-shadow:var(--glow-r)}
+.ch-i{width:22px;height:22px;border-radius:6px;background:var(--surf3);display:flex;align-items:center;justify-content:center;margin-bottom:4px;}
+.ch-i svg{width:12px;height:12px;stroke:var(--ink3);fill:none;stroke-width:1.8}
+.ch-n{font-size:10px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-id{font-size:9px;color:var(--ink4);font-family:var(--mono);margin-top:1px}
+
+/* ══ WARRANTY TAB ══ */
+.section-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.section-title svg{width:18px;height:18px;stroke:var(--red);fill:none;stroke-width:2}
+
+/* ══════════════════════════════════════════
+   GANTT CHART
+══════════════════════════════════════════ */
+.gantt-wrap{overflow-x:auto;padding:12px 14px}
+.gantt-header{display:flex;align-items:center;margin-bottom:8px;padding-left:220px;gap:0}
+.gantt-month{font-size:8px;font-weight:700;color:var(--ink4);text-align:center;text-transform:uppercase;letter-spacing:.4px;border-left:1px solid var(--line);flex:1;padding:2px 0;}
+.gantt-row{display:flex;align-items:center;margin-bottom:5px;gap:0}
+.gantt-label{width:220px;min-width:220px;padding-right:10px;display:flex;flex-direction:column;justify-content:center;}
+.gantt-name{font-size:11px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gantt-sub{font-size:9px;color:var(--ink4);font-family:var(--mono);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gantt-track{flex:1;height:28px;background:var(--surf3);border-radius:6px;position:relative;overflow:hidden;cursor:pointer;transition:var(--ease);}
+.gantt-track:hover{background:var(--surf2)}
+.gantt-bar{position:absolute;top:3px;height:22px;border-radius:5px;display:flex;align-items:center;padding:0 6px;font-size:9px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;transition:var(--ease);}
+.gantt-bar.ok{background:var(--green)}
+.gantt-bar.warn{background:var(--amber)}
+.gantt-bar.exp{background:var(--red)}
+.gantt-today{position:absolute;top:0;bottom:0;width:1.5px;background:var(--red);z-index:2;opacity:.7;}
+.gantt-today::before{content:'▼';position:absolute;top:-10px;left:-4px;font-size:8px;color:var(--red);}
+.gantt-pct{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:9px;color:rgba(255,255,255,.8);font-weight:700;}
+
+/* ══════════════════════════════════════════
+   SERVICE AGREEMENT TAB
+══════════════════════════════════════════ */
+.sa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:16px}
+.sa-card{background:var(--glass);border:1px solid var(--line);border-radius:var(--rl);backdrop-filter:blur(20px);box-shadow:var(--glow);overflow:hidden;transition:var(--ease);}
+.sa-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.sa-card-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.sa-dealer{font-size:12px;font-weight:700;color:var(--ink);line-height:1.3}
+.sa-proj{font-size:10px;color:var(--ink4);margin-top:2px}
+.sa-body{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.sa-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sa-k{font-size:10px;color:var(--ink4);font-weight:500}
+.sa-v{font-size:11px;color:var(--ink);font-weight:600}
+.sa-items{margin-top:8px;border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:4px}
+.sa-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;transition:var(--ease);}
+.sa-item:hover{background:var(--surf3)}
+.sa-item-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sa-item-name{font-size:10px;color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sa-item-date{font-size:9px;color:var(--ink4);font-family:var(--mono)}
+.sa-item-status{font-size:9px}
+
+/* Contract point box */
+.cp-box{background:var(--surf2);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-top:8px;}
+.cp-label{font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.cp-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.cp-row svg{width:11px;height:11px;stroke:var(--ink3);fill:none;stroke-width:2;flex-shrink:0}
+.cp-val{font-size:11px;color:var(--ink2)}
+.cp-val a{color:var(--red);text-decoration:none}
+.cp-val a:hover{text-decoration:underline}
+
+/* Summary banner for SA tab */
+.sa-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px}
+.sa-sum-card{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);padding:12px;backdrop-filter:blur(16px);box-shadow:var(--glow);text-align:center;}
+.sa-sum-v{font-family:var(--display);font-size:22px;font-weight:700;color:var(--ink)}
+.sa-sum-l{font-size:9px;color:var(--ink4);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* Dealer filter in topbar */
+.dealer-filter-wrap{position:relative}
+
+/* ══ UTILS ══ */
+.between{display:flex;justify-content:space-between;align-items:center}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fu .22s ease both}
+.d1{animation-delay:.04s}.d2{animation-delay:.08s}.d3{animation-delay:.12s}.d4{animation-delay:.16s}
+.toast{position:fixed;bottom:18px;right:18px;z-index:9998;padding:10px 16px;border-radius:var(--rl);font-size:11px;font-weight:600;box-shadow:var(--shadow-lg);animation:fu .2s ease;pointer-events:none;backdrop-filter:blur(12px);}
+.t-ok{background:rgba(26,127,75,.12);color:var(--green);border:1px solid rgba(26,127,75,.2)}
+.t-err{background:rgba(214,40,40,.1);color:var(--red);border:1px solid var(--red-rim)}
+@media(max-width:900px){.c2{grid-template-columns:1fr}.tree-left{width:240px;min-width:240px}}
+@media(max-width:640px){.sidebar{display:none}.kpi-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loader-ov" id="ldr">
+  <div class="dots"><span></span><span></span><span></span></div>
+  <div class="load-txt" id="ldrTxt">กำลังโหลดข้อมูล…</div>
+</div>
+
+<div class="shell">
+  <!-- ════ SIDEBAR ════ -->
+  <aside class="sidebar" id="sb">
+    <div class="sb-brand" style="gap:8px">
+      <div class="sb-logo-wrap">
+        <img src="https://img1.pic.in.th/images/AMR_LOGO_01_NO_BG.png" alt="Logo" style="width:30px;height:30px;object-fit:contain;border-radius:4px">
+      </div>
+      <div class="sb-texts" style="line-height:.7">
+        <div class="sb-title">Asset</div>
+        <div class="sb-sub">OMA</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-sect">MAIN</div>
+      <div class="ni on" id="ni-dashboard" onclick="goTab('dashboard')">
+        <div class="ni-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+        <span class="ni-lbl">Dashboard</span>
+      </div>
+      <div class="ni" id="ni-tree" onclick="goTab('tree')">
+        <div class="ni-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 15H5a2 2 0 000 4h14a2 2 0 000-4h-3"/><path d="M8 15a4 4 0 018 0"/></svg></div>
+        <span class="ni-lbl">Asset Structure</span>
+      </div>
+      <div class="nav-sect" style="margin-top:10px">TOOLS</div>
+      <div class="ni" id="ni-warranty" onclick="goTab('warranty')">
+        <div class="ni-ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <span class="ni-lbl">Warranty Tracker</span>
+        <span class="ni-badge" id="wBadge" style="display:none">0</span>
+      </div>
+      <div class="ni" id="ni-gantt" onclick="goTab('gantt')">
+        <div class="ni-ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="12" height="4" rx="1"/><rect x="3" y="16" width="16" height="4" rx="1"/></svg></div>
+        <span class="ni-lbl">Warranty Gantt</span>
+      </div>
+      <div class="ni" id="ni-service" onclick="goTab('service')">
+        <div class="ni-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg></div>
+        <span class="ni-lbl">Service Agreement</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <div class="main">
+    <div class="topbar">
+      <button onclick="toggleSb()" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;color:var(--ink2);padding-right:12px;transition:.2s" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--ink2)'">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="tb-title" id="tbTitle">Dashboard</div>
+
+      <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
+        <!-- 1. โครงการ -->
+        <div style="position:relative">
+          <button class="filter-trigger" id="ft-proj" onclick="toggleDD('proj')">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            โครงการ<span class="ft-badge" id="proj-badge" style="display:none">0</span>
+            <svg viewBox="0 0 24 24" id="proj-caret" style="width:10px;height:10px;transition:.2s"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-proj" style="display:none">
+            <div class="dd-head"><span class="dd-title"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>เลือกโครงการ</span><button class="dd-sel-all" onclick="selAllProj()">เลือกทั้งหมด</button></div>
+            <div class="dd-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="ค้นหาโครงการ…" oninput="filterDDList('proj',this.value)" id="proj-srch"/></div>
+            <div class="dd-list" id="dd-proj-list"></div>
+          </div>
+        </div>
+
+        <!-- 2. ประเภทอุปกรณ์ -->
+        <div style="position:relative">
+          <button class="filter-trigger" id="ft-type" onclick="toggleDD('type')">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            ประเภท<span class="ft-badge" id="type-badge" style="display:none">0</span>
+            <svg viewBox="0 0 24 24" id="type-caret" style="width:10px;height:10px;transition:.2s"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-type" style="display:none">
+            <div class="dd-head"><span class="dd-title"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/></svg>ประเภทอุปกรณ์</span><button class="dd-sel-all" onclick="selAllType()">เลือกทั้งหมด</button></div>
+            <div class="dd-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="ค้นหาประเภท…" oninput="filterDDList('type',this.value)" id="type-srch"/></div>
+            <div class="dd-list" id="dd-type-list"></div>
+            <div class="dd-step"><div class="dd-step-dot done"></div><span>โครงการ →</span><div class="dd-step-dot active"></div><span>ประเภท →</span><div class="dd-step-dot"></div><span>อุปกรณ์</span></div>
+          </div>
+        </div>
+
+        <!-- 3. Dealer -->
+        <div style="position:relative">
+          <button class="filter-trigger" id="ft-dealer" onclick="toggleDD('dealer')">
+            <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            Dealer<span class="ft-badge" id="dealer-badge" style="display:none">0</span>
+            <svg viewBox="0 0 24 24" id="dealer-caret" style="width:10px;height:10px;transition:.2s"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-dealer" style="display:none">
+            <div class="dd-head"><span class="dd-title"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>เลือก Dealer</span><button class="dd-sel-all" onclick="selAllDealer()">เลือกทั้งหมด</button></div>
+            <div class="dd-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="ค้นหา Dealer…" oninput="filterDDList('dealer',this.value)" id="dealer-srch"/></div>
+            <div class="dd-list" id="dd-dealer-list"></div>
+          </div>
+        </div>
+
+        <!-- 4. อุปกรณ์ -->
+        <div style="position:relative">
+          <button class="filter-trigger" id="ft-asset" onclick="toggleDD('asset')" disabled style="opacity:.45">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            อุปกรณ์<span class="ft-badge" id="asset-badge" style="display:none">0</span>
+            <svg viewBox="0 0 24 24" id="asset-caret" style="width:10px;height:10px;transition:.2s"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="dd-panel" id="dd-asset" style="display:none;min-width:300px">
+            <div class="dd-head"><span class="dd-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>รายการอุปกรณ์</span><button class="dd-sel-all" onclick="selAllAsset()">เลือกทั้งหมด</button></div>
+            <div class="dd-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="ค้นหาอุปกรณ์…" oninput="filterDDList('asset',this.value)" id="asset-srch"/></div>
+            <div class="dd-list" id="dd-asset-list"></div>
+            <div class="dd-step"><div class="dd-step-dot done"></div><span>โครงการ →</span><div class="dd-step-dot done"></div><span>ประเภท →</span><div class="dd-step-dot active"></div><span>อุปกรณ์</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="srch"><span class="srch-ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></span><input type="text" id="srchIn" placeholder="ค้นหา…" oninput="onSrch()"/></div>
+      <button class="reload-btn" id="rldBtn" onclick="loadData()">
+        <svg viewBox="0 0 24 24" class="ri"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 013.51 15"/></svg>รีเฟรช
+      </button>
+    </div>
+
+    <!-- Filter Chips Bar -->
+    <div class="filter-bar" id="filterBar">
+      <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:var(--ink4);fill:none;stroke-width:2;flex-shrink:0"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <div class="active-chips" id="activeChips"><span class="no-filter">ยังไม่ได้เลือกตัวกรอง — แสดงทุกรายการ</span></div>
+      <button class="clear-all-btn" id="clearAllBtn" onclick="clearAllFilters()" style="display:none">
+        <svg viewBox="0 0 24 24" style="width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2"><path d="M18 6L6 18M6 6l12 12"/></svg>ล้างทั้งหมด
+      </button>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="tab on" id="tab-dashboard">
+        <div class="kpi-row" id="kpiRow"></div>
+        <div class="c2">
+          <div class="card fu d1">
+            <div class="card-h"><span class="card-t"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h6"/></svg>ประเภทอุปกรณ์</span><span class="cbadge" id="typeBadge">0</span></div>
+            <div class="tg" id="typeGrid"></div>
+          </div>
+          <div class="card fu d2">
+            <div class="card-h"><span class="card-t"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>จำนวนตามแบรนด์</span></div>
+            <div class="card-b"><div class="bc" id="brandBar"></div></div>
+          </div>
+        </div>
+        <div class="c2">
+          <div class="card fu d2">
+            <div class="card-h"><span class="card-t"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 010 20"/></svg>สัดส่วนประเภท</span></div>
+            <div class="card-b"><div class="dw"><svg class="dsv" id="donutSvg" viewBox="0 0 100 100"></svg><div class="dl-wrap" id="donutLeg"></div></div></div>
+          </div>
+          <div class="card fu d3">
+            <div class="card-h"><span class="card-t"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>จำนวนตามพื้นที่</span></div>
+            <div class="card-b"><div class="bc" id="locBar"></div></div>
+          </div>
+        </div>
+        <div class="card fu d4">
+          <div class="card-h between">
+            <span class="card-t" id="tblTitle"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>รายการอุปกรณ์</span>
+            <div style="display:flex;gap:6px;align-items:center"><span class="cbadge" id="tblBadge">0</span>
+              <button id="clearTypeBtn" onclick="clearType()" style="display:none;background:transparent;border:1px solid var(--line2);color:var(--ink4);padding:2px 8px;border-radius:6px;font-size:9px;cursor:pointer;transition:var(--ease)">✕ ล้าง</button>
+            </div>
+          </div>
+          <div class="tw">
+            <table class="at"><thead><tr><th>#</th><th>Asset No</th><th>ชื่ออุปกรณ์</th><th>ประเภท</th><th>Brand</th><th>Serial No</th><th>ตำแหน่ง</th><th>ติดตั้ง</th><th>ประกันถึง</th><th>Dealer</th><th>สถานะ</th></tr></thead>
+            <tbody id="tblBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ASSET TREE ── -->
+      <div class="tab" id="tab-tree">
+        <div class="tree-wrap">
+          <div class="tree-left">
+            <div class="tree-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="treeSrch" placeholder="ค้นหาในต้นไม้…" oninput="filterTree(this.value)"/></div>
+            <div class="tree-nodes" id="treeNodes"></div>
+          </div>
+          <div class="detail-right"><div class="dp-inner" id="dpInner">
+            <div class="dp-empty"><div class="dp-empty-ic"><svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 19.54M9.5 10.5C8 16 4.5 17 2 19M21 5C17.5 5.5 13 7 9 10"/><circle cx="12" cy="5" r="2"/></svg></div>
+              <p style="font-size:13px;font-weight:600;color:var(--ink3)">Asset Structure</p>
+              <p style="font-size:11px;color:var(--ink4)">เลือกโหนดเพื่อดูรายละเอียด</p>
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- ── WARRANTY ── -->
+      <div class="tab" id="tab-warranty">
+        <p class="section-title"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Warranty Tracker</p>
+        <div class="card">
+          <div class="card-h between"><span class="card-t"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>รายการอุปกรณ์ตามสถานะการรับประกัน</span><span class="cbadge" id="wTblBadge">0</span></div>
+          <div class="tw"><table class="at"><thead><tr><th>Asset No</th><th>ชื่ออุปกรณ์</th><th>ประเภท</th><th>Brand</th><th>Dealer</th><th>Contact</th><th>ติดตั้ง</th><th>ประกันถึง</th><th>เหลือ (วัน)</th><th>สถานะ</th></tr></thead><tbody id="wTblBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ── GANTT CHART ── -->
+      <div class="tab" id="tab-gantt">
+        <p class="section-title"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="12" height="4" rx="1"/><rect x="3" y="16" width="16" height="4" rx="1"/></svg>Warranty Gantt Chart</p>
+        <!-- Controls -->
+        <div class="card fu" style="margin-bottom:12px">
+          <div class="card-h between">
+            <span class="card-t"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>แผนภูมิระยะเวลาการรับประกัน รายอุปกรณ์</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span style="font-size:10px;color:var(--ink4)">แสดง:</span>
+              <select id="ganttRange" onchange="renderGantt()" style="font-size:10px;padding:3px 6px;border:1px solid var(--line2);border-radius:6px;background:var(--surf2);color:var(--ink)">
+                <option value="3">3 ปี</option>
+                <option value="5" selected>5 ปี</option>
+                <option value="10">10 ปี</option>
+              </select>
+              <div style="display:flex;gap:5px;align-items:center;font-size:9px">
+                <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></span>ปกติ</span>
+                <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:3px;background:var(--amber);display:inline-block"></span>ใกล้หมด</span>
+                <span style="display:inline-flex;align-items:center;gap:3px"><span style="width:10px;height:10px;border-radius:3px;background:var(--red);display:inline-block"></span>หมดแล้ว</span>
+              </div>
+            </div>
+          </div>
+          <div id="ganttContainer" style="overflow-x:auto;max-height:70vh;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- ── SERVICE AGREEMENT ── -->
+      <div class="tab" id="tab-service">
+        <p class="section-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>Service Agreement & Contract</p>
+        <!-- Summary -->
+        <div class="sa-summary" id="saSummary"></div>
+        <!-- Cards by dealer -->
+        <div class="sa-grid" id="saGrid"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ════════════════════════════
+// STATE
+// ════════════════════════════
+let RAW=[],srchQ='';
+let treeMap={},roots=[],exp={},sbOpen=true,curTab='dashboard';
+let selProjs=new Set(),selTypes=new Set(),selAssets=new Set(),selDealers=new Set();
+let selType=null;
+let openDD=null;
+
+// ════════════════════════════
+// TYPE META
+// ════════════════════════════
+const SVG_ICONS={
+  camera:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+  cctv:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
+  nvr:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  network:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M9 14l-2 3M15 14l2 3M9 14h6"/></svg>',
+  router:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="2" y="9" width="20" height="8" rx="2"/><path d="M6 9V5M12 9V5M18 9V5M6 17v2M18 17v2"/></svg>',
+  wifi:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M5 12.5A7 7 0 0119 12.5M8 16a4 4 0 018 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>',
+  ups:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  battery:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="2" y="7" width="18" height="10" rx="1"/><path d="M22 11v2M6 11h6"/></svg>',
+  ac:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="1" y="3" width="22" height="10" rx="2"/><path d="M5 17v4M9 17v4M15 17v4M19 17v4M1 13h22"/></svg>',
+  fire:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M8.5 14.5A2.5 2.5 0 0011 17c0 1.5-1 2-1 2s5-1 5-5c0-2-2-3-2-3s0 2-1.5 2.5c0 0-1-1-1-2s1-3 1-3-4 2-4 6z"/><path d="M12 21a9 9 0 100-18 9 9 0 000 18z"/></svg>',
+  access:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>',
+  face:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="5"/><path d="M3 21a9 9 0 0118 0"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+  shop:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>',
+};
+const LV_SVG={
+  1:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 10v4M12 10v4M16 10v4"/></svg>',
+  2:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+  3:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M3 21h18M9 21V7l3-4 3 4v14M5 21V11l4-2M19 21V11l-4-2"/></svg>',
+  4:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  5:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>',
+  6:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+};
+const TM={'IP Camera Dome':{ic:'camera',c:'#D62828',h1:'#A01919',h2:'#D62828'},'IP Camera PTZ':{ic:'camera',c:'#D62828',h1:'#A01919',h2:'#D62828'},'CCTV System':{ic:'cctv',c:'#B91C1C',h1:'#7F1D1D',h2:'#B91C1C'},'NVR':{ic:'nvr',c:'#555555',h1:'#333',h2:'#555'},'Managed Switch':{ic:'network',c:'#475569',h1:'#334155',h2:'#475569'},'Network System':{ic:'network',c:'#475569',h1:'#334155',h2:'#475569'},'Router':{ic:'router',c:'#475569',h1:'#334155',h2:'#475569'},'Wireless AP':{ic:'wifi',c:'#475569',h1:'#334155',h2:'#475569'},'UPS Online':{ic:'ups',c:'#B45309',h1:'#92400e',h2:'#B45309'},'UPS System':{ic:'ups',c:'#B45309',h1:'#92400e',h2:'#B45309'},'Battery Module':{ic:'battery',c:'#B45309',h1:'#92400e',h2:'#B45309'},'Split Type':{ic:'ac',c:'#0369A1',h1:'#075985',h2:'#0369A1'},'Air Conditioning':{ic:'ac',c:'#0369A1',h1:'#075985',h2:'#0369A1'},'Fire Alarm':{ic:'fire',c:'#DC2626',h1:'#991B1B',h2:'#DC2626'},'Access Control':{ic:'access',c:'#1A7F4B',h1:'#14532d',h2:'#1A7F4B'},'Access Controller':{ic:'access',c:'#1A7F4B',h1:'#14532d',h2:'#1A7F4B'},'Face Recognition':{ic:'face',c:'#1A7F4B',h1:'#14532d',h2:'#1A7F4B'}};
+const DM={ic:'gear',c:'#777777',h1:'#444',h2:'#666'};
+const tm=t=>TM[t]||DM;
+function getSVG(ic){return SVG_ICONS[ic]||SVG_ICONS.gear;}
+function getLvSVG(lv){return LV_SVG[lv]||LV_SVG[6];}
+const PAL=['#D62828','#B91C1C','#475569','#555555','#B45309','#0369A1','#1A7F4B','#374151','#7F1D1D','#92400e'];
+const LVN={1:'Plant',2:'Zone/Bldg',3:'Floor',4:'Area/Dept',5:'System',6:'Equipment'};
+
+// ════════════════════════════
+// INIT
+// ════════════════════════════
+window.onload=()=>{
+  loadData();
+  document.addEventListener('click',e=>{
+    if(!openDD)return;
+    const panel=document.getElementById('dd-'+openDD);
+    const btn=document.getElementById('ft-'+openDD);
+    if(panel&&panel.contains(e.target))return;
+    if(btn&&btn.contains(e.target))return;
+    closeDD();
+  });
+};
+function loadData(){
+  document.getElementById('rldBtn').classList.add('spinning');
+  showLoad(true,'กำลังโหลดข้อมูลจาก Google Sheet…');
+  if(typeof google!=='undefined'&&google.script){
+    google.script.run.withSuccessHandler(j=>{init(JSON.parse(j));}).withFailureHandler(e=>{showLoad(false);toast('โหลดล้มเหลว: '+e.message,'err');document.getElementById('rldBtn').classList.remove('spinning');}).getAssetData(window.PORTAL && window.PORTAL.token);
+  }else{setTimeout(()=>init(DEMO),700);}
+}
+function init(data){
+  RAW=data;renderFilterChips();buildTree();render();showLoad(false);document.getElementById('rldBtn').classList.remove('spinning');
+}
+
+// ════════════════════════════
+// DROPDOWN SYSTEM
+// ════════════════════════════
+function toggleDD(name){
+  if(openDD===name){closeDD();return;}
+  closeDD();openDD=name;
+  const panel=document.getElementById('dd-'+name);
+  const btn=document.getElementById('ft-'+name);
+  if(panel.parentNode!==document.body)document.body.appendChild(panel);
+  const rect=btn.getBoundingClientRect();
+  panel.style.display='block';
+  panel.style.top=(rect.bottom+6)+'px';
+  requestAnimationFrame(()=>{
+    const pw=panel.offsetWidth||260;
+    if(name==='asset'||name==='dealer'){let left=rect.right-pw;if(left<8)left=8;panel.style.left=left+'px';}
+    else{let left=rect.left;if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;panel.style.left=Math.max(8,left)+'px';}
+    panel.style.right='auto';
+  });
+  document.getElementById(name+'-caret').style.transform='rotate(180deg)';
+  btn.classList.add('active');
+  if(name==='proj')populateProjDD();
+  if(name==='type')populateTypeDD();
+  if(name==='dealer')populateDealerDD();
+  if(name==='asset')populateAssetDD();
+  const si=document.getElementById(name+'-srch');
+  if(si){si.value='';setTimeout(()=>si.focus(),50);}
+}
+function closeDD(){
+  if(!openDD)return;
+  const panel=document.getElementById('dd-'+openDD);
+  if(panel)panel.style.display='none';
+  const c=document.getElementById(openDD+'-caret');if(c)c.style.transform='';
+  const btn=document.getElementById('ft-'+openDD);if(btn)btn.classList.remove('active');
+  openDD=null;
+}
+function repositionDD(){
+  if(!openDD)return;
+  const btn=document.getElementById('ft-'+openDD);if(!btn)return;
+  const panel=document.getElementById('dd-'+openDD);
+  const rect=btn.getBoundingClientRect();
+  panel.style.top=(rect.bottom+6)+'px';
+  const pw=panel.offsetWidth||260;
+  if(openDD==='asset'||openDD==='dealer'){let left=rect.right-pw;if(left<8)left=8;panel.style.left=left+'px';}
+  else{let left=rect.left;if(left+pw>window.innerWidth-8)left=window.innerWidth-pw-8;panel.style.left=Math.max(8,left)+'px';}
+}
+window.addEventListener('resize',repositionDD);
+window.addEventListener('scroll',repositionDD,true);
+
+function populateProjDD(q=''){
+  const ps=[...new Set(RAW.map(r=>r['plant (โครงการ)']).filter(Boolean))].sort();
+  const filt=q?ps.filter(p=>p.toLowerCase().includes(q.toLowerCase())):ps;
+  const el=document.getElementById('dd-proj-list');
+  if(!filt.length){el.innerHTML='<div class="dd-empty">ไม่พบโครงการ</div>';return;}
+  el.innerHTML=filt.map(p=>{
+    const checked=selProjs.has(p);
+    const cnt=RAW.filter(r=>r['plant (โครงการ)']=== p&&r['level']>=5&&r['Type']).length;
+    return`<div class="dd-opt ${checked?'checked':''}" onclick="toggleSelProj('${esc(p)}')"><div class="dd-cb"><svg class="dd-cb-check" viewBox="0 0 12 9"><polyline points="1 4 4 8 11 1"/></svg></div><div class="dd-opt-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="dd-opt-lbl">${p}</span><span class="dd-opt-cnt">${cnt}</span></div>`;
+  }).join('');
+}
+function populateTypeDD(q=''){
+  const base=getBase();const eq=base.filter(r=>r['level']>=5&&r['Type']);
+  const byT=grp(eq,'Type');const sorted=Object.entries(byT).sort((a,b)=>b[1].length-a[1].length);
+  const filt=q?sorted.filter(([t])=>t.toLowerCase().includes(q.toLowerCase())):sorted;
+  const el=document.getElementById('dd-type-list');
+  if(!filt.length){el.innerHTML='<div class="dd-empty">ไม่พบประเภท</div>';return;}
+  el.innerHTML=filt.map(([t,rows])=>{const checked=selTypes.has(t);const m=tm(t);
+    return`<div class="dd-opt ${checked?'checked':''}" onclick="toggleSelType('${esc(t)}')"><div class="dd-cb"><svg class="dd-cb-check" viewBox="0 0 12 9"><polyline points="1 4 4 8 11 1"/></svg></div><div class="dd-opt-icon" style="color:${checked?m.c:'var(--ink3)'}">${getSVG(m.ic)}</div><span class="dd-opt-lbl">${t}</span><span class="dd-opt-cnt">${rows.length}</span></div>`;
+  }).join('');
+  const ab=document.getElementById('ft-asset');ab.disabled=selTypes.size===0;ab.style.opacity=selTypes.size>0?'1':'.45';
+}
+function populateDealerDD(q=''){
+  const base=getBase();
+  const dealers=[...new Set(base.filter(r=>r['Dealer (ผู้ขาย)']).map(r=>r['Dealer (ผู้ขาย)']))].sort();
+  const filt=q?dealers.filter(d=>d.toLowerCase().includes(q.toLowerCase())):dealers;
+  const el=document.getElementById('dd-dealer-list');
+  if(!filt.length){el.innerHTML='<div class="dd-empty">ไม่พบ Dealer</div>';return;}
+  el.innerHTML=filt.map(d=>{
+    const checked=selDealers.has(d);
+    const cnt=base.filter(r=>r['Dealer (ผู้ขาย)']=== d&&r['level']>=5).length;
+    return`<div class="dd-opt ${checked?'checked':''}" onclick="toggleSelDealer('${esc(d)}')"><div class="dd-cb"><svg class="dd-cb-check" viewBox="0 0 12 9"><polyline points="1 4 4 8 11 1"/></svg></div><div class="dd-opt-icon">${getSVG('shop')}</div><span class="dd-opt-lbl">${d}</span><span class="dd-opt-cnt">${cnt}</span></div>`;
+  }).join('');
+}
+function populateAssetDD(q=''){
+  const base=getBase();let eq=base.filter(r=>r['level']>=5&&r['Type']&&r['Name (ชื่ออุปกรณ์)']);
+  if(selTypes.size>0)eq=eq.filter(r=>selTypes.has(r['Type']));
+  const filt=q?eq.filter(r=>{const n=(r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||'').toLowerCase();const id=(r['AssetNo (รหัสทรัพย์สิน)']||'').toLowerCase();return n.includes(q.toLowerCase())||id.includes(q.toLowerCase());}):eq;
+  const el=document.getElementById('dd-asset-list');
+  if(!filt.length){el.innerHTML='<div class="dd-empty">ไม่พบอุปกรณ์</div>';return;}
+  el.innerHTML=filt.map(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'];const checked=selAssets.has(id);const m=tm(r['Type']);const name=r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||id;const asno=r['AssetNo (รหัสทรัพย์สิน)']||'';
+    return`<div class="dd-opt ${checked?'checked':''}" onclick="toggleSelAsset('${esc(id)}')"><div class="dd-cb"><svg class="dd-cb-check" viewBox="0 0 12 9"><polyline points="1 4 4 8 11 1"/></svg></div><div class="dd-opt-icon" style="color:${checked?m.c:'var(--ink3)'}">${getSVG(m.ic)}</div><div style="flex:1;min-width:0"><div class="dd-opt-lbl">${name}</div>${asno?`<div style="font-size:9px;color:var(--ink4);font-family:var(--mono)">${asno}</div>`:''}</div></div>`;
+  }).join('');
+}
+function filterDDList(name,q){
+  if(name==='proj')populateProjDD(q);if(name==='type')populateTypeDD(q);
+  if(name==='dealer')populateDealerDD(q);if(name==='asset')populateAssetDD(q);
+}
+function toggleSelProj(p){if(selProjs.has(p))selProjs.delete(p);else selProjs.add(p);selTypes.clear();selAssets.clear();selDealers.clear();populateProjDD(document.getElementById('proj-srch')?.value||'');updateFilterBadges();renderFilterChips();render();}
+function toggleSelType(t){if(selTypes.has(t))selTypes.delete(t);else selTypes.add(t);selAssets.clear();populateTypeDD(document.getElementById('type-srch')?.value||'');const ab=document.getElementById('ft-asset');ab.disabled=selTypes.size===0;ab.style.opacity=selTypes.size>0?'1':'.45';updateFilterBadges();renderFilterChips();render();}
+function toggleSelDealer(d){if(selDealers.has(d))selDealers.delete(d);else selDealers.add(d);populateDealerDD(document.getElementById('dealer-srch')?.value||'');updateFilterBadges();renderFilterChips();render();}
+function toggleSelAsset(id){if(selAssets.has(id))selAssets.delete(id);else selAssets.add(id);populateAssetDD(document.getElementById('asset-srch')?.value||'');updateFilterBadges();renderFilterChips();render();}
+function selAllProj(){const ps=[...new Set(RAW.map(r=>r['plant (โครงการ)']).filter(Boolean))];const allOn=ps.every(p=>selProjs.has(p));if(allOn)selProjs.clear();else ps.forEach(p=>selProjs.add(p));selTypes.clear();selAssets.clear();selDealers.clear();populateProjDD();updateFilterBadges();renderFilterChips();render();}
+function selAllType(){const base=getBase();const types=[...new Set(base.filter(r=>r['level']>=5&&r['Type']).map(r=>r['Type']))];const allOn=types.every(t=>selTypes.has(t));if(allOn)selTypes.clear();else types.forEach(t=>selTypes.add(t));selAssets.clear();populateTypeDD();const ab=document.getElementById('ft-asset');ab.disabled=selTypes.size===0;ab.style.opacity=selTypes.size>0?'1':'.45';updateFilterBadges();renderFilterChips();render();}
+function selAllDealer(){const base=getBase();const dealers=[...new Set(base.filter(r=>r['Dealer (ผู้ขาย)']).map(r=>r['Dealer (ผู้ขาย)']))];const allOn=dealers.every(d=>selDealers.has(d));if(allOn)selDealers.clear();else dealers.forEach(d=>selDealers.add(d));populateDealerDD();updateFilterBadges();renderFilterChips();render();}
+function selAllAsset(){const base=getBase();let eq=base.filter(r=>r['level']>=5&&r['Type']&&r['Name (ชื่ออุปกรณ์)']);if(selTypes.size>0)eq=eq.filter(r=>selTypes.has(r['Type']));const ids=eq.map(r=>r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']);const allOn=ids.every(id=>selAssets.has(id));if(allOn)selAssets.clear();else ids.forEach(id=>selAssets.add(id));populateAssetDD();updateFilterBadges();renderFilterChips();render();}
+function updateFilterBadges(){
+  const pb=document.getElementById('proj-badge');if(selProjs.size>0){pb.textContent=selProjs.size;pb.style.display='';}else pb.style.display='none';
+  const tb=document.getElementById('type-badge');if(selTypes.size>0){tb.textContent=selTypes.size;tb.style.display='';}else tb.style.display='none';
+  const db=document.getElementById('dealer-badge');if(selDealers.size>0){db.textContent=selDealers.size;db.style.display='';}else db.style.display='none';
+  const ab=document.getElementById('asset-badge');if(selAssets.size>0){ab.textContent=selAssets.size;ab.style.display='';}else ab.style.display='none';
+}
+function renderFilterChips(){
+  const chips=document.getElementById('activeChips');const clearBtn=document.getElementById('clearAllBtn');
+  const hasAny=selProjs.size>0||selTypes.size>0||selAssets.size>0||selDealers.size>0;
+  clearBtn.style.display=hasAny?'':'none';
+  if(!hasAny){chips.innerHTML='<span class="no-filter">ยังไม่ได้เลือกตัวกรอง — แสดงทุกรายการ</span>';return;}
+  let html='';
+  selProjs.forEach(p=>{html+=`<span class="fchip proj"><svg viewBox="0 0 24 24" style="width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>${p}<span class="fchip-x" onclick="toggleSelProj('${esc(p)}')">×</span></span>`;});
+  selTypes.forEach(t=>{const m=tm(t);html+=`<span class="fchip type">${t}<span class="fchip-x" onclick="toggleSelType('${esc(t)}')">×</span></span>`;});
+  selDealers.forEach(d=>{html+=`<span class="fchip dealer"><svg viewBox="0 0 24 24" style="width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>${d.length>22?d.slice(0,22)+'…':d}<span class="fchip-x" onclick="toggleSelDealer('${esc(d)}')">×</span></span>`;});
+  selAssets.forEach(id=>{const r=RAW.find(r=>r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']=== id);const name=r?(r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||id):id;html+=`<span class="fchip asset">${name.length>22?name.slice(0,22)+'…':name}<span class="fchip-x" onclick="toggleSelAsset('${esc(id)}')">×</span></span>`;});
+  chips.innerHTML=html;
+}
+function clearAllFilters(){selProjs.clear();selTypes.clear();selAssets.clear();selDealers.clear();selType=null;const ab=document.getElementById('ft-asset');ab.disabled=true;ab.style.opacity='.45';updateFilterBadges();renderFilterChips();render();}
+
+// ════════════════════════════
+// SEARCH + BASE
+// ════════════════════════════
+function onSrch(){srchQ=document.getElementById('srchIn').value.toLowerCase().trim();render();}
+function getBase(){return RAW.filter(r=>{if(selProjs.size===0)return true;return selProjs.has(r['plant (โครงการ)']);});}
+function getFilt(ignoreAsset=false){
+  return RAW.filter(r=>{
+    const pOK=selProjs.size===0||selProjs.has(r['plant (โครงการ)']);
+    const typeOK=selTypes.size===0||selTypes.has(r['Type'])||(selType&&r['Type']===selType);
+    const dealerOK=selDealers.size===0||selDealers.has(r['Dealer (ผู้ขาย)']);
+    const assetOK=ignoreAsset||selAssets.size===0||selAssets.has(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']);
+    const q=srchQ;
+    const sOK=!q||(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']||'').toLowerCase().includes(q)||(r['detail (รายละเอียดอุปกรณ์)']||'').toLowerCase().includes(q)||(r['Name (ชื่ออุปกรณ์)']||'').toLowerCase().includes(q)||(r['Type']||'').toLowerCase().includes(q)||(r['Brand (ยี่ห้อ)']||'').toLowerCase().includes(q)||(r['AssetNo (รหัสทรัพย์สิน)']||'').toLowerCase().includes(q)||(r['SerialNo (หมายเลขอุปกรณ์)']||'').toLowerCase().includes(q)||(r['Dealer (ผู้ขาย)']||'').toLowerCase().includes(q);
+    return pOK&&typeOK&&dealerOK&&assetOK&&sOK;
+  });
+}
+
+// ════════════════════════════
+// RENDER ROUTER
+// ════════════════════════════
+function render(){
+  if(curTab==='dashboard')renderDash();
+  else if(curTab==='tree')renderTreeTab();
+  else if(curTab==='warranty')renderWarranty();
+  else if(curTab==='gantt')renderGantt();
+  else if(curTab==='service')renderService();
+}
+
+// ════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════
+function goTab(t){
+  curTab=t;
+  document.querySelectorAll('.tab').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('tab-'+t).classList.add('on');
+  document.getElementById('ni-'+t).classList.add('on');
+  const titles={dashboard:'Dashboard',tree:'Asset Structure',warranty:'Warranty Tracker',gantt:'Warranty Gantt Chart',service:'Service Agreement'};
+  document.getElementById('tbTitle').textContent=titles[t]||t;
+  render();
+}
+function toggleSb(){sbOpen=!sbOpen;document.getElementById('sb').classList.toggle('col',!sbOpen);}
+
+// ════════════════════════════
+// DASHBOARD
+// ════════════════════════════
+function renderDash(){
+  const all=getFilt(true);const eq=all.filter(r=>r['level']>=5&&r['Type']);
+  const flt=getFilt(false);const today=new Date();
+  const brands=new Set(eq.map(r=>r['Brand (ยี่ห้อ)']).filter(Boolean));
+  const types=new Set(eq.map(r=>r['Type']).filter(Boolean));
+  const soon=eq.filter(r=>{const d=wd(r);return d&&(d-today)/864e5>=0&&(d-today)/864e5<=180;});
+  const expd=eq.filter(r=>{const d=wd(r);return d&&(d-today)<0;});
+  const kpiDefs=[
+    {l:'อุปกรณ์ทั้งหมด',v:all.length,m:'ทุก Level',svg:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>',c:'var(--red)',bg:'var(--red-bg)'},
+    {l:'อุปกรณ์หลัก',v:eq.length,m:'Level 5-6',svg:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',c:'var(--ink2)',bg:'rgba(0,0,0,.05)'},
+    {l:'ประเภทอุปกรณ์',v:types.size,m:'ชนิดที่แตกต่าง',svg:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',c:'var(--ink2)',bg:'rgba(0,0,0,.05)'},
+    {l:'แบรนด์',v:brands.size,m:'ผู้ผลิต',svg:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>',c:'var(--ink2)',bg:'rgba(0,0,0,.05)'},
+    {l:'ใกล้หมดประกัน',v:soon.length,m:'≤ 180 วัน',svg:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>',c:'var(--amber)',bg:'var(--amber-bg)'},
+    {l:'หมดประกันแล้ว',v:expd.length,m:'ต้องดำเนินการ',svg:'<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',c:'var(--red)',bg:'var(--red-bg)'},
+  ];
+  document.getElementById('kpiRow').innerHTML=kpiDefs.map((k,i)=>`<div class="kpi fu d${Math.min(i+1,4)}" style="--kc:${k.c}"><div class="kpi-ic" style="--kb:${k.bg};color:${k.c}">${k.svg}</div><div class="kpi-txt"><div class="kpi-l">${k.l}</div><div class="kpi-v">${k.v}</div><div class="kpi-m">${k.m}</div></div></div>`).join('');
+  const wb=soon.length+expd.length;const wbEl=document.getElementById('wBadge');wbEl.textContent=wb;wbEl.style.display=wb?'':'none';
+  const byT=grp(eq,'Type');const sT=Object.entries(byT).sort((a,b)=>b[1].length-a[1].length);const mxT=sT[0]?.[1].length||1;
+  document.getElementById('typeGrid').innerHTML=sT.map(([t,rows])=>{const m=tm(t);return`<div class="tc ${selType===t?'sel':''}" style="--tc:${m.c}" onclick="setType('${esc(t)}')"><div class="tc-i" style="color:${m.c}">${getSVG(m.ic)}</div><div class="tc-n" title="${t}">${t}</div><div class="tc-c">${rows.length} รายการ</div><div class="tc-bar"><div class="tc-bf" style="width:${Math.round(rows.length/mxT*100)}%;background:${m.c}"></div></div></div>`;}).join('');
+  document.getElementById('typeBadge').textContent=sT.length+' ประเภท';
+  const byB=grp(eq,'Brand (ยี่ห้อ)');const sB=Object.entries(byB).sort((a,b)=>b[1].length-a[1].length).slice(0,7);const mxB=sB[0]?.[1].length||1;
+  document.getElementById('brandBar').innerHTML=sB.map(([b,r],i)=>`<div class="br"><div class="bl" title="${b}">${b}</div><div class="bt"><div class="bf" style="width:${Math.round(r.length/mxB*100)}%;background:${PAL[i%PAL.length]}">${r.length}</div></div><div class="bn">${r.length}</div></div>`).join('');
+  renderDonut(sT.slice(0,7).map(([t,r],i)=>({lbl:t,val:r.length,c:PAL[i%PAL.length]})));
+  const lv2=all.filter(r=>r['level']===2);const byL={};
+  lv2.forEach(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'];const cnt=eq.filter(e=>(e['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']||'').startsWith(id+'-')||e['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']===id).length;if(cnt>0)byL[r['detail (รายละเอียดอุปกรณ์)']||id]=cnt;});
+  const sL=Object.entries(byL).sort((a,b)=>b[1]-a[1]);const mxL=sL[0]?.[1]||1;
+  document.getElementById('locBar').innerHTML=sL.length?sL.map(([l,c],i)=>`<div class="br"><div class="bl" title="${l}">${l}</div><div class="bt"><div class="bf" style="width:${Math.round(c/mxL*100)}%;background:${PAL[(i+3)%PAL.length]}">${c}</div></div><div class="bn">${c}</div></div>`).join(''):'<div style="color:var(--ink4);font-size:11px;text-align:center;padding:14px">ไม่มีข้อมูลพื้นที่ Lv2</div>';
+  const tData=flt.filter(r=>r['level']>=5);
+  document.getElementById('tblTitle').innerHTML=`<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" style="width:13px;height:13px;color:var(--red)"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>รายการอุปกรณ์`;
+  document.getElementById('tblBadge').textContent=tData.length;
+  document.getElementById('clearTypeBtn').style.display=(selType||selTypes.size>0||selAssets.size>0||selDealers.size>0)?'':'none';
+  document.getElementById('tblBody').innerHTML=tData.map((r,i)=>{const m=tm(r['Type']);const ws=wStatus(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);
+    return`<tr onclick="openInTree('${eId(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'])}')"><td style="color:var(--ink4)">${i+1}</td><td class="mc">${r['AssetNo (รหัสทรัพย์สิน)']||'-'}</td><td><div style="font-weight:600">${r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||'-'}</div><div style="font-size:9px;color:var(--ink4)">${r['PartNo (รุ่นของอุปกรณ์)']||''}</div></td><td><span class="badge" style="background:${m.c}12;color:${m.c};border:1px solid ${m.c}25">${r['Type']||'-'}</span></td><td style="font-weight:600">${r['Brand (ยี่ห้อ)']||'-'}</td><td class="mc">${r['SerialNo (หมายเลขอุปกรณ์)']||'-'}</td><td style="color:var(--ink4);font-size:10px">${sLoc(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'])}</td><td style="color:var(--ink3)">${r['InstallDate (วันที่ติดตั้ง)']||'-'}</td><td style="color:var(--ink3)">${r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']||'-'}</td><td style="font-size:10px;color:var(--ink3)">${r['Dealer (ผู้ขาย)']||'-'}</td><td><span class="badge ${ws.cls}">${ws.lbl}</span></td></tr>`;
+  }).join()||`<tr><td colspan="11" style="text-align:center;padding:28px;color:var(--ink4)">ไม่พบข้อมูล</td></tr>`;
+}
+function setType(t){selType=selType===t?null:t;if(selType){selTypes.clear();selTypes.add(selType);}else selTypes.clear();selAssets.clear();updateFilterBadges();renderFilterChips();renderDash();}
+function clearType(){selType=null;selTypes.clear();selAssets.clear();const ab=document.getElementById('ft-asset');ab.disabled=true;ab.style.opacity='.45';updateFilterBadges();renderFilterChips();renderDash();}
+let selNode=null;
+function openInTree(encId){const id=dId(encId);selNode=id;goTab('tree');setTimeout(()=>{const el=document.querySelector(`.tr-row[data-id="${CSS.escape(id)}"]`);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});selectNode(id);}},120);}
+
+// ════════════════════════════
+// DONUT
+// ════════════════════════════
+function renderDonut(items){
+  const svg=document.getElementById('donutSvg');const leg=document.getElementById('donutLeg');
+  const tot=items.reduce((s,i)=>s+i.val,0);if(!tot){svg.innerHTML='';leg.innerHTML='';return;}
+  const R=38,S=13,cx=50,cy=50,circ=2*Math.PI*R;
+  let off=0,paths='';
+  items.forEach(it=>{const pct=it.val/tot,dash=pct*circ,rot=off*360-90;
+    paths+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${it.c}" stroke-width="${S}" stroke-dasharray="${dash.toFixed(2)} ${(circ-dash).toFixed(2)}" transform="rotate(${rot} ${cx} ${cy})" style="cursor:pointer;transition:stroke-width .2s" onmouseenter="this.setAttribute('stroke-width','${S+3}')" onmouseleave="this.setAttribute('stroke-width','${S}')" onclick="setType('${esc(it.lbl)}')"><title>${it.lbl}: ${it.val}</title></circle>`;
+    off+=pct;
+  });
+  paths+=`<text x="50" y="46" text-anchor="middle" font-size="13" font-weight="700" fill="#1A1A1A">${tot}</text><text x="50" y="56" text-anchor="middle" font-size="6" fill="#777">รายการ</text>`;
+  svg.innerHTML=paths;
+  leg.innerHTML=items.map(it=>`<div class="dl" onclick="setType('${esc(it.lbl)}')"><div class="dd" style="background:${it.c}"></div><div class="dn">${it.lbl}</div><div class="dv">${it.val}<span class="dp">${Math.round(it.val/tot*100)}%</span></div></div>`).join('');
+}
+
+// ════════════════════════════
+// ASSET TREE
+// ════════════════════════════
+function buildTree(){
+  const data=getFilt(true);treeMap={};roots=[];
+  data.forEach(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'];treeMap[id]={row:r,id,children:[],level:r['level']||1};});
+  data.forEach(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'];const pid=r['parent_id (สถานที่)'];const node=treeMap[id];if(!node)return;if(pid&&pid!==id&&treeMap[pid])treeMap[pid].children.push(node);else roots.push(node);});
+  const seen=new Set();roots=roots.filter(n=>{if(seen.has(n.id))return false;seen.add(n.id);return true;});
+}
+function renderTreeTab(){buildTree();drawTree(roots,document.getElementById('treeNodes'));}
+function drawTree(nodes,container){
+  container.innerHTML='';
+  if(!nodes.length){container.innerHTML='<div style="color:var(--ink4);font-size:11px;padding:14px;text-align:center">ไม่พบข้อมูล</div>';return;}
+  nodes.forEach(n=>drawNode(n,container));
+}
+function drawNode(node,parent){
+  const r=node.row,lv=node.level;const lbl=r['detail (รายละเอียดอุปกรณ์)']||node.id;
+  const hasK=node.children.length>0;const isExp=exp[node.id]!==false;const isOn=selNode===node.id;
+  const wrap=document.createElement('div');wrap.className='tn';
+  const row=document.createElement('div');row.className='tr-row'+(isOn?' on':'');row.dataset.id=node.id;row.onclick=()=>selectNode(node.id);
+  const tog=document.createElement('div');tog.className='tr-tog'+(hasK?(isExp?' open':''):'');
+  if(hasK){tog.innerHTML='<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>';tog.onclick=e=>{e.stopPropagation();toggleNode(node.id,wrap,tog);};}
+  const ic=document.createElement('div');ic.className='tr-ic';ic.innerHTML=getLvSVG(lv);
+  const lb=document.createElement('span');lb.className='tr-lbl';lb.textContent=lbl;lb.title=node.id;
+  row.append(tog,ic,lb);
+  if(hasK){const b=document.createElement('span');b.className='tr-bdg';b.textContent=cntD(node);row.appendChild(b);}
+  wrap.appendChild(row);
+  if(hasK){const kids=document.createElement('div');kids.className='tr-kids';kids.style.display=isExp?'':'none';node.children.forEach(c=>drawNode(c,kids));wrap.appendChild(kids);}
+  parent.appendChild(wrap);
+}
+function toggleNode(id,wrap,tog){exp[id]=exp[id]===false;const k=wrap.querySelector('.tr-kids');if(k)k.style.display=exp[id]===false?'none':'';tog.className='tr-tog'+(exp[id]===false?'':' open');}
+function cntD(n){let c=n.children.length;n.children.forEach(ch=>c+=cntD(ch));return c;}
+function selectNode(id){
+  selNode=id;document.querySelectorAll('.tr-row').forEach(r=>r.classList.remove('on'));document.querySelectorAll(`.tr-row[data-id="${CSS.escape(id)}"]`).forEach(r=>r.classList.add('on'));
+  const node=treeMap[id];if(node)renderDP(node);
+}
+function filterTree(q){
+  q=q.toLowerCase().trim();if(!q){buildTree();drawTree(roots,document.getElementById('treeNodes'));return;}
+  const matched=getFilt(true).filter(r=>(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']||'').toLowerCase().includes(q)||(r['detail (รายละเอียดอุปกรณ์)']||'').toLowerCase().includes(q)||(r['Name (ชื่ออุปกรณ์)']||'').toLowerCase().includes(q));
+  const tmp={};const rr=[];
+  matched.forEach(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'];tmp[id]={row:r,id,children:[],level:r['level']||1};});
+  matched.forEach(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'],pid=r['parent_id (สถานที่)'];if(pid&&pid!==id&&tmp[pid])tmp[pid].children.push(tmp[id]);else rr.push(tmp[id]);});
+  const seen=new Set();const ur=rr.filter(n=>{if(seen.has(n.id))return false;seen.add(n.id);return true;});
+  const tb=document.getElementById('treeNodes');tb.innerHTML='';ur.forEach(n=>drawNode(n,tb));
+}
+function renderDP(node){
+  const r=node.row,m=tm(r['Type']),lv=r['level']||node.level;
+  const ws=wStatus(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);
+  const wp=wPct(r['InstallDate (วันที่ติดตั้ง)'],r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);
+  const kids=node.children||[];const crumbs=getCrumbs(node);
+  document.getElementById('dpInner').innerHTML=`
+  <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;font-size:10px;color:var(--ink4)">
+    ${crumbs.map((c,i)=>`<span style="cursor:pointer;padding:2px 5px;border-radius:4px;transition:var(--ease)" onmouseenter="this.style.background='var(--surf3)'" onmouseleave="this.style.background=''" onclick="selectNode('${c.id}')">${c.lbl}</span>${i<crumbs.length-1?'<span style="color:var(--ink4)">›</span>':''}`).join('')}
+  </div>
+  <div class="dp-hero" style="--h1:${m.h1};--h2:${m.h2}">
+    <div class="dp-hero-i">${getLvSVG(lv)}</div>
+    <div class="dp-hero-n">${r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||'-'}</div>
+    <div class="dp-hero-id">${r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']}</div>
+    ${r['Type']?`<div class="dp-hero-tag">${getSVG(m.ic)} ${r['Type']}</div>`:''}
+  </div>
+  <div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1.5" fill="var(--red)"/></svg>ข้อมูลทรัพย์สิน</div>
+    <div class="dps-b">${dr('Asset No',r['AssetNo (รหัสทรัพย์สิน)'],true)}${dr('Part No / Model',r['PartNo (รุ่นของอุปกรณ์)'],true)}${dr('Serial No',r['SerialNo (หมายเลขอุปกรณ์)'],true)}${dr('แบรนด์',r['Brand (ยี่ห้อ)'])}${dr('ขนาด / Size',r['Size'])}${dr('RateCapacity',r['RateCapacity'])}${dr('Level',`Lv${lv} — ${LVN[lv]||'Node'}`)}</div></div>
+  <div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>ตำแหน่ง</div>
+    <div class="dps-b">${dr('โครงการ',r['plant (โครงการ)'])}${dr('FL ID',r['FLId (รหัสตำแหน่งที่ตั้งงานอุปกรณ์)']||r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'],true)}${dr('Work Center',r['WorkCenter'])}${dr('Cost Center',r['CostCenter'])}</div></div>
+  ${r['Dealer (ผู้ขาย)']?`<div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>ผู้จัดจำหน่าย & Contact</div>
+    <div class="dps-b">${dr('Dealer',r['Dealer (ผู้ขาย)'])}${dr('ระยะประกัน',r['Contact (ระยะเวลารับประกัน)'])}
+    ${r['ContactPhone']?`<div class="dp-row"><span class="dp-k">โทรศัพท์</span><span class="dp-v"><a href="tel:${r['ContactPhone']}" style="color:var(--red)">${r['ContactPhone']}</a></span></div>`:''}
+    ${r['ContactEmail']?`<div class="dp-row"><span class="dp-k">อีเมล</span><span class="dp-v"><a href="mailto:${r['ContactEmail']}" style="color:var(--red)">${r['ContactEmail']}</a></span></div>`:''}
+    ${r['ContactPerson']?dr('ผู้ติดต่อ',r['ContactPerson']):''}
+    </div></div>`:''}
+  <div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>วันที่ & ประกัน</div>
+    <div class="dps-b">${dr('ติดตั้ง',r['InstallDate (วันที่ติดตั้ง)'])}${dr('ประกันถึง',r['WarrantyDate (วันที่สิ้นสุดรับประกัน)'])}
+    ${r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']?`
+    <div style="margin-top:4px">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--ink4);margin-bottom:3px"><span>สถานะประกัน</span><span class="badge ${ws.cls}">${ws.lbl}</span></div>
+      <div class="wb"><div class="wf ${ws.wf}" style="width:${wp}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--ink4);margin-top:2px"><span>ติดตั้ง</span><span>${wp}%</span><span>หมดประกัน</span></div>
+    </div>`:''} </div></div>
+  ${r['ServiceAgreement']?`<div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Service Agreement</div>
+    <div class="dps-b">${dr('ประเภท SA',r['ServiceAgreement'])}${dr('SA เริ่มต้น',r['SAStartDate']||'-')}${dr('SA สิ้นสุด',r['SAEndDate']||'-')}${dr('SLA',r['SLA']||'-')}</div></div>`:''}
+  ${r['Spec (สเปค)']?`<div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Spec</div><div style="padding:9px 13px;font-size:10px;color:var(--ink2);line-height:1.7;background:var(--surf2)">${r['Spec (สเปค)']}</div></div>`:''}
+  ${r['Remark']?`<div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>หมายเหตุ</div><div style="padding:9px 13px;font-size:10px;color:var(--ink2)">${r['Remark']}</div></div>`:''}
+  ${kids.length?`<div class="dps"><div class="dps-h"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>รายการลูก (${kids.length})</div>
+    <div class="ch-grid">${kids.map(ch=>`<div class="ch-c" onclick="selectNode('${ch.id}')"><div class="ch-i">${getLvSVG(ch.level)}</div><div class="ch-n">${ch.row['detail (รายละเอียดอุปกรณ์)']||ch.id}</div><div class="ch-id">${ch.id.split('-').slice(-1)[0]}</div></div>`).join('')}</div></div>`:''}`;
+}
+function dr(k,v,isMono=false){if(!v&&v!==0)return'';return`<div class="dp-row"><span class="dp-k">${k}</span><span class="dp-v${isMono?' mc':''}">${v}</span></div>`;}
+function getCrumbs(node){const p=[];let n=node;while(n){p.unshift({id:n.id,lbl:n.row['detail (รายละเอียดอุปกรณ์)']||n.id});const pid=n.row['parent_id (สถานที่)'];if(pid&&pid!==n.id&&treeMap[pid])n=treeMap[pid];else break;}return p;}
+
+// ════════════════════════════
+// WARRANTY
+// ════════════════════════════
+function renderWarranty(){
+  const eq=getFilt(true).filter(r=>r['level']>=5);const today=new Date();
+  const sorted=[...eq].sort((a,b)=>{const da=wd(a)||new Date(9999,0),db=wd(b)||new Date(9999,0);return da-db;});
+  document.getElementById('wTblBadge').textContent=sorted.length;
+  document.getElementById('wTblBody').innerHTML=sorted.map(r=>{
+    const ws=wStatus(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);const d=wd(r);const days=d?Math.round((d-today)/864e5):null;
+    return`<tr><td class="mc">${r['AssetNo (รหัสทรัพย์สิน)']||'-'}</td><td style="font-weight:600">${r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||'-'}</td><td>${r['Type']||'-'}</td><td>${r['Brand (ยี่ห้อ)']||'-'}</td><td style="font-size:10px">${r['Dealer (ผู้ขาย)']||'-'}</td><td style="font-size:10px">${r['Contact (ระยะเวลารับประกัน)']||'-'}</td><td style="color:var(--ink3)">${r['InstallDate (วันที่ติดตั้ง)']||'-'}</td><td style="color:var(--ink3)">${r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']||'-'}</td><td style="font-weight:700;color:${days===null?'var(--ink4)':days<0?'var(--red)':days<=180?'var(--amber)':'var(--green)'}">
+      ${days===null?'-':days<0?`${Math.abs(days)} วันที่แล้ว`:`${days} วัน`}
+    </td><td><span class="badge ${ws.cls}">${ws.lbl}</span></td></tr>`;
+  }).join('');
+}
+
+// ════════════════════════════
+// GANTT CHART
+// ════════════════════════════
+function renderGantt(){
+  const eq=getFilt(true).filter(r=>r['level']>=5&&(r['InstallDate (วันที่ติดตั้ง)']||r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']));
+  const sorted=[...eq].sort((a,b)=>{const da=parseDate(a['InstallDate (วันที่ติดตั้ง)'])||new Date(9999,0);const db=parseDate(b['InstallDate (วันที่ติดตั้ง)'])||new Date(9999,0);return da-db;});
+  const years=parseInt(document.getElementById('ganttRange').value)||5;
+  const today=new Date();today.setHours(0,0,0,0);
+  // window: earliest install - 3 months → today + remaining span
+  let winStart=new Date(today);winStart.setMonth(winStart.getMonth()-6);
+  let winEnd=new Date(today);winEnd.setFullYear(winEnd.getFullYear()+years);
+  sorted.forEach(r=>{const d=parseDate(r['InstallDate (วันที่ติดตั้ง)']);if(d&&d<winStart)winStart=new Date(d);});
+  const totalMs=winEnd-winStart;
+  // build months header
+  const months=[];let m=new Date(winStart.getFullYear(),winStart.getMonth(),1);
+  while(m<=winEnd){months.push(new Date(m));m=new Date(m.getFullYear(),m.getMonth()+1,1);}
+  const THAI_MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const monthW=100/months.length;
+  let html=`<div style="padding:12px 14px 0">`;
+  // header
+  html+=`<div style="display:flex;margin-left:220px;margin-bottom:4px">`;
+  months.forEach(mn=>{html+=`<div style="flex:0 0 ${monthW}%;font-size:7.5px;font-weight:700;color:var(--ink4);text-align:center;border-left:1px solid var(--line);padding:1px 0;overflow:hidden;white-space:nowrap">${THAI_MON[mn.getMonth()]}${mn.getMonth()===0?mn.getFullYear().toString().slice(2):''}`;html+='</div>';});
+  html+='</div>';
+  // today line position
+  const todayPct=Math.max(0,Math.min(100,(today-winStart)/totalMs*100));
+  // rows
+  if(!sorted.length){html+='<div style="padding:20px;text-align:center;color:var(--ink4);font-size:11px">ไม่พบข้อมูลที่มีวันติดตั้ง</div>';}
+  else sorted.forEach(r=>{
+    const instD=parseDate(r['InstallDate (วันที่ติดตั้ง)']);
+    const warrD=parseDate(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);
+    if(!instD&&!warrD)return;
+    const barStart=instD||today;
+    const barEnd=warrD||new Date(barStart.getFullYear()+1,barStart.getMonth(),barStart.getDate());
+    const leftPct=Math.max(0,(barStart-winStart)/totalMs*100);
+    const widthPct=Math.max(.5,(barEnd-barStart)/totalMs*100);
+    const ws=wStatus(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);
+    const pct=warrD?wPct(r['InstallDate (วันที่ติดตั้ง)'],r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']):0;
+    const name=r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||'-';
+    const asno=r['AssetNo (รหัสทรัพย์สิน)']||'';
+    const barCls=ws.wf==='wf-ok'?'ok':ws.wf==='wf-warn'?'warn':'exp';
+    html+=`<div style="display:flex;align-items:center;margin-bottom:4px">
+      <div style="width:220px;min-width:220px;padding-right:10px">
+        <div style="font-size:10px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${name}">${name}</div>
+        <div style="font-size:8px;color:var(--ink4);font-family:var(--mono)">${asno}</div>
+      </div>
+      <div style="flex:1;height:26px;background:var(--surf3);border-radius:5px;position:relative;overflow:visible">
+        <div style="position:absolute;left:${leftPct.toFixed(2)}%;width:${Math.min(widthPct,100-leftPct).toFixed(2)}%;top:2px;height:22px;border-radius:4px;display:flex;align-items:center;overflow:hidden" class="gantt-bar ${barCls}" title="${name}: ${r['InstallDate (วันที่ติดตั้ง)']} → ${r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']}">
+          <span style="font-size:8px;font-weight:700;color:rgba(255,255,255,.9);padding:0 4px;white-space:nowrap;overflow:hidden">${pct}%</span>
+        </div>
+        <div style="position:absolute;left:${todayPct.toFixed(2)}%;top:0;bottom:0;width:1.5px;background:var(--red);z-index:2;opacity:.7"></div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('ganttContainer').innerHTML=html;
+}
+
+// ════════════════════════════
+// SERVICE AGREEMENT
+// ════════════════════════════
+function renderService(){
+  const eq=getFilt(true).filter(r=>r['level']>=5&&r['Dealer (ผู้ขาย)']);
+  const today=new Date();
+  // group by dealer
+  const byDealer={};
+  eq.forEach(r=>{const d=r['Dealer (ผู้ขาย)']||'ไม่ระบุ';if(!byDealer[d])byDealer[d]=[];byDealer[d].push(r);});
+  const dealers=Object.entries(byDealer).sort((a,b)=>b[1].length-a[1].length);
+  // summary
+  const totalDealer=dealers.length;
+  const totalItems=eq.length;
+  const expItems=eq.filter(r=>{const d=wd(r);return d&&d<today;}).length;
+  const warnItems=eq.filter(r=>{const d=wd(r);return d&&d>=today&&(d-today)/864e5<=180;}).length;
+  const okItems=eq.filter(r=>{const d=wd(r);return d&&(d-today)/864e5>180;}).length;
+  document.getElementById('saSummary').innerHTML=[
+    {v:totalDealer,l:'จำนวน Dealer',c:'var(--ink)'},
+    {v:totalItems,l:'อุปกรณ์รวม',c:'var(--ink)'},
+    {v:okItems,l:'ประกันปกติ',c:'var(--green)'},
+    {v:warnItems,l:'ใกล้หมดประกัน',c:'var(--amber)'},
+    {v:expItems,l:'หมดประกัน',c:'var(--red)'},
+  ].map(s=>`<div class="sa-sum-card"><div class="sa-sum-v" style="color:${s.c}">${s.v}</div><div class="sa-sum-l">${s.l}</div></div>`).join('');
+  if(!dealers.length){document.getElementById('saGrid').innerHTML='<div style="padding:40px;text-align:center;color:var(--ink4);grid-column:1/-1">ไม่พบข้อมูล Dealer</div>';return;}
+  document.getElementById('saGrid').innerHTML=dealers.map(([dealer,items])=>{
+    // stats per dealer
+    const dExp=items.filter(r=>{const d=wd(r);return d&&d<today;}).length;
+    const dWarn=items.filter(r=>{const d=wd(r);return d&&d>=today&&(d-today)/864e5<=180;}).length;
+    const dOk=items.filter(r=>{const d=wd(r);return d&&(d-today)/864e5>180;}).length;
+    // contact point — pick first item that has data
+    const cp=items.find(r=>r['ContactPhone']||r['ContactEmail']||r['ContactPerson'])||items[0];
+    const statusBadge=dExp>0?`<span class="badge b-exp">${dExp} หมดประกัน</span>`:dWarn>0?`<span class="badge b-warn">${dWarn} ใกล้หมด</span>`:`<span class="badge b-ok">✓ ปกติ</span>`;
+    // item list (max 5 shown)
+    const shown=items.slice(0,5);
+    const extra=items.length>5?`<div style="font-size:9px;color:var(--ink4);padding:3px 6px">และอีก ${items.length-5} รายการ…</div>`:'';
+    return`<div class="sa-card fu">
+      <div class="sa-card-head">
+        <div>
+          <div class="sa-dealer">${dealer}</div>
+          <div class="sa-proj" style="margin-top:3px">${[...new Set(items.map(r=>r['plant (โครงการ)']).filter(Boolean))].join(', ')}</div>
+        </div>
+        ${statusBadge}
+      </div>
+      <div class="sa-body">
+        <div class="sa-row"><span class="sa-k">อุปกรณ์ทั้งหมด</span><span class="sa-v">${items.length} รายการ</span></div>
+        <div class="sa-row"><span class="sa-k">ประกันปกติ</span><span class="sa-v" style="color:var(--green)">${dOk}</span></div>
+        <div class="sa-row"><span class="sa-k">ใกล้หมดประกัน</span><span class="sa-v" style="color:var(--amber)">${dWarn}</span></div>
+        <div class="sa-row"><span class="sa-k">หมดประกัน</span><span class="sa-v" style="color:var(--red)">${dExp}</span></div>
+        <!-- Contract Point -->
+        <div class="cp-box">
+          <div class="cp-label">Contract Point</div>
+          ${cp['ContactPerson']?`<div class="cp-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/></svg><span class="cp-val">${cp['ContactPerson']}</span></div>`:`<div class="cp-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0116 0"/></svg><span class="cp-val" style="color:var(--ink4)">ไม่ระบุผู้ติดต่อ</span></div>`}
+          ${cp['ContactPhone']?`<div class="cp-row"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.3 10.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012.18 0h3a2 2 0 012 1.72c.13 1.05.35 2.08.68 3.09a2 2 0 01-.45 2.11l-1.27 1.27a16 16 0 006.29 6.29l1.27-1.27a2 2 0 012.11-.45c1 .33 2 .56 3.09.68A2 2 0 0122 16.92z"/></svg><span class="cp-val"><a href="tel:${cp['ContactPhone']}">${cp['ContactPhone']}</a></span></div>`:''}
+          ${cp['ContactEmail']?`<div class="cp-row"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span class="cp-val"><a href="mailto:${cp['ContactEmail']}">${cp['ContactEmail']}</a></span></div>`:`<div class="cp-row"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span class="cp-val" style="color:var(--ink4)">ไม่ระบุอีเมล</span></div>`}
+        </div>
+        <!-- Item list -->
+        <div class="sa-items">
+          ${shown.map(r=>{const ws=wStatus(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);const dotC=ws.wf==='wf-ok'?'var(--green)':ws.wf==='wf-warn'?'var(--amber)':'var(--red)';
+            return`<div class="sa-item" onclick="openInTree('${eId(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'])}')"><span class="sa-item-dot" style="background:${dotC}"></span><span class="sa-item-name">${r['Name (ชื่ออุปกรณ์)']||r['detail (รายละเอียดอุปกรณ์)']||'-'}</span><span class="sa-item-date">${r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']||'-'}</span></div>`;
+          }).join('')}
+          ${extra}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════
+// HELPERS
+// ════════════════════════════
+function grp(arr,key){const m={};arr.forEach(r=>{const k=r[key]||'?';if(!m[k])m[k]=[];m[k].push(r);});return m;}
+function parseDate(s){
+  if(!s)return null;
+  try{const p=s.includes('/')?s.split('/').reverse().join('-'):s;const d=new Date(p);return isNaN(d)?null:d;}
+  catch{return null;}
+}
+function wd(r){return parseDate(r['WarrantyDate (วันที่สิ้นสุดรับประกัน)']);}
+function wStatus(s){
+  if(!s)return{cls:'b-neu',lbl:'-',wf:''};
+  try{const d=parseDate(s);if(!d)return{cls:'b-neu',lbl:'-',wf:''};const diff=(d-new Date())/864e5;
+    if(diff<0)return{cls:'b-exp',lbl:'หมดประกัน',wf:'wf-exp'};
+    if(diff<=180)return{cls:'b-warn',lbl:'⚠ ใกล้หมด',wf:'wf-warn'};
+    return{cls:'b-ok',lbl:'✓ ปกติ',wf:'wf-ok'};}
+  catch{return{cls:'b-neu',lbl:'-',wf:''};}
+}
+function wPct(inst,warr){
+  if(!inst||!warr)return 50;
+  const s=parseDate(inst);const e=parseDate(warr);if(!s||!e)return 50;
+  const tot=e-s;if(tot<=0)return 100;
+  return Math.min(100,Math.max(0,Math.round((new Date()-s)/tot*100)));
+}
+function sLoc(id){const p=(id||'').split('-');return p.slice(-2).join(' › ');}
+function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function eId(id){return(id||'').replace(/[^\w]/g,'_');}
+function dId(enc){const r=RAW.find(r=>eId(r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']||'')=== enc);return r?r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']:enc;}
+function showLoad(v,msg){document.getElementById('ldr').classList.toggle('off',!v);if(msg)document.getElementById('ldrTxt').textContent=msg;}
+function toast(msg,type='ok'){const t=document.createElement('div');t.className=`toast t-${type}`;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(()=>t.remove(),400);},2600);}
+
+// ════════════════════════════
+// DEMO DATA
+// ════════════════════════════
+const DEMO=[
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK","detail (รายละเอียดอุปกรณ์)":"NETWORK","level":1},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-สำนักงานเขต01","detail (รายละเอียดอุปกรณ์)":"สำนักงานเขต01","level":2},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-สำนักงานเขต02","detail (รายละเอียดอุปกรณ์)":"สำนักงานเขต02","level":2},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-สำนักงานเขต01","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL","detail (รายละเอียดอุปกรณ์)":"ชั้น1 เขต01","level":3},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-สำนักงานเขต01","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-2FL","detail (รายละเอียดอุปกรณ์)":"ชั้น2 เขต01","level":3},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-สำนักงานเขต02","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD02-1FL","detail (รายละเอียดอุปกรณ์)":"ชั้น1 เขต02","level":3},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB","detail (รายละเอียดอุปกรณ์)":"ล็อบบี้ ชั้น1","level":4},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT","detail (รายละเอียดอุปกรณ์)":"แผนก IT","level":4},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-2FL","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-2FL-ACC","detail (รายละเอียดอุปกรณ์)":"แผนกบัญชี","level":4},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-LOB","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB-CCTV","detail (รายละเอียดอุปกรณ์)":"ระบบ CCTV ล็อบบี้","level":5,"AssetNo (รหัสทรัพย์สิน)":"AST-SYS-CCTV01","Name (ชื่ออุปกรณ์)":"ระบบ CCTV 16CH","Type":"CCTV System","Size":"16CH","Brand (ยี่ห้อ)":"Hikvision","Spec (สเปค)":"IP Camera System 16CH, NVR, Monitor","Dealer (ผู้ขาย)":"บ. เทคโนวิชั่น จำกัด","ContactPerson":"คุณสมชาย วิชั่น","ContactPhone":"02-123-4567","ContactEmail":"support@technovision.co.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2025-05-31","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"16 กล้อง"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-NET","detail (รายละเอียดอุปกรณ์)":"ระบบ Network","level":5,"AssetNo (รหัสทรัพย์สิน)":"AST-SYS-NET01","Name (ชื่ออุปกรณ์)":"Network LAN 1Gbps","Type":"Network System","Size":"1Gbps","Brand (ยี่ห้อ)":"Cisco","Spec (สเปค)":"Cisco Switch+Router+WAP","Dealer (ผู้ขาย)":"บ. ซิสโก้ ไทย จำกัด","ContactPerson":"คุณมานพ เน็ตเวิร์ก","ContactPhone":"02-456-7890","ContactEmail":"network@cisco.th","Contact (ระยะเวลารับประกัน)":"5 ปี","InstallDate (วันที่ติดตั้ง)":"2021-03-15","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2026-03-14","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"48 Port"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-UPS","detail (รายละเอียดอุปกรณ์)":"ระบบ UPS","level":5,"AssetNo (รหัสทรัพย์สิน)":"AST-SYS-UPS01","Name (ชื่ออุปกรณ์)":"UPS 10kVA","Type":"UPS System","Size":"10kVA","Brand (ยี่ห้อ)":"APC","Spec (สเปค)":"APC Smart-UPS 10kVA Online","Dealer (ผู้ขาย)":"บ. เอพีซี ไทย จำกัด","ContactPerson":"คุณวิชัย เพาเวอร์","ContactPhone":"02-789-0123","ContactEmail":"ups@apcthailand.co.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2025-05-31","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"10 kVA"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-2FL-ACC","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-2FL-ACC-AC","detail (รายละเอียดอุปกรณ์)":"ระบบแอร์","level":5,"AssetNo (รหัสทรัพย์สิน)":"AST-SYS-AC01","Name (ชื่ออุปกรณ์)":"Daikin 24000BTU","Type":"Air Conditioning","Size":"24000BTU","Brand (ยี่ห้อ)":"Daikin","Spec (สเปค)":"Split Type Inverter 24000BTU","Dealer (ผู้ขาย)":"บ. ไดกิ้น ไทย จำกัด","ContactPerson":"คุณสุนีย์ แอร์คูล","ContactPhone":"02-234-5678","ContactEmail":"service@daikinthailand.co.th","Contact (ระยะเวลารับประกัน)":"2 ปี","InstallDate (วันที่ติดตั้ง)":"2023-01-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2024-12-31","CostCenter":"CC-ACC","WorkCenter":"WC-FAC","RateCapacity":"24000 BTU"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-LOB","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB-ACS","detail (รายละเอียดอุปกรณ์)":"Access Control","level":5,"AssetNo (รหัสทรัพย์สิน)":"AST-SYS-ACS01","Name (ชื่ออุปกรณ์)":"ZKTeco 4Door","Type":"Access Control","Size":"4Door","Brand (ยี่ห้อ)":"ZKTeco","Spec (สเปค)":"ZKTeco 4-Door Controller","Dealer (ผู้ขาย)":"บ. ซีเคอร์ ซิสเต็ม จำกัด","ContactPerson":"คุณประยงค์ เซคเคอร์","ContactPhone":"02-345-6789","ContactEmail":"contact@securesystem.co.th","Contact (ระยะเวลารับประกัน)":"2 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-15","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2024-06-14","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"4 ประตู"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-LOB-CCTV","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB-CCTV-001","detail (รายละเอียดอุปกรณ์)":"กล้อง CCTV #1","level":6,"SerialNo (หมายเลขอุปกรณ์)":"SN-001","PartNo (รุ่นของอุปกรณ์)":"DS-2CD2143G2-I","AssetNo (รหัสทรัพย์สิน)":"AST-CAM-001","Name (ชื่ออุปกรณ์)":"Hikvision Dome 4MP #1","Type":"IP Camera Dome","Size":"4MP","Brand (ยี่ห้อ)":"Hikvision","Spec (สเปค)":"4MP AcuSense Fixed Dome, IR 40m","Dealer (ผู้ขาย)":"บ. เทคโนวิชั่น จำกัด","ContactPerson":"คุณสมชาย วิชั่น","ContactPhone":"02-123-4567","ContactEmail":"support@technovision.co.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2025-05-31","CostCenter":"CC-IT","Remark":"โซน A ล็อบบี้","WorkCenter":"WC-IT","RateCapacity":"4MP"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-LOB-CCTV","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB-CCTV-002","detail (รายละเอียดอุปกรณ์)":"กล้อง CCTV #2","level":6,"SerialNo (หมายเลขอุปกรณ์)":"SN-002","PartNo (รุ่นของอุปกรณ์)":"DS-2CD2143G2-I","AssetNo (รหัสทรัพย์สิน)":"AST-CAM-002","Name (ชื่ออุปกรณ์)":"Hikvision Dome 4MP #2","Type":"IP Camera Dome","Size":"4MP","Brand (ยี่ห้อ)":"Hikvision","Spec (สเปค)":"4MP AcuSense Fixed Dome, IR 40m","Dealer (ผู้ขาย)":"บ. เทคโนวิชั่น จำกัด","ContactPerson":"คุณสมชาย วิชั่น","ContactPhone":"02-123-4567","ContactEmail":"support@technovision.co.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2025-05-31","CostCenter":"CC-IT","Remark":"โซน B ทางออก","WorkCenter":"WC-IT","RateCapacity":"4MP"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-LOB-CCTV","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB-CCTV-NVR","detail (รายละเอียดอุปกรณ์)":"NVR","level":6,"SerialNo (หมายเลขอุปกรณ์)":"SN-NVR-001","PartNo (รุ่นของอุปกรณ์)":"DS-9616NI-M8","AssetNo (รหัสทรัพย์สิน)":"AST-NVR-001","Name (ชื่ออุปกรณ์)":"Hikvision NVR 16CH","Type":"NVR","Size":"16CH","Brand (ยี่ห้อ)":"Hikvision","Spec (สเปค)":"16-ch 4K NVR","Dealer (ผู้ขาย)":"บ. เทคโนวิชั่น จำกัด","ContactPerson":"คุณสมชาย วิชั่น","ContactPhone":"02-123-4567","ContactEmail":"support@technovision.co.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2025-05-31","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"16CH"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT-NET","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-SW01","detail (รายละเอียดอุปกรณ์)":"Core Switch","level":6,"SerialNo (หมายเลขอุปกรณ์)":"FCW2344G01X","PartNo (รุ่นของอุปกรณ์)":"WS-C2960X-48FPS-L","AssetNo (รหัสทรัพย์สิน)":"AST-SW-001","Name (ชื่ออุปกรณ์)":"Cisco 2960X-48","Type":"Managed Switch","Size":"48Port","Brand (ยี่ห้อ)":"Cisco","Spec (สเปค)":"48-port PoE+ 370W","Dealer (ผู้ขาย)":"บ. ซิสโก้ ไทย จำกัด","ContactPerson":"คุณมานพ เน็ตเวิร์ก","ContactPhone":"02-456-7890","ContactEmail":"network@cisco.th","Contact (ระยะเวลารับประกัน)":"5 ปี","InstallDate (วันที่ติดตั้ง)":"2021-03-15","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2026-03-14","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"48 Port"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT-NET","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-RTR","detail (รายละเอียดอุปกรณ์)":"Router","level":6,"SerialNo (หมายเลขอุปกรณ์)":"FCW2344H001","PartNo (รุ่นของอุปกรณ์)":"ISR4321/K9","AssetNo (รหัสทรัพย์สิน)":"AST-RTR-001","Name (ชื่ออุปกรณ์)":"Cisco ISR 4321","Type":"Router","Size":"2xGE","Brand (ยี่ห้อ)":"Cisco","Spec (สเปค)":"ISR 2x GE WAN","Dealer (ผู้ขาย)":"บ. ซิสโก้ ไทย จำกัด","ContactPerson":"คุณมานพ เน็ตเวิร์ก","ContactPhone":"02-456-7890","ContactEmail":"network@cisco.th","Contact (ระยะเวลารับประกัน)":"5 ปี","InstallDate (วันที่ติดตั้ง)":"2021-03-15","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2026-03-14","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"2Gbps"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT-NET","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-WAP01","detail (รายละเอียดอุปกรณ์)":"Wireless AP","level":6,"SerialNo (หมายเลขอุปกรณ์)":"FCW2355A001","PartNo (รุ่นของอุปกรณ์)":"AIR-AP2802I-T-K9","AssetNo (รหัสทรัพย์สิน)":"AST-WAP-001","Name (ชื่ออุปกรณ์)":"Cisco Aironet 2800","Type":"Wireless AP","Size":"Dual Band","Brand (ยี่ห้อ)":"Cisco","Spec (สเปค)":"802.11ac Wave2","Dealer (ผู้ขาย)":"บ. ซิสโก้ ไทย จำกัด","ContactPerson":"คุณมานพ เน็ตเวิร์ก","ContactPhone":"02-456-7890","ContactEmail":"network@cisco.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2021-03-15","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2024-03-14","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"1.3Gbps"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT-UPS","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-UPS-001","detail (รายละเอียดอุปกรณ์)":"UPS หลัก","level":6,"SerialNo (หมายเลขอุปกรณ์)":"AS1234567890","PartNo (รุ่นของอุปกรณ์)":"SMX10000I","AssetNo (รหัสทรัพย์สิน)":"AST-UPS-001","Name (ชื่ออุปกรณ์)":"APC Smart-UPS 10kVA","Type":"UPS Online","Size":"10kVA","Brand (ยี่ห้อ)":"APC","Spec (สเปค)":"Online Double Conversion 10kVA","Dealer (ผู้ขาย)":"บ. เอพีซี ไทย จำกัด","ContactPerson":"คุณวิชัย เพาเวอร์","ContactPhone":"02-789-0123","ContactEmail":"ups@apcthailand.co.th","Contact (ระยะเวลารับประกัน)":"3 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2025-05-31","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"10kVA"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-IT-UPS","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-IT-UPS-BAT","detail (รายละเอียดอุปกรณ์)":"Battery","level":6,"SerialNo (หมายเลขอุปกรณ์)":"AS1234567891","PartNo (รุ่นของอุปกรณ์)":"SRT192RMBP","AssetNo (รหัสทรัพย์สิน)":"AST-UPS-BAT01","Name (ชื่ออุปกรณ์)":"APC Battery Pack","Type":"Battery Module","Size":"192V","Brand (ยี่ห้อ)":"APC","Spec (สเปค)":"Extended Battery 192VDC","Dealer (ผู้ขาย)":"บ. เอพีซี ไทย จำกัด","ContactPerson":"คุณวิชัย เพาเวอร์","ContactPhone":"02-789-0123","ContactEmail":"ups@apcthailand.co.th","Contact (ระยะเวลารับประกัน)":"1 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2023-05-31","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"192V"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-1FL-LOB-ACS","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-1FL-LOB-ACS-CTL","detail (รายละเอียดอุปกรณ์)":"Controller","level":6,"SerialNo (หมายเลขอุปกรณ์)":"ZK20230001","PartNo (รุ่นของอุปกรณ์)":"C3-400","AssetNo (รหัสทรัพย์สิน)":"AST-ACS-001","Name (ชื่ออุปกรณ์)":"ZKTeco C3-400","Type":"Access Controller","Size":"4Door","Brand (ยี่ห้อ)":"ZKTeco","Spec (สเปค)":"4-Door Panel TCP/IP","Dealer (ผู้ขาย)":"บ. ซีเคอร์ ซิสเต็ม จำกัด","ContactPerson":"คุณประยงค์ เซคเคอร์","ContactPhone":"02-345-6789","ContactEmail":"contact@securesystem.co.th","Contact (ระยะเวลารับประกัน)":"2 ปี","InstallDate (วันที่ติดตั้ง)":"2022-06-15","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2024-06-14","CostCenter":"CC-IT","WorkCenter":"WC-IT","RateCapacity":"4 ประตู"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-2FL-ACC-AC","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-2FL-ACC-AC-001","detail (รายละเอียดอุปกรณ์)":"แอร์ 1","level":6,"SerialNo (หมายเลขอุปกรณ์)":"DK23450001","PartNo (รุ่นของอุปกรณ์)":"FTKM25RV2S","AssetNo (รหัสทรัพย์สิน)":"AST-AC-001","Name (ชื่ออุปกรณ์)":"Daikin 9200BTU #1","Type":"Split Type","Size":"9200BTU","Brand (ยี่ห้อ)":"Daikin","Spec (สเปค)":"FTKM R32 Inverter","Dealer (ผู้ขาย)":"บ. ไดกิ้น ไทย จำกัด","ContactPerson":"คุณสุนีย์ แอร์คูล","ContactPhone":"02-234-5678","ContactEmail":"service@daikinthailand.co.th","Contact (ระยะเวลารับประกัน)":"2 ปี","InstallDate (วันที่ติดตั้ง)":"2023-01-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2024-12-31","CostCenter":"CC-ACC","WorkCenter":"WC-FAC","RateCapacity":"9200 BTU"},
+  {"plant (โครงการ)":"NETWORK","parent_id (สถานที่)":"NETWORK-BD01-2FL-ACC-AC","id (รหัสอุปกรณ์แหน่งที่ใช้งาน)":"NETWORK-BD01-2FL-ACC-AC-002","detail (รายละเอียดอุปกรณ์)":"แอร์ 2","level":6,"SerialNo (หมายเลขอุปกรณ์)":"DK23450002","PartNo (รุ่นของอุปกรณ์)":"FTKM25RV2S","AssetNo (รหัสทรัพย์สิน)":"AST-AC-002","Name (ชื่ออุปกรณ์)":"Daikin 9200BTU #2","Type":"Split Type","Size":"9200BTU","Brand (ยี่ห้อ)":"Daikin","Spec (สเปค)":"FTKM R32 Inverter","Dealer (ผู้ขาย)":"บ. ไดกิ้น ไทย จำกัด","ContactPerson":"คุณสุนีย์ แอร์คูล","ContactPhone":"02-234-5678","ContactEmail":"service@daikinthailand.co.th","Contact (ระยะเวลารับประกัน)":"2 ปี","InstallDate (วันที่ติดตั้ง)":"2023-01-01","WarrantyDate (วันที่สิ้นสุดรับประกัน)":"2024-12-31","CostCenter":"CC-ACC","WorkCenter":"WC-FAC","RateCapacity":"9200 BTU"}
+];
+</script>
+</body>
+</html>
