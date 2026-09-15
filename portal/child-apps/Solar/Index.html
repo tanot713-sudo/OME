@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Solar Portfolio Dashboard — OMA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root{
+  --red:#DC2828; --red-dk:#B91C1C; --red-soft:#FEF2F2; --red-line:#FBD5D5;
+  --ink:#101317; --ink-2:#3C434F; --muted:#6B7280; --faint:#9CA3AF;
+  --bg:#F6F7F9; --panel:#FFFFFF; --line:#EAECEF; --line-2:#F1F2F4;
+  --green:#16A249; --green-soft:#E9FBEF;
+  --amber:#E08600; --amber-soft:#FFF7EA;
+  --blue:#2563EB;  --blue-soft:#EEF3FE;
+  --slate:#64748B; --slate-soft:#F1F3F6;
+  --r:18px; --r-md:14px; --r-sm:10px;
+  --sh:0 1px 2px rgba(16,19,23,.04), 0 2px 6px rgba(16,19,23,.04);
+  --sh-md:0 4px 16px rgba(16,19,23,.07);
+  --sh-lg:0 16px 40px rgba(16,19,23,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+.dsp{font-family:'Plus Jakarta Sans',sans-serif}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+svg{display:block}
+.wrap{width:100%;max-width:none;margin:0;display:flex;flex-direction:column;gap:20px}
+ 
+/* ---------- header ---------- */
+.app-header{position:sticky;top:0;z-index:30;background:var(--panel);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;padding:14px 28px}
+.brand-badge{width:40px;height:40px;border-radius:12px;background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;letter-spacing:.3px}
+.brand-title{font-size:16px;font-weight:800;color:var(--ink)}
+.brand-sub{font-size:11.5px;color:var(--muted)}
+.header-space{flex:1}
+.header-updated{font-size:12px;color:var(--muted);text-align:right}
+.header-updated b{color:var(--ink-2);font-weight:700}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--panel);
+  display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;transition:.15s}
+.icon-btn:hover{border-color:var(--red);color:var(--red)}
+.icon-btn.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+ 
+/* ---------- control row (tabs + selector, replaces sidebar/menu) ---------- */
+.control-row{position:sticky;top:69px;z-index:29;background:rgba(246,247,249,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;
+  gap:14px;padding:0 28px;flex-wrap:wrap}
+.tabs{display:flex;gap:22px}
+.tab-btn{appearance:none;background:none;border:none;cursor:pointer;padding:14px 2px;
+  font-family:inherit;font-size:13.5px;font-weight:700;color:var(--muted);
+  border-bottom:2.5px solid transparent;transition:.15s}
+.tab-btn:hover{color:var(--ink-2)}
+.tab-btn.active{color:var(--red);border-bottom-color:var(--red)}
+.selector-wrap{display:flex;align-items:center;gap:8px;padding:10px 0}
+.selector-label{font-size:11.5px;color:var(--faint);font-weight:600}
+.proj-select,.year-select{appearance:none;background:var(--panel) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%236B7280" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat right 12px center;
+  border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 34px 8px 14px;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;box-shadow:var(--sh)}
+.proj-select{min-width:280px}
+.year-select{min-width:110px}
+.proj-select:focus,.year-select:focus{outline:none;border-color:var(--red)}
+ 
+/* ---------- content ---------- */
+.content {width: 100%;max-width: none;margin: 0 auto;padding: 22px 28px 60px;display: flex;flex-direction: column;gap: 18px;}
+@media(max-width: 600px) {{ grid-template-columns: 1fr; }.app-header { padding: 12px; }.control-row { padding: 0 12px; }.tabs { gap: 12px; }.proj-select { width: 100%; }}
+.tab-panel{display:none;flex-direction:column;gap:18px}
+.tab-panel.active{display:flex}
+ 
+/* ---------- panel ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+.panel-icon{width:32px;height:32px;border-radius:10px;background:var(--red-soft);display:flex;align-items:center;justify-content:center;color:var(--red);flex-shrink:0}
+.panel-title{font-size:15px;font-weight:700;color:var(--ink)}
+.panel-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.panel-head-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-body{padding:20px}
+ 
+/* ---------- kpi ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.kpi{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);
+  box-shadow:var(--sh);padding:16px 18px 16px 20px}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:var(--r-md) 0 0 var(--r-md)}
+.kpi--green::before{background:var(--green)} .kpi--amber::before{background:var(--amber)}
+.kpi--blue::before{background:var(--blue)}   .kpi--slate::before{background:var(--slate)}
+.kpi--red::before{background:var(--red)}
+.kpi-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-head-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.kpi--green .kpi-icon{background:var(--green-soft);color:var(--green)}
+.kpi--amber .kpi-icon{background:var(--amber-soft);color:var(--amber)}
+.kpi--blue .kpi-icon{background:var(--blue-soft);color:var(--blue)}
+.kpi--slate .kpi-icon{background:var(--slate-soft);color:var(--slate)}
+.kpi--red .kpi-icon{background:var(--red-soft);color:var(--red)}
+.kpi-label{font-size:11.5px;color:var(--muted);font-weight:600}
+.kpi-value{font-size:23px;font-weight:800;color:var(--ink)}
+.kpi-unit{font-size:12.5px;color:var(--faint);margin-left:2px;font-weight:600}
+.kpi-delta{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:700;margin-top:6px}
+.kpi-delta.pos{color:var(--green)} .kpi-delta.neg{color:var(--amber)}
+
+/* ---------- kpi compare card (Feas | Present) ---------- */
+.kpi-cmp{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);
+  box-shadow:var(--sh);padding:14px 16px 16px}
+.kpi-cmp::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:var(--r-md) 0 0 var(--r-md)}
+.kpi-cmp--green::before{background:var(--green)} .kpi-cmp--amber::before{background:var(--amber)}
+.kpi-cmp--blue::before{background:var(--blue)}   .kpi-cmp--slate::before{background:var(--slate)}
+.kpi-cmp--red::before{background:var(--red)}
+.kpi-cmp-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.kpi-cmp-icon{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-cmp--green .kpi-cmp-icon{background:var(--green-soft);color:var(--green)}
+.kpi-cmp--slate .kpi-cmp-icon{background:var(--slate-soft);color:var(--slate)}
+.kpi-cmp--blue .kpi-cmp-icon{background:var(--blue-soft);color:var(--blue)}
+.kpi-cmp--red .kpi-cmp-icon{background:var(--red-soft);color:var(--red)}
+.kpi-cmp--amber .kpi-cmp-icon{background:var(--amber-soft);color:var(--amber)}
+.kpi-cmp-label{font-size:11.5px;color:var(--muted);font-weight:700}
+.kpi-cmp-row{display:flex;align-items:stretch;gap:0}
+.kpi-cmp-col{flex:1;min-width:0;padding:0 10px}
+.kpi-cmp-col:first-child{padding-left:0}
+.kpi-cmp-col:last-child{padding-right:0}
+.kpi-cmp-divider{width:1px;background:var(--line);flex-shrink:0;margin:2px 0}
+.kpi-cmp-tag{font-size:9.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.kpi-cmp-value{font-size:16.5px;font-weight:800;color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-cmp-value .kpi-unit{font-size:11px;color:var(--faint);font-weight:600;margin-left:2px}
+.kpi-cmp-sub{font-size:10.5px;font-weight:700;margin-top:4px}
+.kpi-cmp-sub.pos{color:var(--green)} .kpi-cmp-sub.neg{color:var(--amber)}
+@media(max-width:600px){
+  .kpi-cmp-row{flex-direction:column;gap:10px}
+  .kpi-cmp-divider{width:100%;height:1px;margin:2px 0}
+  .kpi-cmp-col{padding:0 !important}
+}
+ 
+/* ---------- pill / chip ---------- */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.pill-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.pill--green{background:var(--green-soft);color:var(--green)} .pill--green .pill-dot{background:var(--green)}
+.pill--amber{background:var(--amber-soft);color:var(--amber)} .pill--amber .pill-dot{background:var(--amber)}
+.pill--blue{background:var(--blue-soft);color:var(--blue)}   .pill--blue .pill-dot{background:var(--blue)}
+.pill--slate{background:var(--slate-soft);color:var(--slate)} .pill--slate .pill-dot{background:var(--slate)}
+.now-chip{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;
+  background:#FFF6E9;border:1.2px solid var(--red);color:var(--red);font-weight:700;font-size:11.5px;white-space:nowrap}
+ 
+/* ---------- buttons ---------- */
+.btn{padding:9px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit;border:1px solid}
+.btn--secondary{background:#FBFBFC;border-color:var(--line);color:var(--ink-2)}
+.btn--secondary:hover{border-color:var(--red);color:var(--red)}
+.btn--primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn--primary:hover{background:var(--red-dk);border-color:var(--red-dk)}
+.btn--primary:disabled{background:var(--faint);border-color:var(--faint);cursor:not-allowed}
+.seg{display:inline-flex;background:var(--slate-soft);border-radius:var(--r-sm);padding:3px;gap:2px}
+.seg-btn{padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;border:none;background:none;font-family:inherit}
+.seg-btn.active{background:var(--panel);color:var(--red);box-shadow:var(--sh)}
+ 
+/* ---------- toggle-legend buttons (chart series show/hide) ---------- */
+.tog-row{display:flex;flex-wrap:wrap;gap:6px}
+.tog-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;border:1px solid var(--line);
+  background:var(--panel);font-size:11px;font-weight:700;color:var(--ink-2);cursor:pointer;font-family:inherit;transition:.15s}
+.tog-btn:hover{border-color:var(--faint)}
+.tog-btn.off{opacity:.4}
+.tog-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+ 
+/* ---------- scrollable chart (horizontal timeline) ---------- */
+.chart-scroll{width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:6px}
+.chart-scroll::-webkit-scrollbar{height:8px}
+.chart-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+.chart-inner{position:relative;height:250px}
+.chart-box{position:relative;height:250px}
+ 
+/* ---------- table ---------- */
+.table-wrap{overflow-x:auto}
+.oma-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.oma-table thead th{background:#FAFBFC;font-size:10.5px;font-weight:800;color:var(--ink-2);
+  text-align:right;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.2px}
+.oma-table thead th:first-child{text-align:left}
+.oma-table td{padding:9px 14px;border-bottom:1px solid var(--line-2);color:var(--ink-2);text-align:right;white-space:nowrap}
+.oma-table td:first-child{text-align:left;font-weight:600;color:var(--ink)}
+.oma-table tr:last-child td{border-bottom:none}
+.oma-table tr:hover td{background:#FCFCFD}
+.oma-table tr.is-now td{background:#FFFBF3}
+.code-chip{background:var(--red-soft);color:var(--red);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:700}
+.input-cell input{width:100px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-family:inherit;
+  font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.input-cell input:focus{outline:none;border-color:var(--red)}
+.input-cell input.dirty{border-color:var(--amber);background:var(--amber-soft)}
+.empty-row{text-align:center;padding:28px;color:var(--muted);font-size:12.5px}
+@media(max-width: 600px) {.oma-table thead { display: none; }.oma-table, .oma-table tbody, .oma-table tr, .oma-table td {display: block;width: 100%;}
+  .oma-table tr { margin-bottom: 15px; border: 1px solid var(--line); border-radius: var(--r-sm); }
+  .oma-table td { text-align: right; position: relative; padding-left: 50%; }
+  .oma-table td::before {content: attr(data-label);position: absolute; left: 10px; font-weight: bold;}}
+ 
+/* ---------- misc ---------- */
+.grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+.grid-2b{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.info-banner{display:flex;align-items:flex-start;gap:10px;background:var(--blue-soft);color:#1D4ED8;
+  border:1px solid #C9DBFC;border-radius:var(--r-sm);padding:12px 16px;font-size:12.5px;line-height:1.5}
+.info-banner.warn{background:var(--amber-soft);color:#92610A;border-color:#F5DDAF}
+.info-banner b{font-weight:700}
+.progress-track{height:8px;background:var(--line-2);border-radius:20px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:20px;transition:width .5s}
+.progress-mark{position:absolute;top:-3px;width:2px;height:14px;background:var(--ink-2);border-radius:2px}
+.mini-row{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:14px 18px}
+.stat-item .lbl{font-size:10.5px;color:var(--faint);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.stat-item .val{font-size:14px;font-weight:700;color:var(--ink)}
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:600}
+.legend-dot{width:9px;height:9px;border-radius:3px}
+.attn-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+.attn-row:last-child{border-bottom:none}
+.attn-idx{width:22px;height:22px;border-radius:7px;background:var(--amber-soft);color:var(--amber);
+  font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.attn-name{font-size:12.5px;font-weight:700;color:var(--ink)}
+.attn-sub{font-size:11px;color:var(--muted)}
+.attn-space{flex:1}
+.toast-ct{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:var(--r-sm);
+  box-shadow:var(--sh-lg);padding:11px 16px;font-size:12.5px;color:var(--ink-2);font-weight:600;min-width:220px;animation:toastIn .2s ease}
+.toast.err{border-left-color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.skel{background:linear-gradient(90deg,#F1F2F4 25%,#E7E9EC 37%,#F1F2F4 63%);background-size:400% 100%;
+  animation:skel 1.3s ease infinite;border-radius:8px}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.loading-line{height:14px;width:60%}
+
+/* ---------- app loading overlay (initial dashboard load) ---------- */
+.app-loading-overlay{position:fixed;inset:0;z-index:200;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .35s ease}
+.app-loading-card{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;max-width:340px;padding:0 24px}
+.app-loading-badge{width:56px;height:56px;border-radius:16px;background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:.3px;
+  box-shadow:var(--sh-md);animation:appLoadPulse 1.6s ease-in-out infinite}
+@keyframes appLoadPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.app-loading-step{font-size:13px;font-weight:700;color:var(--ink-2);text-align:center;min-height:18px}
+.app-loading-track{width:100%;height:7px;background:var(--line-2);border-radius:20px;overflow:hidden}
+.app-loading-fill{height:100%;border-radius:20px;background:var(--red);width:0%;
+  transition:width .5s cubic-bezier(.4,0,.2,1)}
+.app-loading-foot{display:flex;align-items:center;justify-content:space-between;width:100%}
+.app-loading-dots{display:flex;gap:6px}
+.app-loading-dot{width:6px;height:6px;border-radius:50%;background:var(--line);transition:.3s}
+.app-loading-dot.on{background:var(--red);transform:scale(1.3)}
+.app-loading-pct{font-size:11.5px;font-weight:800;color:var(--red)}
+ 
+/* ---------- accordion (collapsible detail tables) ---------- */
+.accordion{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.accordion-head{display:flex;align-items:center;gap:10px;padding:16px 20px;cursor:pointer;user-select:none}
+.accordion-head:hover{background:#FAFBFC}
+.accordion-chevron{margin-left:auto;transition:transform .2s;color:var(--faint);flex-shrink:0}
+.accordion.open .accordion-chevron{transform:rotate(180deg)}
+.accordion-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.accordion.open .accordion-body{max-height:4000px}
+.accordion-body-inner{padding:4px 20px 20px}
+.table-section-title{font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+ 
+@media(max-width:860px){
+  .app-header{padding:12px 16px}.control-row{padding:0 16px;top:65px}.content{padding:16px 16px 50px}
+  .grid-2,.grid-2b{grid-template-columns:1fr}
+  .proj-select{min-width:0;flex:1}
+  .selector-wrap{width:100%}
+}
+ 
+/* ---------- Gantt-style breakeven list (shared contract-period timeline) ---------- */
+.gantt-group-title{font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--faint);padding:14px 4px 6px}
+.gantt-group-title:first-child{padding-top:2px}
+.gantt-row {display: flex;flex-wrap: wrap;gap: 8px;padding: 12px 4px;}
+.gantt-row:hover{background:#FAFBFC}
+.gantt-label {width: 100%;border-bottom: 1px solid var(--line-2);padding-bottom: 4px;position:sticky; left:0; z-index:2; background:var(--panel);}@media(min-width: 768px) {.gantt-row { flex-wrap: nowrap; }
+.gantt-label { width: 190px; border: none; }}
+.gantt-name{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt-sub{font-size:10.5px;color:var(--muted)}
+.gantt-bar-wrap{flex:1;min-width:0}
+.gantt-pct{width:150px;flex-shrink:0;text-align:right;font-size:10.5px;color:var(--muted);font-weight:700}
+.gantt-pct b{color:var(--ink);font-size:12.5px}
+.gantt-axis{position:relative;height:15px;margin-bottom:4px}
+.gantt-axis .yr{position:absolute;top:0;font-size:9px;color:var(--faint);transform:translateX(-50%)}
+.gantt-track{position:relative;height:15px}
+.gantt-bar{position:absolute;top:0;height:15px;border-radius:5px;background:var(--slate-soft);overflow:hidden}
+.gantt-fill{position:absolute;top:0;left:0;height:15px;border-radius:5px 0 0 5px}
+.gantt-mark{position:absolute;top:-3px;width:2px;height:21px;border-radius:2px}
+.gantt-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);padding:10px 4px 2px;align-items:center;margin-left: auto;}
+.gantt-legend span{display:inline-flex;align-items:center;gap:5px}
+.gantt-today-full {position: absolute;top: 0;bottom: 0;border-left: 2px dashed var(--red);z-index: 1;pointer-events: none;}
+.gantt-pct-inline {position: absolute;top: -6px;font-size: 11px;font-weight: 700;margin-left: 6px;z-index: 2;}
+.gantt-date-label {position: absolute;font-size: 10px;color: var(--muted);top: 50%;transform: translateY(-50%);white-space: nowrap;}
+.gantt-ldot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.gantt-lline{width:2px;height:11px;border-radius:2px;flex-shrink:0}
+
+/* ---------- Gantt scroll wrapper: เปิดให้เลื่อนดูปีที่เกินอายุสัญญาได้ (เช่น breakeven จริงที่ตกไปไกลกว่า timeline) ---------- */
+.gantt-scroll{width:100%;overflow-x:auto;overflow-y:hidden;padding-bottom:6px}
+.gantt-scroll::-webkit-scrollbar{height:8px}
+.gantt-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+.gantt-inner{position:relative}
+ 
+/* ---------- project detail popup ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(16,19,23,.55);z-index:100;display:none;
+  align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-card{background:var(--panel);border-radius:var(--r);max-width:640px;width:100%;max-height:88vh;
+  overflow-y:auto;position:relative;padding:26px;box-shadow:var(--sh-lg)}
+.modal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel);color:var(--muted);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{border-color:var(--red);color:var(--red)}
+ 
+/* ---------- bar-click drilldown ---------- */
+.drilldown{margin-top:16px;border-top:1px solid var(--line-2);padding-top:14px;display:none}
+.drilldown.open{display:block}
+.drilldown-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.drilldown-title{font-size:12.5px;font-weight:700;color:var(--ink)}
+.drilldown-sub{font-size:11px;color:var(--muted)}
+.drilldown-close{margin-left:auto;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.drilldown-close:hover{border-color:var(--red);color:var(--red)}
+        
+</style>
+</style>
+</head>
+<body>
+
+<div class="app-loading-overlay" id="appLoadingOverlay">
+  <div class="app-loading-card">
+    <div class="app-loading-badge dsp">OMA</div>
+    <div class="app-loading-step" id="appLoadingStep">กำลังเริ่มต้นระบบ...</div>
+    <div class="app-loading-track"><div class="app-loading-fill" id="appLoadingFill"></div></div>
+    <div class="app-loading-foot">
+      <div class="app-loading-dots" id="appLoadingDots"></div>
+      <div class="app-loading-pct" id="appLoadingPct">0%</div>
+    </div>
+  </div>
+</div>
+
+<div class="app-header">
+  <div class="brand-badge dsp">OMA</div>
+  <div>
+    <div class="brand-title dsp">Solar Portfolio Dashboard</div>
+    <div class="brand-sub">Investment Billing & Collection Tracking</div>
+  </div>
+  <div class="header-space"></div>
+  <div class="header-updated">Data as of<br><b id="asOfLabel">–</b></div>
+  <button class="icon-btn" id="btnRefresh" title="Refresh data">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+  </button>
+</div>
+ 
+<div class="control-row">
+  <div class="selector-wrap" id="overviewFilterWrap">
+    <span class="selector-label">Filter</span>
+    <select class="proj-select" id="chartFilter" disabled><option>Loading projects…</option></select>
+    <select class="year-select" id="yearFilter" disabled><option>Year</option></select>
+  </div>
+</div>
+ 
+<div id="connBanner"></div>
+ 
+<div class="content">
+ 
+  <div class="tab-panel active" id="tab-overview">
+ 
+    <div class="kpi-grid" id="portKpiOverview"><div class="kpi skel loading-line" style="height:90px"></div></div>
+ 
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+        </div>
+        <div><div class="dsp panel-title">Contract and Breakeven Timeline</div><div class="panel-sub">Contract period on a shared timeline · click a project for full detail</div></div>
+        <div class="gantt-legend">
+        <span><span class="gantt-lline" style="background:var(--green)"></span>Breakeven (Present)</span>
+        <span><span class="gantt-lline" style="background:var(--blue)"></span>Breakeven (Feas)</span>
+        <span><span class="gantt-lline" style="background:var(--red)"></span>Today</span>
+      </div>
+      </div>
+      <div class="panel-body">
+        <div class="gantt-scroll" id="ganttScroll"><div class="gantt-inner" id="ganttBody"><div class="skel loading-line"></div></div></div>
+      </div>
+    </div>
+
+        <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg></div>
+        <div><div class="dsp panel-title">Cumulative Billing & Collection</div><div class="panel-sub" id="annualChartSub">All projects combined · Unit: THB · red dashed = Investment</div></div>
+        <div class="panel-head-right"><div class="tog-row" id="togFinAnnual"></div></div>
+      </div>
+      <div class="panel-body"><div class="chart-box"><canvas id="chartFinAnnual"></canvas></div></div>
+    </div>
+ 
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/></svg></div>
+        <div><div class="dsp panel-title">Billing & Collection Progress</div><div class="panel-sub" id="feasChartSub">All projects combined · Unit: THB · click a bar for detail</div></div>
+        <div class="panel-head-right"><div class="tog-row" id="togFinFeas"></div></div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-scroll" id="scrollFinFeas"><div class="chart-inner" id="innerFinFeas"><canvas id="chartFinFeas"></canvas></div></div>
+        <div class="drilldown" id="drilldownFinFeas"></div>
+      </div>
+    </div>
+ 
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <div><div class="dsp panel-title">Monthly Revenue Table</div><div class="panel-sub" id="finTableSub">–</div></div>
+      </div>
+      <div id="finTableWrap" style="padding-top:18px;"></div>
+    </div>
+ 
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+        <div><div class="dsp panel-title">Monthly Power Consumption</div><div class="panel-sub" id="energyChartSub">All projects combined · Unit: kWh · click a bar for detail</div></div>
+        <div class="panel-head-right"><div class="tog-row" id="togProdMonthly"></div></div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-scroll" id="scrollProdMonthly"><div class="chart-inner" id="innerProdMonthly"><canvas id="chartProdMonthly"></canvas></div></div>
+        <div class="drilldown" id="drilldownProdMonthly"></div>
+      </div>
+    </div>
+ 
+  <div class="modal-overlay" id="projectPopupOverlay">
+    <div class="modal-card">
+      <button class="modal-close" id="projectPopupClose">×</button>
+      <div id="projectPopupBody"></div>
+    </div>
+  </div>
+   
+  </div>
+ 
+</div>
+ 
+<div class="toast-ct" id="toastCt"></div>
+ 
+<script>
+const state = { filterRef:'all', filterYear:'all', yearOptionsBuilt:false, projects:[], homepage:null, panel2:null, chartProd:null };
+ 
+// 1. ฟังก์ชันจัดการการเรียกข้อมูล
+function call(action, params, onOk, onErr){
+  const p = Object.assign({}, params || {}, { portalToken: window.PORTAL && window.PORTAL.token });
+  google.script.run.withSuccessHandler(onOk).withFailureHandler(onErr).dispatch(action, p);
+}
+ 
+/* ---------------- helpers ---------------- */
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function ymLabel(ym){ 
+  if(!ym || ym === 'N/A' || ym === '–') return '–'; 
+  const clean = String(ym).trim();
+  const parts = clean.split(' ')[0].split('-'); // ดึงเฉพาะส่วนวันที่ YYYY-MM ออกมา
+  if (parts.length < 2) return clean;
+  const y = parts[0], m = parts[1];
+  return MONTHS[+m-1] + ' ' + y; 
+}
+function fmtM(n){ return (n/1e6).toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2}); }
+function fmtNum(n){ return Math.round(n||0).toLocaleString('en-US'); }
+function fmtK(n){ return Math.round((n||0)/1000).toLocaleString('en-US'); }
+function fmtPct(n){ return n==null ? '–' : (n*100).toFixed(1)+'%'; }
+function pctClass(n){ return n>=0 ? 'pos':'neg'; }
+function toM(v){ return v==null?0:Math.round(v/10000)/100; }
+function fmtRate(p1){
+  const onPeak = Number(p1.rateEnergyOnPeak)||0;
+  const flat = Number(p1.rateEnergy)||0;
+  const ft = Number(p1.rateFT)||0;
+  const base = onPeak>0 ? onPeak : flat;
+  return base>0 ? (base+ft).toFixed(4)+' ฿/kWh' : '–';
+}
+
+function groupedOptionsHtml(projects, includeAll){
+  let html = includeAll ? '<option value="all">All Projects</option>' : '';
+  const groups = {};
+  projects.forEach(p=>{ (groups[p.group] = groups[p.group]||[]).push(p); });
+  Object.keys(groups).forEach(g=>{
+    html += `<optgroup label="${g}">` + groups[g].map(p=>
+      // 🌟 ใช้ .split('.')[0] ตัดทศนิยมออกเฉพาะข้อความที่แสดงผลใน Dropdown
+      `<option value="${p.refCode}">${p.contractName} · ${p.refCode.split('.')[0]}</option>`).join('') + `</optgroup>`;
+  });
+  return html;
+}
+ 
+/* ---------------- header / connection ---------------- */
+function setAsOf(ymStr){ document.getElementById('asOfLabel').textContent = ymStr ? ymLabel(ymStr) : '–'; }
+function showConnBanner(msg){
+  document.getElementById('connBanner').innerHTML = `<div class="content" style="padding-top:14px;padding-bottom:0">
+    <div class="info-banner warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#92610A" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+    <div><b>Not connected.</b> ${msg}</div></div></div>`;
+}
+ 
+/* ---------------- toast ---------------- */
+function toast(msg, type){
+  const el = document.createElement('div'); el.className='toast'+(type==='err'?' err':''); el.textContent = msg;
+  document.getElementById('toastCt').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='.25s'; setTimeout(()=>el.remove(),250); }, 3200);
+}
+ 
+/* ---------------- tabs ---------------- */
+document.getElementById('btnRefresh').addEventListener('click', ()=>{
+  document.getElementById('btnRefresh').classList.add('spin');
+  loadHomepageOnce();
+  applyFilter(state.filterRef);
+  setTimeout(()=>document.getElementById('btnRefresh').classList.remove('spin'), 900);
+});
+
+/* ================= INITIAL LOADING OVERLAY ================= */
+const LOADING_STEPS = [
+  { id:'init',        pct:5,   label:'กำลังเริ่มต้นระบบ...' },
+  { id:'projects',    pct:20,  label:'โหลดรายชื่อโครงการ...' },
+  { id:'homepage',    pct:40,  label:'โหลดข้อมูลภาพรวมพอร์ตโฟลิโอ...' },
+  { id:'financial',   pct:62,  label:'โหลดข้อมูลรายรับและการเรียกเก็บเงิน...' },
+  { id:'production',  pct:80,  label:'โหลดข้อมูลการผลิตไฟฟ้า...' },
+  { id:'installments',pct:92,  label:'เตรียมตารางงวดการเงิน...' },
+  { id:'done',        pct:100, label:'โหลดเสร็จสมบูรณ์ ✓' },
+];
+let _loadingPct = 0;
+let _overlayHidden = false;
+
+function initLoadingDots(){
+  const el = document.getElementById('appLoadingDots');
+  if(!el) return;
+  el.innerHTML = LOADING_STEPS.slice(0,-1).map(s=>`<div id="ldot_${s.id}" class="app-loading-dot"></div>`).join('');
+}
+function setProgress(stepId){
+  const step = LOADING_STEPS.find(s=>s.id===stepId);
+  // ไม่ให้ progress ถอยหลัง เผื่อ endpoint ที่ยิงพร้อมกันตอบกลับมาไม่เรียงลำดับ
+  if(!step || step.pct < _loadingPct) return;
+  _loadingPct = step.pct;
+  const fill = document.getElementById('appLoadingFill');
+  const lbl  = document.getElementById('appLoadingStep');
+  const pct  = document.getElementById('appLoadingPct');
+  if(fill) fill.style.width = step.pct+'%';
+  if(lbl)  lbl.textContent  = step.label;
+  if(pct)  pct.textContent  = step.pct+'%';
+  LOADING_STEPS.slice(0,-1).forEach(s=>{
+    const dot = document.getElementById('ldot_'+s.id);
+    if(dot) dot.classList.toggle('on', s.pct <= step.pct);
+  });
+}
+function showAppLoading(show){
+  const overlay = document.getElementById('appLoadingOverlay');
+  if(!overlay) return;
+  if(show){
+    _loadingPct = 0; _overlayHidden = false;
+    initLoadingDots();
+    setProgress('init');
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+  } else {
+    if(_overlayHidden) return; // กันไม่ให้ทำงานซ้ำตอน refresh ปุ่มธรรมดาที่ไม่เกี่ยวกับ boot
+    _overlayHidden = true;
+    setProgress('done');
+    setTimeout(()=>{
+      overlay.style.opacity = '0';
+      setTimeout(()=>{ overlay.style.display = 'none'; }, 350);
+    }, 350);
+  }
+}
+
+// ติดตามว่าข้อมูลชุดแรกของ Dashboard (5 endpoint) โหลดครบหรือยัง — ครบแล้วค่อยปิด overlay
+const bootTracker = { homepage:false, panel2:false, billing:false, production:false, installments:false };
+function bootMark(key, stepId){
+  bootTracker[key] = true;
+  if(stepId) setProgress(stepId);
+  if(Object.values(bootTracker).every(Boolean)) showAppLoading(false);
+}
+
+/* ================= BOOTSTRAP ================= */
+window.addEventListener('DOMContentLoaded', ()=>{
+  showAppLoading(true);
+  const bootWatchdog = setTimeout(()=>{
+    showConnBanner('Still waiting for a response after 8 seconds. ...');
+    showAppLoading(false);
+  }, 8000);
+  call('getProjects', {}, projects=>{
+    clearTimeout(bootWatchdog);
+    document.getElementById('connBanner').innerHTML = '';
+    setProgress('projects');
+    if(!projects || !projects.length){
+      showConnBanner('getProjects() returned no data. ...');
+      showAppLoading(false);
+      return;
+    }
+    state.projects = projects;
+    buildChartFilter(projects);
+    loadHomepageOnce();
+    applyFilter('all');
+  }, e=>{
+    clearTimeout(bootWatchdog);
+    console.error('[bootstrap] getProjects failed:', e);
+    showConnBanner('Failed to load projects — ' + (e && e.message ? e.message : String(e)));
+    showAppLoading(false);
+  });
+});
+ 
+/* ================= PORTFOLIO SUMMARY (always all-projects — cards/attention/gantt) ================= */
+function loadHomepageOnce(){
+  call('getHomepageData', {}, hd=>{
+    state.homepage = hd;
+    setAsOf(hd.asOfYM);
+    renderAttention();
+    renderGantt();
+    renderOverviewKpis();
+    bootMark('homepage', 'homepage');
+  }, e=>{
+    console.error('[loadHomepageOnce] failed:', e);
+    const msg = 'Could not load the portfolio summary — ' + (e && e.message ? e.message : String(e));
+    document.getElementById('portKpiOverview').innerHTML = `<div class="info-banner warn" style="grid-column:1/-1">${msg}</div>`;
+    document.getElementById('attnBody').innerHTML = `<div class="info-banner warn">${msg}</div>`;
+    document.getElementById('ganttBody').innerHTML = `<div class="info-banner warn">${msg}</div>`;
+    bootMark('homepage', 'homepage');
+  });
+}
+ 
+/* ================= FILTER-DRIVEN: cards, attention, gantt, charts, tables ================= */
+function buildChartFilter(projects){
+  const sel = document.getElementById('chartFilter');
+  sel.disabled = false;
+  sel.innerHTML = groupedOptionsHtml(projects, true);
+  sel.value = 'all';
+  sel.addEventListener('change', ()=>{ applyFilter(sel.value); });
+}
+ 
+function buildYearFilterOptions(rows){
+  if(state.yearOptionsBuilt) return;
+  const years = [...new Set((rows||[]).map(r=>r.yr))].filter(y=>y).sort((a,b)=>a-b);
+  const sel = document.getElementById('yearFilter');
+  sel.innerHTML = '<option value="all">All Years</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  sel.disabled = false;
+  sel.addEventListener('change', ()=>{ applyYearFilter(sel.value); });
+  state.yearOptionsBuilt = true;
+}
+ 
+function scopeLabelFor(ref){
+  if(ref==='all') return 'All projects combined';
+  const p = state.projects.find(x=>x.refCode===ref);
+  return p ? (p.contractName+' · '+p.refCode) : ref;
+}
+ 
+function applyFilter(ref){
+  state.filterRef = ref;
+  renderAttention();
+  renderGantt();
+ 
+  const scope = scopeLabelFor(ref);
+  hideAllDrilldowns();
+ 
+  call('getPanel2', {refCode:ref, year:1}, d=>{
+    state.panel2 = d;
+    if(ref==='all') buildYearFilterOptions(d.rows);
+    renderFinCharts(d, ref, scope);
+    renderFinTable(d, scope);
+    bootMark('panel2', 'financial');
+  }, e=>{ console.error('[applyFilter:getPanel2] failed:', e); toast('Failed to load revenue charts','err'); bootMark('panel2', 'financial'); });
+
+  call('getBillingChartData', {refCode: ref}, d => {
+    renderBillingChart(d, ref, scope);
+    bootMark('billing', 'financial');
+  }, e => {console.error('[applyFilter] failed:', e); bootMark('billing', 'financial');});
+
+  call('getProduction', {refCode:ref, year:1}, d=>{
+    state.chartProd = d;
+    renderOverviewKpis();
+    renderProdCharts(d, ref, scope);
+    bootMark('production', 'production');
+  }, e=>{ console.error('[applyFilter:getProduction] failed:', e); toast('Failed to load production charts','err'); bootMark('production', 'production'); });
+}
+ 
+function applyYearFilter(year){
+  state.filterYear = year;
+  hideAllDrilldowns();
+  const scope = scopeLabelFor(state.filterRef);
+  if(state.panel2){ renderFinCharts(state.panel2, state.filterRef, scope); renderFinTable(state.panel2, scope); }
+  if(state.chartProd){ renderProdCharts(state.chartProd, state.filterRef, scope); }
+}
+ 
+function buildInputProjectDropdown(projects){
+  const sel = document.getElementById('inputProjSelect');
+  sel.disabled = false;
+  sel.innerHTML = groupedOptionsHtml(projects, false);
+  state.inputRef = projects[0] ? projects[0].refCode : null;
+  if(state.inputRef) sel.value = state.inputRef;
+  sel.addEventListener('change', ()=>{ state.inputRef = sel.value; state.dirty={}; loadInputData(); });
+}
+ 
+/* ================= BAR-CLICK DRILLDOWN ================= */
+function hideAllDrilldowns(){
+  ['drilldownFinFeas','drilldownProdMonthly'].forEach(id=>{
+    const el = document.getElementById(id); if(el){ el.classList.remove('open'); el.innerHTML=''; }
+  });
+  billingState.ym = null; billingState.metric = null;
+  if (typeof chartFinFeas !== 'undefined' && chartFinFeas) chartFinFeas.update('none');
+}
+function projectLabel(ref){
+  const p = state.projects.find(x=>x.refCode===ref);
+  return p ? p.contractName : ref;
+}
+// Renders "[real RefCode chip] Group · Contract Name" for a drilldown row, given its AssetCode (join key).
+// state.projects entries carry both refCode (=AssetCode, the join key used to look this up) and
+// budgetCode (=the actual company RefCode, e.g. NB230004 vs NB230004.1) — the chip should show budgetCode.
+function projectCellHtml(ref){
+  const p = state.projects.find(x=>x.refCode===ref) || {};
+  const budgetCode = p.budgetCode || ref;
+  const group = p.group || '';
+  const name = p.contractName || ref;
+  return `<span class="code-chip">${budgetCode}</span> ${group ? `<span style="color:var(--muted); font-size:11px;">${group}</span> · ` : ''}${name}`;
+}
+function showDrilldown(containerId, ym, rows, chartLabel, fmt, metric){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(!rows || !rows.length){
+    el.classList.remove('open'); el.innerHTML = '<div style="font-size:12px;color:var(--muted)">No per-project breakdown available for this month.</div>';
+    el.classList.add('open');
+    return;
+  }
+
+  const isProd = containerId === 'drilldownProdMonthly';
+  const isFeas = containerId === 'drilldownFinFeas'; // ตรวจจับกล่อง Billing & Cash In
+  
+  let total = 0;
+  let thead = '';
+  let body = '';
+  let tfoot = '';
+  let titleText = `${ymLabel(ym)} · ${chartLabel}`;
+  let subLabelText = '';
+  let dotColor = 'var(--green)'; // สีของสัญลักษณ์สี่เหลี่ยมด้านหน้าหัวข้อ
+
+  if (isFeas && metric === 'billing') {
+    // ==========================================
+    // กรณีที่ 1a: ตาราง Financial — Billing (คลิกแท่งสีส้ม)
+    // ==========================================
+    const anyActual = rows.some(r => r.billingActualDate);
+    titleText = `${ymLabel(ym)} · Billing ${anyActual ? 'Actual' : 'Plan'}`;
+    dotColor = 'var(--amber)';
+
+    thead = `<tr>
+      <th>Project</th>
+      <th>Installment</th>
+      <th>Work Period</th>
+      <th>Billing Plan</th>
+      <th>Billing Actual</th>
+      <th>vs Plan</th>
+      <th>Invoice No.</th>
+      <th class="num">Amount (MB)</th>
+    </tr>`;
+
+    body = rows.map(r => {
+      console.log('Row Data:', r);
+      const amt = r.amount || r.billingValue || r.cashInValue || 0;
+      total += amt;
+
+      let statusHtml = '–';
+      const statusText = r.billingStatus;
+      if (statusText && statusText !== 'planned') {
+        const isLate = /late/i.test(statusText);
+        const isEarly = /early/i.test(statusText);
+        const bg = isEarly ? 'rgba(16, 182, 73, 0.12)' : (isLate ? 'rgba(245, 158, 11, 0.12)' : 'rgba(107, 114, 128, 0.12)');
+        const color = isEarly ? 'var(--green)' : (isLate ? 'var(--amber)' : 'var(--muted)');
+        statusHtml = `<span class="status-chip" style="background:${bg}; color:${color}; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block;">${statusText}</span>`;
+      }
+
+      return `<tr>
+        <td>${projectCellHtml(r.refCode)}</td>
+        <td>${r.installment || '–'}</td>
+        <td>${r.workPeriod || '–'}</td>
+        <td>${r.billingPlanDate || r.cPlanDate || '–'}</td>
+        <td style="font-weight:700">${r.billingActualDate || '–'}</td>
+        <td>${statusHtml || '–'}</td>
+        <td>${r.invoiceNo || '–'}</td>
+        <td class="num" style="font-weight:700">${amt > 0 ? fmtNum(amt) : '0'}</td>
+      </tr>`;
+    }).join('');
+
+    subLabelText = `${rows.length} installment(s) · ${fmt(total)} M`;
+
+    tfoot = `<tfoot>
+      <tr style="background: rgba(0,0,0,0.015); font-weight:700; border-top:1px solid var(--border)">
+        <td colspan="7" style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; padding-left:12px;">TOTAL</td>
+        <td class="num" style="font-weight:700; font-size:13px;">${fmt(total)}</td>
+      </tr>
+    </tfoot>`;
+
+  } else if (isFeas) {
+    // ==========================================
+    // กรณีที่ 1b: ตาราง Financial — Cash In (คลิกแท่งสีเขียว)
+    // แสดงคอลัมน์ Cash In Actual แยกต่างหากจาก vs Plan เหมือนฝั่ง Billing
+    // ==========================================
+    const anyActual = rows.some(r => r.cashInActualDate);
+    titleText = `${ymLabel(ym)} · Cash In ${anyActual ? 'Actual' : 'Plan'}`;
+    dotColor = 'var(--green)'; // ใช้สีเขียวตาม Cash In
+
+    thead = `<tr>
+      <th>Project</th>
+      <th>Installment</th>
+      <th>Work Period</th>
+      <th>Cash In Plan</th>
+      <th>Invoice No.</th>
+      <th>Cash In Actual</th>
+      <th>vs Plan</th>
+      <th class="num">Amount (MB)</th>
+    </tr>`;
+
+    body = rows.map(r => {
+      // ดึงค่ายอดเงิน (เช็คเผื่อตัวแปรหลายชื่อ)
+      const amt = r.amount != null ? Number(r.amount) : (r.cashInValue != null ? Number(r.cashInValue) : (r.actual != null ? Number(r.actual) : 0));
+      total += amt;
+
+      const installment = r.installment != null ? r.installment : (r.inst != null ? r.inst : '–');
+      const workPeriod = r.workPeriod || r.period || '–';
+      const planDate = r.cashInPlanDate || r.cashInPlan || r.planDate || '–';
+      const invNo = r.invoiceNo || r.inv || '–';
+
+      // คำนวณหรือดึงค่า Status (20d early / 21d late) ให้เป็น Chip สีตามรูปภาพ
+      let statusHtml = '–';
+      const statusText = r.cashInStatus || r.status || r.vsPlan; // รองรับกรณีมีตัวแปร status หรือ vsPlan ตรงๆ
+
+      if (statusText && statusText !== 'planned') {
+        const isLate = /late/i.test(statusText) || /delay/i.test(statusText);
+        const isEarly = /early/i.test(statusText) || /ahead/i.test(statusText);
+        
+        // กำหนดสีพื้นหลังและตัวหนังสือตามเงื่อนไข
+        const bg = isEarly ? 'rgba(16, 182, 73, 0.12)' : (isLate ? 'rgba(245, 158, 11, 0.12)' : 'rgba(107, 114, 128, 0.12)');
+        const color = isEarly ? 'var(--green)' : (isLate ? 'var(--amber)' : 'var(--muted)');
+        
+        statusHtml = `<span class="status-chip" style="background:${bg}; color:${color}; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; display: inline-block;">${statusText}</span>`;
+      }
+
+      return `<tr>
+        <td>${projectCellHtml(r.refCode)}</td>
+        <td>${installment}</td>
+        <td>${workPeriod}</td>
+        <td>${planDate}</td>
+        <td>${invNo}</td>
+        <td style="font-weight:700">${r.cashInActualDate || '–'}</td>
+        <td>${statusHtml}</td>
+        <td class="num" style="font-weight:700">${amt ? fmt(amt) : '–'}</td>
+      </tr>`;
+    }).join('');
+
+    // ข้อความสับเฮดเดอร์ด้านบน: "3 installment(s) · 4.26 M"
+    subLabelText = `${rows.length} installment(s) · ${fmt(total)} M`;
+
+    // เพิ่มตารางส่วนล่าง (Footer) เพื่อแสดงยอดรวมสะสม (TOTAL) เหมือนในภาพ
+    tfoot = `<tfoot>
+      <tr style="background: rgba(0,0,0,0.015); font-weight:700; border-top:1px solid var(--border)">
+        <td colspan="7" style="text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; padding-left:12px;">TOTAL</td>
+        <td class="num" style="font-weight:700; font-size:13px;">${fmt(total)}</td>
+      </tr>
+    </tfoot>`;
+
+  } else if (isProd) {
+    // ==========================================
+    // กรณีที่ 2: ตารางพลังงาน (Consumption, PV, Grid, Export)
+    // ==========================================
+    thead = `<tr>
+      <th>Project</th>
+      <th>Consumption</th>
+      <th>PV (Actual)</th>
+      <th>Grid Import</th>
+      <th>Grid Export</th>
+    </tr>`;
+
+    body = rows.map(r => {
+      const cons = r.consumption != null ? Number(r.consumption) : 0;
+      const pv = r.actual != null ? Number(r.actual) : 0;
+      const imp = r.importGrid != null ? Number(r.importGrid) : 0;
+      const exp = r.exported != null ? Number(r.exported) : 0;
+      
+      total += pv; 
+
+      return `<tr>
+        <td>${projectCellHtml(r.refCode)}</td>
+        <td class="num">${cons ? fmt(cons) : '–'}</td>
+        <td class="num" style="color:var(--green); font-weight:700">${pv ? fmt(pv) : '–'}</td>
+        <td class="num">${imp ? fmt(imp) : '–'}</td>
+        <td class="num" style="color:var(--blue)">${exp ? fmt(exp) : '–'}</td>
+      </tr>`;
+    }).join('');
+
+    subLabelText = `${rows.length} project(s) with data · Total PV: ${fmt(total)}`;
+
+  } else {
+    // ==========================================
+    // กรณีที่ 3: ตารางเริ่มต้นอื่นๆ (Plan, Actual, vs Plan)
+    // ==========================================
+    dotColor = 'var(--blue)';
+
+    thead = `<tr>
+      <th>Project</th>
+      <th>Plan</th>
+      <th>Actual</th>
+      <th>vs Plan</th>
+    </tr>`;
+
+    body = rows.map(r => {
+      const plan = r.plan || 0, actual = r.actual;
+      const diff = actual != null ? actual - plan : null;
+      const pct = plan > 0 && diff != null ? diff / plan : 0;
+      
+      if (actual != null) total += actual;
+
+      return `<tr>
+        <td>${projectCellHtml(r.refCode)}</td>
+        <td class="num">${fmt(plan)}</td>
+        <td class="num">${actual != null ? fmt(actual) : '–'}</td>
+        <td class="num" style="color:${diff != null && diff >= 0 ? 'var(--green)' : 'var(--amber)'};font-weight:700">
+          ${diff != null ? (diff >= 0 ? '+' : '') + fmt(diff) + ' (' + fmtPct(pct) + ')' : '–'}
+        </td>
+      </tr>`;
+    }).join('');
+
+    subLabelText = `${rows.length} project(s) with data · Total actual: ${fmt(total)}`;
+  }
+
+  // เรนเดอร์โครงสร้าง HTML โดยมีไอคอนสี่เหลี่ยมสี (dot-indicator) อยู่ด้านหน้า
+  el.innerHTML = `
+    <div class="drilldown-head">
+      <div>
+        <div class="drilldown-title" style="display:flex; align-items:center; gap:8px;">
+          <span class="dot-indicator" style="width:12px; height:12px; background-color:${dotColor}; border-radius:3px; display:inline-block;"></span>
+          <span style="font-weight:700;">${titleText}</span>
+        </div>
+        <div class="drilldown-sub" style="margin-top:2px; font-size:12px; color:var(--muted);">${subLabelText}</div>
+      </div>
+      <button class="drilldown-close" onclick="document.getElementById('${containerId}').classList.remove('open')">×</button>
+    </div>
+    <div class="table-wrap"><table class="oma-table">
+      <thead>${thead}</thead>
+      <tbody>${body}</tbody>
+      ${tfoot}
+    </table></div>`;
+    
+  el.classList.add('open');
+}
+ 
+/* ================= PORTFOLIO KPI ================= */
+function kpi(label, value, unit, cls, iconPath, deltaText, deltaCls){
+  return `<div class="kpi kpi--${cls}">
+    <div class="kpi-head-row">
+      <div class="kpi-icon">${iconPath}</div>
+      <div class="kpi-label">${label}</div>
+    </div>
+    <div class="dsp num kpi-value">${value}<span class="kpi-unit">${unit}</span></div>
+    ${deltaText? `<div class="kpi-delta ${deltaCls}">${deltaText}</div>`:''}
+  </div>`;
+}
+
+function kpiCompare(label, cls, iconPath, feas, present){
+  // feas / present: { value, unit?, sub?, subCls? }
+  return `<div class="kpi-cmp kpi-cmp--${cls}">
+    <div class="kpi-cmp-head">
+      <div class="kpi-cmp-icon">${iconPath}</div>
+      <div class="kpi-cmp-label">${label}</div>
+    </div>
+    <div class="kpi-cmp-row">
+      <div class="kpi-cmp-col">
+        <div class="kpi-cmp-tag">Feas</div>
+        <div class="dsp num kpi-cmp-value">${feas.value}${feas.unit?`<span class="kpi-unit">${feas.unit}</span>`:''}</div>
+        ${feas.sub? `<div class="kpi-cmp-sub ${feas.subCls||''}">${feas.sub}</div>`:''}
+      </div>
+      <div class="kpi-cmp-divider"></div>
+      <div class="kpi-cmp-col">
+        <div class="kpi-cmp-tag">Present</div>
+        <div class="dsp num kpi-cmp-value">${present.value}${present.unit?`<span class="kpi-unit">${present.unit}</span>`:''}</div>
+        ${present.sub? `<div class="kpi-cmp-sub ${present.subCls||''}">${present.sub}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+const ICO = {
+  coin:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.5 3-2 3-2s3 .5 3 2-3 1.5-3 1.5-3 .5-3 2 3 2 3 2 3-.5 3-2"/></svg>',
+  trend:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
+  target:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5" fill="currentColor"/></svg>',
+  percent:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+  wallet:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M15 14h3"/></svg>',
+  sun:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+  leaf:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21c8 0 14-6 14-16-8 0-14 6-14 16z"/><path d="M5 21c0-5 3-9 7-11"/></svg>',
+  bolt:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
+};
+ 
+function renderOverviewKpis(){
+  const hp = state.homepage;
+  if(!hp) return;
+  const ref = state.filterRef;
+  
+  let data = {};
+  if(ref === 'all'){
+    data = hp.portfolio || {};
+  } else {
+    data = (hp.cards || []).find(c => c.refCode === ref) || {};
+  }
+  
+  if(!data || data.totalInvestment === 0 || data.investment === 0){
+    document.getElementById('portKpiOverview').innerHTML = '<div class="info-banner warn" style="grid-column:1/-1">Project data not found.</div>';
+    return;
+  }
+  
+  const inv = data.totalInvestment !== undefined ? data.totalInvestment : (data.investment || 0);
+
+  /* ---- Cash In ---- */
+  const cashInPresent = data.totalActual || 0;
+  const cashInFeas = data.totalPlanToDate || 0;
+  const cashInPresentChange = data.cashInMonthChange || 0;
+  const cashInFeasChange = data.cashInMonthChangePlan || 0;
+
+  /* ---- Balance ---- */
+  const balancePresent = data.balance !== undefined ? data.balance : (inv - cashInPresent);
+  const balanceFeas = data.balancePlan !== undefined ? data.balancePlan : (inv - cashInFeas);
+  const balancePresentPct = inv > 0 ? Math.max(0, balancePresent) / inv * 100 : 0;
+  const balanceFeasPct = inv > 0 ? Math.max(0, balanceFeas) / inv * 100 : 0;
+
+  /* ---- Breakeven: Feas ไม่ flag (ตามที่ตกลง) / Present ยังคง flag ตามลอจิกเดิม ---- */
+  const planBE = data.breakevenPlanYM || '–';
+  const planBeMain = String(planBE).split(' ')[0].trim();
+
+  const projBE = data.breakevenActYM || '–';
+  let projBeMain = String(projBE).split(' ')[0].trim(), projBeSub = '', projBeSubCls = '';
+  
+  if (projBE && projBE !== '–' && projBE !== 'N/A') {
+    const cleanStr = String(projBE).trim();
+    projBeMain = cleanStr.split(' ')[0];
+    
+    // 1. เช็คเงื่อนไข เกิน/ก่อน กำหนดสัญญาตามเดิม
+    let isLate = false;
+    if (ref === 'all') {
+      const planStr = String(planBE).split(' ')[0].trim();
+      if (planStr !== '–' && planStr !== 'N/A') {
+        isLate = projBeMain > planStr;
+      }
+    } else {
+      isLate = cleanStr.includes('เกินอายุสัญญา') || cleanStr.includes('ไม่คุ้มทุน');
+    }
+
+    // 2. ฟังก์ชันภายในสำหรับแปลง YYYY-MM หรือ YYYYMM เป็นจำนวนเดือนรวม
+    const toTotalMonths = (ymStr) => {
+      const digits = ymStr.replace(/[^0-9]/g, ''); // ดึงเฉพาะตัวเลขออกมารองรับทั้งแบบมีขีดและไม่มีขีด
+      if (digits.length !== 6) return null;
+      const year = parseInt(digits.substring(0, 4), 10);
+      const month = parseInt(digits.substring(4, 6), 10);
+      return (year * 12) + month;
+    };
+
+    const planMonths = toTotalMonths(planBeMain);
+    const projMonths = toTotalMonths(projBeMain);
+    let diffText = '';
+
+    // 3. คำนวณหาผลต่างปีและเดือน
+    if (planMonths !== null && projMonths !== null) {
+      const diffMonths = Math.abs(projMonths - planMonths);
+      if (diffMonths > 0) {
+        const yy = Math.floor(diffMonths / 12);
+        const mm = diffMonths % 12;
+        
+        const parts = [];
+        if (yy > 0) parts.push(`${yy} ปี`);
+        if (mm > 0) parts.push(`${mm} เดือน`);
+        diffText = ' ' + parts.join(' '); // ได้ผลลัพธ์เป็นต่อท้าย เช่น " 1 ปี 2 เดือน"
+      }
+    }
+
+    // 4. ประกอบข้อความแสดงผล
+    if (isLate) {
+      projBeSub = '▼ เกินอายุสัญญา' + (diffText ? `<br />${diffText.trim()}` : '');
+      projBeSubCls = 'neg';
+    } else {
+      projBeSub = '▲ ก่อนกำหนดสัญญา' + (diffText ? `<br />${diffText.trim()}` : '');
+      projBeSubCls = 'pos';
+    }
+  }
+
+  /* ---- IRR: Feas ใช้ Variance (Present - Feas) แทน delta ---- */
+  const irrPresent = data.realtimeIRR || 0;
+  const irrPresentChange = data.irrMonthChange || 0;
+  const irrFeas = data.feasIRR || 0;
+  const irrVariance = irrPresent - irrFeas;
+
+  document.getElementById('portKpiOverview').innerHTML = [
+    kpi('Investment', fmtM(inv), 'M฿', 'slate', ICO.wallet),
+
+    kpiCompare('Cash In', 'green', ICO.trend,
+      { value: fmtM(cashInFeas), unit:'M฿',
+        sub: (cashInFeasChange>=0?'▲ ':'▼ ')+fmtK(Math.abs(cashInFeasChange))+'K ฿'+'<br /> vs Last Month',
+        subCls: cashInFeasChange>=0?'pos':'neg' },
+      { value: fmtM(cashInPresent), unit:'M฿',
+        sub: (cashInPresentChange>=0?'▲ ':'▼ ')+fmtK(Math.abs(cashInPresentChange))+'K ฿'+'<br /> vs Last Month',
+        subCls: cashInPresentChange>=0?'pos':'neg' }
+    ),
+
+    kpiCompare('Balance', balancePresent<=0?'green':'red', ICO.coin,
+      { value: fmtM(balanceFeas), unit:'M฿',
+        sub: balanceFeas<=0 ? '✓ เก็บครบแล้ว' : 'คงเหลือ '+balanceFeasPct.toFixed(1)+'%',
+        subCls: balanceFeas<=0 ? 'pos' : 'neg' },
+      { value: fmtM(balancePresent), unit:'M฿',
+        sub: balancePresent<=0 ? '✓ เก็บครบแล้ว' : 'คงเหลือ '+balancePresentPct.toFixed(1)+'%',
+        subCls: balancePresent<=0 ? 'pos' : 'neg' }
+    ),
+
+    kpiCompare('Breakeven', 'slate', ICO.target,
+      { value: ymLabel(planBeMain) },
+      { value: ymLabel(projBeMain), sub: projBeSub, subCls: projBeSubCls }
+    ),
+
+    kpiCompare('IRR', 'blue', ICO.percent,
+      { value: (irrFeas*100).toFixed(2)+'%',
+        sub: (irrVariance>=0?'▲ ':'▼ ')+Math.abs(irrVariance*100).toFixed(2)+'%'+' <br /> vs Present',
+        subCls: irrVariance>=0?'pos':'neg' },
+      { value: (irrPresent*100).toFixed(2)+'%',
+        sub: (irrPresentChange>=0?'▲ ':'▼ ')+(Math.abs(irrPresentChange)*100).toFixed(2)+'%'+'<br /> vs Last Month',
+        subCls: irrPresentChange>=0?'pos':'neg' }
+    )
+  ].join('');
+}
+ 
+/* ================= ATTENTION PANEL ================= */
+function renderAttention(){
+  const allCards = (state.homepage && state.homepage.cards) || [];
+  const cards = state.filterRef==='all' ? allCards : allCards.filter(c=>c.refCode===state.filterRef);
+  const flagged = cards
+    .filter(c=> c.variancePct!=null && c.variancePct<0)
+    .sort((a,b)=>a.variancePct-b.variancePct);
+    
+  const elFin = document.getElementById('attnBody');
+  
+  if(!flagged.length){ 
+    const msg = '<div style="font-size:12.5px;color:var(--muted)">No projects are significantly below plan right now.</div>';
+    if(elFin) elFin.innerHTML = msg;
+    return; 
+  }
+  
+  const html = flagged.map((c,i)=>`
+    <div class="attn-row">
+      <div class="attn-idx">${i+1}</div>
+      <div>
+        <div style="font-size:11.5px; color:var(--faint);">Due ${c.dateLabel} · <span style="color:var(--ink-2); font-weight:500;">${c.invoiceNo}</span></div>
+        <div class="attn-sub">Revenue ${c.variancePct>=0?'+':''}${fmtPct(c.variancePct)} vs plan · Breakeven plan ${c.breakevenPlanYM? ymLabel(c.breakevenPlanYM):'–'}</div>
+      </div>
+      <div class="attn-space"></div>
+      <span class="pill pill--amber"><span class="pill-dot"></span>Needs Attention</span>
+      <button class="btn btn--secondary" style="padding:6px 12px;font-size:11.5px" onclick="openProjectPopup('${c.refCode}')">View Detail</button>
+    </div>`).join('');
+    
+  if(elFin) elFin.innerHTML = html;
+}
+ 
+/* ================= GANTT-STYLE BREAKEVEN LIST ================= */
+function ganttToDec(y,m){ return y + (m-1)/12; }
+function ganttYmToDec(ym){ 
+  if(!ym || ym === 'N/A' || ym === '–') return null;
+  const clean = String(ym).trim().split(' ')[0]; // ดึงเฉพาะ "YYYY-MM" ออกจากข้อความยาว
+  const parts = clean.split('-');
+  if(parts.length < 2) return null;
+  const y = parseInt(parts[0]);
+  const m = parseInt(parts[1]);
+  if(isNaN(y) || isNaN(m)) return null;
+  return y + (m - 1) / 12; 
+}
+ 
+// 🌟 ปรับปรุงฟังก์ชันแปลงข้อความสากลให้แสดงผลเป็นระบบ ค.ศ. (Christian Era) ทั้งหมด
+function getBEMonthTooltipText(ym) {
+  if (!ym || ym === 'N/A' || ym === '–') return 'ไม่มีข้อมูลจุดคุ้มทุน';
+  const clean = String(ym).trim();
+  const parts = clean.split(' ')[0].split('-');
+  if (parts.length < 2) return clean;
+  const MONTHS_ENG = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const mainDate = MONTHS_ENG[+parts[1]-1] + ' ' + parts[0]; // ถอดการบวก 543 ออกเพื่อให้ล็อกเป็น ค.ศ.
+  const suffix = clean.includes('(') ? ' ' + clean.substring(clean.indexOf('(')) : '';
+  return mainDate + suffix;
+}
+
+function renderGantt(){
+  const allCards = (state.homepage && state.homepage.cards) || [];
+  const cards = (state.filterRef==='all' ? allCards : allCards.filter(c=>c.refCode===state.filterRef))
+    .filter(c=>ganttYmToDec(c.startYM)!=null);
+  const el = document.getElementById('ganttBody');
+  if(!el) return;
+  if(!cards.length){ el.innerHTML = '<div class="info-banner" style="font-size:12.5px;color:var(--muted)">ไม่พบข้อมูลโครงการ</div>'; return; }
+
+  const spans = cards.map(c=>{
+    const s = ganttYmToDec(c.startYM);
+    const e = s + (Number(c.contractYr)||20);
+    return { c, s, e };
+  });
+
+  const minStart = Math.min(...spans.map(x=>x.s));
+  const maxEnd = Math.max(...spans.map(x=>x.e));
+
+  // 🌟 ผลักขอบเขตปีสุดท้ายให้กว้างพอ ถ้ามีจุดคุ้มทุน (แผน/จริง) ของโครงการใดเลยอายุสัญญาไปแล้ว
+  // เพื่อไม่ให้ capsule ของจุดคุ้มทุนนั้นถูกตัดทิ้งจากกราฟ — ผู้ใช้เลื่อนดูผ่าน scrollbar แทน
+  let maxTimelineEnd = maxEnd;
+  cards.forEach(c=>{
+    const actDec = ganttYmToDec(c.breakevenActYM);
+    if(actDec!=null && actDec > maxTimelineEnd) maxTimelineEnd = actDec;
+    const planDec = ganttYmToDec(c.breakevenPlanYM);
+    if(planDec!=null && planDec > maxTimelineEnd) maxTimelineEnd = planDec;
+  });
+
+  const minD = minStart - 1.5;
+  const maxD = maxTimelineEnd + 1.5;
+
+  const totalSpan = Math.max(0.1, maxD - minD);
+  const pct = d => ((d-minD)/totalSpan*100).toFixed(2);
+
+  const now = new Date();
+  let safeFullYear = now.getFullYear();
+  if (safeFullYear > 2400) { safeFullYear -= 543; }
+
+  const nowDec = ganttToDec(safeFullYear, now.getMonth()+1);
+  const MONTHS_ENG = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  const startYr = Math.floor(minD), endYr = Math.ceil(maxD);
+  let axisTicks = '';
+  for(let y=startYr; y<=endYr; y+=1){ axisTicks += `<span class="yr" style="left:${pct(y)}%">${y}</span>`; }
+
+  const groups = {};
+  cards.forEach(c=>{ (groups[c.group]=groups[c.group]||[]).push(c); });
+
+  const axisRow = `<div class="gantt-row" style="cursor:default; flex-wrap: nowrap;">
+    <div class="gantt-label" style="flex: 0 0 240px; width: 240px; max-width: 240px; flex-shrink: 0; border: none;"></div>
+    <div class="gantt-bar-wrap" style="flex: 1; min-width: 0; position: relative;"><div class="gantt-axis">${axisTicks}</div></div>
+  </div>`;
+
+  const body = Object.keys(groups).sort().map(g=>{
+    const rows = groups[g]
+      .sort((a,b)=>String(a.refCode).localeCompare(String(b.refCode)))
+      .map(c=>{
+        const span = spans.find(x=>x.c.refCode===c.refCode);
+        const inv = c.investment||0;
+        const actualPct = inv>0 ? Math.min(100,(c.totalActual||0)/inv*100) : 0;
+        const planPct = inv>0 ? Math.min(100,(c.cumPlanToDate||0)/inv*100) : 0;
+        const elapsedFrac = Math.max(0, Math.min(1, (nowDec-span.s)/(span.e-span.s)));
+        const barLeft = pct(span.s), barWidth = (pct(span.e)-pct(span.s));
+
+        const planMarkPos = c.breakevenPlanYM ? ganttYmToDec(c.breakevenPlanYM) : null;
+        const actMarkPos = c.breakevenActYM ? ganttYmToDec(c.breakevenActYM) : null;
+
+        const barColor = 'var(--green)';
+        const barBg = `color-mix(in srgb, ${barColor} 20%, transparent)`;
+
+        const endYDec = span.e;
+        const endY = Math.floor(endYDec);
+        const endM = Math.round((endYDec - endY) * 12) + 1;
+        const endYmStr = `${endY}-${String(endM).padStart(2,'0')}`;
+
+        const startText = ymLabel(c.startYM);
+        const endText = ymLabel(endYmStr);
+
+        const isOver = String(c.breakevenActYM).includes('เกินอายุสัญญา') || String(c.breakevenActYM).includes('ไม่คุ้มทุน');
+        const actBg = isOver ? 'rgba(220, 40, 40, 0.35)' : 'rgba(22, 162, 73, 0.75)';
+        const actBorder = isOver ? '#DC2828' : '#16A249';
+
+        const contractYr = Number(c.contractYr) || 20;
+        const durationYears = Math.floor(contractYr);
+        const durationMonths = Math.round((contractYr - durationYears) * 12);
+        const contractPeriodText = durationMonths > 0
+          ? `(${durationYears} ปี ${durationMonths} เดือน)`
+          : `(${durationYears} ปี)`;
+
+        return `
+          <div class="gantt-row" onclick="openProjectPopup('${c.refCode}')" style="flex-wrap: nowrap;">
+            <div class="gantt-label" style="flex: 0 0 240px; width: 240px; max-width: 240px; flex-shrink: 0; border: none; display: flex; flex-direction: column; justify-content: center; gap: 2px;">
+              <div class="gantt-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700;">${c.contractName||c.refCode}</div>
+              <div class="gantt-sub" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; line-height: 1;">
+                <div class="gantt-ref-wrapper" style="display: inline-flex; align-items: center;">
+                  ${refCodeCellHtml(c.refCode)}
+                </div>
+                <span style="color: var(--muted); font-size: 11px; font-weight: 500; white-space: nowrap;">${contractPeriodText}</span>
+              </div>
+            </div>
+
+            <div class="gantt-bar-wrap" style="position:relative; flex: 1; min-width: 0;">
+              <div class="gantt-today-full gantt-hover-tip" style="left:${pct(nowDec)}%;"
+                   data-tooltip="<div style='font-weight:700; margin-bottom:6px; color:#101317;'>${MONTHS_ENG[now.getMonth()]} ${safeFullYear}</div><div style='display:flex; align-items:center; gap:6px; color:#3C434F;'><span style='display:inline-block; width:10px; height:10px; background:rgba(220,40,40,0.35); border:1px solid #DC2828; border-radius:2px;'></span><span>เดือนปัจจุบัน</span></div>"></div>
+
+              <div class="gantt-track" style="background: transparent; position: relative;">
+                <span class="gantt-date-label" style="right:${100-Number(barLeft)}%; margin-right:8px;">${startText}</span>
+
+                <div class="gantt-bar" style="left:${barLeft}%; width:${barWidth}%; background:${barBg};">
+                  <div class="gantt-fill" style="width:${(elapsedFrac*100).toFixed(1)}%; background:${barColor}"></div>
+                </div>
+
+                ${planMarkPos!=null && pct(planMarkPos) >= 0 ?
+                  `<div class="gantt-mark gantt-hover-tip" style="left:${pct(planMarkPos)}%; width:8px; margin-left:-4px; background:rgba(37,99,235,0.35); border:1px solid #2563EB; border-radius:3px; z-index:3;"
+                    data-tooltip="<div style='font-weight:700; margin-bottom:6px; color:#101317;'>${getBEMonthTooltipText(c.breakevenPlanYM)}</div><div style='display:flex; align-items:center; gap:6px; color:#3C434F;'><span style='display:inline-block; width:10px; height:10px; background:rgba(37,99,235,0.35); border:1px solid #2563EB; border-radius:2px;'></span><span>Breakeven (Feas)</span></div>"></div>` : ''}
+
+                ${actMarkPos!=null && pct(actMarkPos) >= 0 ?
+                  `<div class="gantt-mark gantt-hover-tip" style="left:${pct(actMarkPos)}%; width:8px; margin-left:-4px; background:${actBg}; border:1px solid ${actBorder}; border-radius:3px; z-index:4;"
+                    data-tooltip="<div style='font-weight:700; margin-bottom:6px; color:#101317;'>${getBEMonthTooltipText(c.breakevenActYM)}</div><div style='display:flex; align-items:center; gap:6px; color:#3C434F;'><span style='display:inline-block; width:10px; height:10px; background:${actBg}; border:1px solid ${actBorder}; border-radius:2px;'></span><span>Breakeven (Present)</span></div>"></div>` : ''}
+
+                <span class="gantt-date-label" style="left:${Number(barLeft) + Number(barWidth)}%; margin-left:8px;">${endText}</span>
+
+                <div class="gantt-pct-inline" style="left:${pct(nowDec)}%; color:${barColor};">${actualPct.toFixed(0)}%</div>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    return `<div class="gantt-group-title">${g}</div>${rows}`;
+  }).join('');
+
+  const styleBlock = `
+    <style>
+      .gantt-ref-wrapper > *:first-child {
+        background: #DC2828 !important;
+        color: #fff !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        font-weight: 700 !important;
+        text-decoration: none !important;
+        font-size: 11px !important;
+        display: inline-block !important;
+      }
+      .gantt-ref-wrapper > *:nth-child(2) { display: none !important; }
+      .gantt-ref-wrapper > *:first-child * { display: none !important; }
+    </style>
+  `;
+
+  el.innerHTML = styleBlock + axisRow + body;
+
+  // 🌟 กำหนดความกว้างจริงของพื้นที่กราฟตามจำนวนปีทั้งหมด (คอลัมน์ชื่อ 240px + พื้นที่แท่งเวลา)
+  // ถ้ากว้างกว่าพื้นที่แสดงผล จะเกิด scrollbar แนวนอนให้เลื่อนไปดูปีที่เกินอายุสัญญาได้
+  const scrollEl = document.getElementById('ganttScroll');
+  const viewW = scrollEl ? scrollEl.clientWidth : 900;
+  const PX_PER_YEAR = 60;
+  const neededW = 240 + Math.ceil(totalSpan) * PX_PER_YEAR;
+  el.style.width = Math.max(viewW, neededW) + 'px';
+
+  // เลื่อนตำแหน่งเริ่มต้นให้ "เดือนปัจจุบัน" อยู่ในมุมมองเสมอ
+  if(scrollEl){
+    setTimeout(()=>{
+      const targetLeft = scrollEl.scrollWidth * (Number(pct(nowDec))/100) - scrollEl.clientWidth*0.4;
+      scrollEl.scrollLeft = Math.max(0, targetLeft);
+    }, 250);
+  }
+}
+ 
+/* ================= PROJECT DETAIL POPUP ================= */
+function openProjectPopup(ref){
+  document.getElementById('projectPopupBody').innerHTML = '<div class="skel loading-line" style="height:22px;margin-bottom:14px"></div><div class="skel loading-line" style="height:160px"></div>';
+  document.getElementById('projectPopupOverlay').classList.add('open');
+  let p1=null, prod=null, pending=2;
+  const done = ()=>{ pending--; if(pending===0) renderProjectPopup(p1, prod); };
+  call('getPanel1', {refCode:ref}, d=>{ p1=d; done(); }, e=>{ console.error('[popup:getPanel1]',e); done(); });
+  call('getProduction', {refCode:ref, year:1}, d=>{ prod=d; done(); }, e=>{ console.error('[popup:getProduction]',e); done(); });
+}
+function closeProjectPopup(){ document.getElementById('projectPopupOverlay').classList.remove('open'); }
+document.getElementById('projectPopupClose').addEventListener('click', closeProjectPopup);
+document.getElementById('projectPopupOverlay').addEventListener('click', e=>{
+  if(e.target.id==='projectPopupOverlay') closeProjectPopup();
+});
+ 
+function renderProjectPopup(p1, prod){
+  const body = document.getElementById('projectPopupBody');
+  if(!p1 || !p1.refCode){ body.innerHTML = '<div class="info-banner warn">Could not load this project.</div>'; return; }
+ 
+  let progressPct = 0;
+  if(p1.startYM){
+    const [sy,sm] = p1.startYM.split('-').map(Number);
+    const now = new Date();
+    const monthsElapsed = (now.getFullYear()-sy)*12 + (now.getMonth()+1-sm) + 1;
+    const contractYr = p1.contractYr || 1;
+    progressPct = Math.max(0, Math.min(100, Math.round(monthsElapsed/(contractYr*12)*100)));
+  }
+  const beActualPct = p1.investment ? (p1.totalActualRevenue||0)/p1.investment*100 : 0;
+  const bePlanPct = p1.investment ? (p1.cumPlanToDate||0)/p1.investment*100 : 0;
+  const budgetWarn = (p1.budgetTotal>0 && (p1.budgetUsed||0)/p1.budgetTotal*100>=98);
+ 
+  body.innerHTML = `
+    <div class="dsp panel-title" style="font-size:16px;margin-bottom:2px">${p1.group} — ${p1.contractName}</div>
+    <div class="panel-sub" style="margin-bottom:18px">${p1.refCode} · Electricity rate used for savings: ${prod && prod.elecRate ? prod.elecRate.toFixed(2) : '–'} ฿/kWh</div>
+    <div class="mini-row"><span>Contract progress</span><span class="num">${progressPct}%</span></div>
+    <div class="progress-track"><div class="progress-fill" style="background:var(--slate);width:${progressPct}%"></div></div>
+    <div class="stat-grid" style="margin-top:18px">
+      <div class="stat-item"><div class="lbl">Installed Capacity</div><div class="val num">${p1.kwp!=null? p1.kwp.toLocaleString('en-US',{maximumFractionDigits:1}):'–'} kWp</div></div>
+      <div class="stat-item"><div class="lbl">Investment</div><div class="val num">${p1.investment!=null? fmtM(p1.investment)+' M฿':'–'}</div></div>
+      <div class="stat-item"><div class="lbl">IRR</div><div class="val num">${p1.irr!=null? fmtPct(p1.irr):'–'}</div></div>
+      <div class="stat-item"><div class="lbl">Payback (Plan)</div><div class="val num">${p1.payback!=null? p1.payback+' yrs':'–'}</div></div>
+      <div class="stat-item"><div class="lbl">Electricity Rate</div><div class="val num">${fmtRate(p1)}</div></div>
+      <div class="stat-item"><div class="lbl">Group Budget Balance</div><div class="val num" style="${budgetWarn?'color:var(--amber)':''}">${p1.budgetTotal? fmtM(p1.budgetBalance)+' M฿':'–'}</div></div>
+      <div class="stat-item"><div class="lbl">Avg Performance Ratio</div><div class="val num">${prod && prod.summary.totalPR!=null? fmtPct(prod.summary.totalPR):'–'}</div></div>
+      <div class="stat-item"><div class="lbl">Cumulative Actual</div><div class="val num">${prod? fmtNum(prod.summary.totalActual)+' kWh':'–'}</div></div>
+      <div class="stat-item"><div class="lbl">Cumulative Plan</div><div class="val num">${prod? fmtNum(prod.summary.totalPlan)+' kWh':'–'}</div></div>
+      <div class="stat-item"><div class="lbl">CO₂ Reduced</div><div class="val num">${prod? fmtNum(prod.summary.totalCO2/1000):'–'} tons</div></div>
+      <div class="stat-item"><div class="lbl">Electricity Savings</div><div class="val num">${prod? fmtM(prod.summary.totalSavingBaht)+' M฿':'–'}</div></div>
+    </div>
+    <div class="mini-row" style="margin-top:20px"><span>Breakeven progress (cumulative revenue / investment)</span></div>
+    <div class="progress-track" style="height:14px">
+      <div class="progress-fill" style="background:${beActualPct>=bePlanPct?'var(--green)':'var(--amber)'};width:${Math.min(100,beActualPct)}%"></div>
+      <div class="progress-mark" style="left:${Math.min(100,bePlanPct)}%"></div>
+    </div>
+    <div class="legend-row" style="margin-top:10px">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Actual progress</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--blue);width:3px;height:11px;border-radius:2px"></span>Planned target (same month)</div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">${breakevenPillsHtml(p1)}</div>
+  `;
+}
+ 
+function breakevenPillsHtml(p1){
+  const pills = [];
+  if(p1.breakevenPlanYM){
+    pills.push(`<span class="pill pill--slate"><span class="pill-dot"></span>Plan breakeven: ${ymLabel(p1.breakevenPlanYM)}</span>`);
+  }
+  if(p1.breakevenActualYM){
+    pills.push(`<span class="pill pill--green"><span class="pill-dot"></span>Breakeven reached: ${ymLabel(p1.breakevenActualYM)}</span>`);
+  } else if(p1.projectedBEYM){
+    pills.push(`<span class="pill pill--amber"><span class="pill-dot"></span>Projected breakeven: ${ymLabel(p1.projectedBEYM)}</span>`);
+  }
+  return pills.join('');
+}
+ 
+ 
+/* ================= FINANCIAL TAB ================= */
+let chartFinFeas;
+ 
+function seriesToggler(chartGetter, containerId, seriesDefs){
+  const el = document.getElementById(containerId);
+  el.innerHTML = seriesDefs.map(s=>`<button class="tog-btn" data-label="${s.label}">
+    <span class="tog-dot" style="background:${s.color}"></span>${s.label}</button>`).join('');
+  el.querySelectorAll('.tog-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const chart = chartGetter(); if(!chart) return;
+      const ds = chart.data.datasets.find(d=>d.label===btn.dataset.label); if(!ds) return;
+      ds.hidden = !ds.hidden; chart.update('none'); btn.classList.toggle('off', ds.hidden);
+    });
+  });
+}
+ 
+function scrollableWidth(scrollElId, innerElId, nBars){
+  const scrollEl = document.getElementById(scrollElId);
+  const viewW = scrollEl ? scrollEl.clientWidth : 800;
+  const barW = viewW/24;
+  document.getElementById(innerElId).style.width = Math.max(viewW, nBars*barW)+'px';
+  return scrollEl;
+}
+function autoScrollToRecent(scrollEl, rows){
+  setTimeout(()=>{
+    if(!scrollEl) return;
+    const y = new Date().getFullYear();
+    let idx = rows.findIndex(r=>r.ym && r.ym.startsWith(String(y-1)));
+    if(idx<0) idx = rows.findIndex(r=>r.ym && r.ym.startsWith(String(y)));
+    if(idx>0){ scrollEl.scrollLeft = scrollEl.scrollWidth * (idx/rows.length); }
+  }, 250);
+}
+function dlLabelValue(ctx){
+  const v = ctx.raw;
+  const ds = ctx.dataset;
+  const actual = ds.actualData ? ds.actualData[ctx.dataIndex] : null;
+  return (actual!=null && actual>0) ? actual : v; // once an amount is actually collected, show that instead of the plan target
+}
+function dlCfg(color, kFormat){
+  return { display: ctx => { const v = dlLabelValue(ctx); return v!==null && v!==undefined && v>0; },
+    anchor:'end', align:'top', rotation:-90, offset:2,
+    formatter: (raw, ctx) => { const v = dlLabelValue(ctx); return kFormat ? (v>=1000? Math.round(v/1000)+'K' : Math.round(v)) : (v? v.toFixed(2):null); },
+    font:{size:9, family:'Inter'}, color };
+}
+ 
+// Billing & Collection Progress — sourced from Sheet_FinancialPlan (Billing vs Cash In),
+// separate from the Feasibility/Actual revenue used elsewhere. Click a bar → per-installment drilldown.
+let lastBillingRows = [];
+const billingDrilldownCache = {}; // `${ref}|${metric}|${ym}` -> response, so re-clicking a bar is instant
+const billingState = { ym: null, metric: null, ref: null };
+
+function _currentYM(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function prevYM(ym){
+  if(!ym) return null;
+  const parts = String(ym).split('-');
+  if(parts.length < 2) return null;
+  let y = parseInt(parts[0],10), m = parseInt(parts[1],10) - 1;
+  if(m < 1){ m = 12; y -= 1; }
+  return y + '-' + String(m).padStart(2,'0');
+}
+
+// แก้ไขข้อ 2: ขยับแกน Y ลงมาเพื่อไม่ให้กรอบสีแดงทับตัวหนังสือ
+function currentMonthTickPlugin(getTodayIdx){
+  return {
+    id: 'currentMonthTick',
+    afterDraw(chart){
+      const idx = getTodayIdx();
+      if (idx == null || idx < 0) return;
+      const xScale = chart.scales.x;
+      if (!xScale) return;
+      const tickX = xScale.getPixelForTick(idx);
+      if (tickX == null || isNaN(tickX)) return;
+      const ctx = chart.ctx;
+      
+      const w = 48, h = 18; // ขนาดความกว้างและความสูงของกรอบ
+      const x = tickX - w/2;
+      const y = xScale.top + 6; // <--- ขยับ y ลงมา 6 พิกเซลเพื่อไม่ให้ทับตัวหนังสือ
+      const r = 6;
+      
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y, x+w, y+h, r);
+      ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r);
+      ctx.arcTo(x, y, x+w, y, r);
+      ctx.closePath();
+      ctx.strokeStyle = '#DC2828';
+      ctx.lineWidth = 1.2;
+      ctx.stroke(); 
+      ctx.restore();
+    }
+  };
+}
+
+function renderBillingChart(data, ref, scope){
+  if (billingState.ref !== ref) {
+    billingState.ym = null;
+    billingState.metric = null;
+    const drilldownEl = document.getElementById('drilldownFinFeas');
+    if(drilldownEl) drilldownEl.classList.remove('open');
+  }
+  billingState.ref = ref;
+
+  // getBillingChartData (Code.gs) now returns one row per YearMonth already carrying feasPlan
+  // (scoped to each installment's own WorkPeriodStart..WorkPeriodEnd, pulled from the FeasPlan
+  // sheet's RefCode+YearMonth+FeasPlan(THB) rows) alongside billing/cashIn plan & actual. This
+  // is the exact same lookup getInstallmentsForMonth uses for the Feas drilldown, so the bar
+  // and its drilldown always agree — no more building the Feas series separately from
+  // state.panel2 (which spanned the full O&M contract length, not the installment schedule).
+  const todayYM = _currentYM();
+  // Billing/Cash In มักถูกบันทึกช้ากว่างวดงานจริงราว 1 เดือน จึง "เลื่อน" แท่ง Feas ที่แสดง
+  // ใต้ label เดือน X ให้ไปใช้ค่า FeasPlan ของเดือน X-1 แทน เพื่อให้ทั้ง 3 แท่งใต้ label
+  // เดียวกัน (Feas / Billing / Cash In) หมายถึงงวดงานเดียวกันจริง ๆ
+  const feasByYm = {};
+  (data.rows || []).forEach(r => { feasByYm[r.ym] = r.feasPlan || 0; });
+  const rows = (data.rows || []).map(r => ({
+    ym: r.ym,
+    feasPlan: feasByYm[prevYM(r.ym)] || 0,
+    billingActual: r.ym <= todayYM ? (r.billingActual || 0) : 0,
+    billingPlan:   r.ym <= todayYM ? (r.billingPlan || r.billing || 0) : 0,
+    cashInActual:  r.ym <= todayYM ? (r.cashInActual || 0) : 0,
+    cashInPlan:    r.cashInPlan || r.cashIn || 0, // ✅ ไม่ gate ด้วย todayYM แล้ว — แสดงแนวโน้มเงินที่จะได้รับล่วงหน้าทุกเดือนตามข้อมูลจริง (เช่น CashInPlanDate ถึง Sep-26)
+  })).sort((a,b) => a.ym.localeCompare(b.ym));
+  lastBillingRows = rows;
+  
+  const labels = rows.map(r => {
+    const parts = r.ym.split('-');
+    if (parts.length >= 2) return `${MONTHS[+parts[1]-1]}-${parts[0].slice(-2)}`;
+    return r.ym;
+  });
+  
+  const todayIdx = rows.findIndex(r=>r.ym===todayYM);
+  document.getElementById('feasChartSub').textContent = `${scope} · Unit: THB · click a bar for detail`;
+  const scrollElFeas = scrollableWidth('scrollFinFeas','innerFinFeas', rows.length);
+  if(chartFinFeas) chartFinFeas.destroy();
+
+  function getDl(color, metricGroup, variant) {
+    return {
+      display: ctx => {
+         const r = rows[ctx.dataIndex];
+         if (metricGroup === 'feasibility') return toM(r.feasPlan) > 0; // ไม่มี "actual" แยก — เป็นแท่งเดี่ยว เช็คแค่ plan
+         const actual = metricGroup === 'billing' ? toM(r.billingActual) : toM(r.cashInActual);
+         const plan = metricGroup === 'billing' ? toM(r.billingPlan) : toM(r.cashInPlan);
+         if (variant === 'actual') return actual > 0;
+         if (variant === 'planSolid') return plan > 0; // แท่งเดี่ยวแสดงค่าตามแผนเต็มจำนวน ไม่ใช่ส่วนต่าง
+         return plan > actual; // planRemainder (เช่น Billing Plan ที่ยังซ้อนทับ Actual)
+      },
+      anchor: 'end', align: 'top', rotation: 0, offset: 4,    
+      formatter: (v, ctx) => {
+         const r = rows[ctx.dataIndex];
+         if (metricGroup === 'feasibility') { const val = toM(r.feasPlan); return val > 0 ? val.toFixed(2) : null; }
+         const actual = metricGroup === 'billing' ? toM(r.billingActual) : toM(r.cashInActual);
+         const plan = metricGroup === 'billing' ? toM(r.billingPlan) : toM(r.cashInPlan);
+         let val;
+         if (variant === 'actual') val = actual;
+         else if (variant === 'planSolid') val = plan;
+         else val = Math.max(actual, plan);
+         return val > 0 ? val.toFixed(2) : null;
+      },
+      font: {size: 9, family: 'Inter', weight: 'bold'}, color: color
+    };
+  }
+
+  function getBgColor(ctx, metricGroup, variant) {
+     const rowYm = rows[ctx.dataIndex].ym;
+     const isActive = billingState.ym === rowYm && billingState.metric === metricGroup;
+     const isAnyActive = !!billingState.ym;
+
+     // dark = สีทึบเข้ม ใช้กับแท่ง "Plan" ที่แยกออกมายืนเดี่ยว (ไม่ใช่ส่วนต่างที่ซ้อนทับ Actual)
+     const palette = {
+       billing:     { base:'#E08600', faded:'rgba(224,134,0,0.30)',  dark:'#B96A00' },
+       cashIn:      { base:'#16A249', faded:'rgba(22,162,73,0.30)',  dark:'#7C3AED' },
+       feasibility: { base:'#2563EB', faded:'rgba(37,99,235,0.30)',  dark:'#1D4ED8' },
+     }[metricGroup] || { base:'#94A3B8', faded:'rgba(148,163,184,0.30)', dark:'#475569' };
+
+     let color;
+     if (variant === 'actual') color = palette.base;
+     else if (variant === 'planSolid') color = palette.dark;
+     else color = palette.faded; // planRemainder
+
+     if (!isAnyActive) return color;
+     return isActive ? color : 'rgba(200, 200, 200, 0.15)'; 
+  }
+
+  const chartOptions = barOpts('M฿');
+  chartOptions.plugins.tooltip = { enabled: false };
+  chartOptions.onHover = (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; };
+  
+  chartOptions.onClick = (evt, els, chart) => {
+     const nearest = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+     if(nearest.length) {
+        const idx = nearest[0].index;
+        const dIdx = nearest[0].datasetIndex;
+        
+        let metric = 'feasibility';
+        if (dIdx === 1 || dIdx === 2) metric = 'billing';
+        if (dIdx === 3 || dIdx === 4) metric = 'cashIn';
+
+        if (billingState.ym === rows[idx].ym && billingState.metric === metric) {
+           billingState.ym = null; 
+           billingState.metric = null;
+           document.getElementById('drilldownFinFeas').classList.remove('open');
+        } else {
+           billingState.ym = rows[idx].ym; 
+           billingState.metric = metric;
+           // แท่ง Feas ใต้ label นี้กำลังแสดงค่าของ "เดือนก่อนหน้า" (ตามการเลื่อนด้านบน)
+           // ดังนั้น drilldown ต้องดึง/แสดงข้อมูลของเดือนก่อนหน้านั้นด้วย ไม่ใช่เดือนตาม label
+           // แกน X ไม่งั้นตัวเลขจะไม่ตรงกับแท่งอีกครั้ง
+           const drilldownYm = metric === 'feasibility' ? prevYM(rows[idx].ym) : rows[idx].ym;
+           showBillingMonthDrilldown(drilldownYm, metric, ref);
+        }
+        chart.update('none'); 
+     }
+  };
+  
+  chartOptions.scales.x.ticks.maxRotation = 0;
+  chartOptions.scales.x.ticks.autoSkip = false;
+
+  chartFinFeas = new Chart(document.getElementById('chartFinFeas'), {
+    type: 'bar',
+    data:{ labels, datasets:[
+      { label:'Feasibility Plan', data: rows.map(r=>toM(r.feasPlan)), stack: 'Feasibility', borderRadius: 3, backgroundColor: ctx => getBgColor(ctx, 'feasibility', 'actual'), datalabels: getDl('#2563EB', 'feasibility', 'actual') },
+      { label:'Billing Actual', data: rows.map(r=>toM(r.billingActual)), stack: 'Billing', borderRadius: 3, backgroundColor: ctx => getBgColor(ctx, 'billing', 'actual'), datalabels: getDl('#E08600', 'billing', 'actual') },
+      { label:'Billing Plan', data: rows.map(r=> Math.max(0, toM(r.billingPlan) - toM(r.billingActual))), stack: 'Billing', borderRadius: 3, backgroundColor: ctx => getBgColor(ctx, 'billing', 'planRemainder'), datalabels: getDl('#E08600', 'billing', 'planRemainder') },
+      { label:'Cash In Actual', data: rows.map(r=>toM(r.cashInActual)), stack: 'CashIn', borderRadius: 3, backgroundColor: ctx => getBgColor(ctx, 'cashIn', 'actual'), datalabels: getDl('#16A249', 'cashIn', 'actual') },
+      { label:'Cash In Plan', data: rows.map(r=>toM(r.cashInPlan)), stack: 'CashInPlan', borderRadius: 3, backgroundColor: ctx => getBgColor(ctx, 'cashIn', 'planSolid'), datalabels: getDl('#7C3AED', 'cashIn', 'planSolid') },
+    ]},
+    plugins: [currentMonthTickPlugin(()=>todayIdx)].concat(window.ChartDataLabels ? [window.ChartDataLabels] : []),
+    options: chartOptions
+  });
+
+  const el = document.getElementById('togFinFeas');
+  el.innerHTML = `
+    <button class="tog-btn" data-metric="Feasibility"><span class="tog-dot" style="background:#2563EB"></span>Feasibility</button>
+    <button class="tog-btn" data-metric="Billing"><span class="tog-dot" style="background:#E08600"></span>Billing</button>
+    <button class="tog-btn" data-metric="Cash In Actual"><span class="tog-dot" style="background:#16A249"></span>Cash In Actual</button>
+    <button class="tog-btn" data-metric="Cash In Plan"><span class="tog-dot" style="background:#7C3AED"></span>Cash In Plan</button>
+  `;
+  el.querySelectorAll('.tog-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const metric = btn.dataset.metric;
+      let hidden = false;
+      chartFinFeas.data.datasets.forEach(d => {
+        // Feasibility / Billing ยังจับคู่แบบกลุ่ม (Billing มี Actual+Plan ซ้อนสแตกเดียวกัน)
+        // ส่วน Cash In Actual / Cash In Plan แยกปุ่มคุมทีละแท่งเป๊ะๆ ด้วยการเทียบ label ตรงตัว
+        const matches = metric === 'Feasibility' ? d.label === 'Feasibility Plan'
+                       : metric === 'Billing'     ? (d.label === 'Billing Actual' || d.label === 'Billing Plan')
+                       : d.label === metric;
+        if (matches) {
+          d.hidden = !d.hidden;
+          hidden = d.hidden;
+        }
+      });
+      chartFinFeas.update('none');
+      btn.classList.toggle('off', hidden);
+    });
+  });
+
+  autoScrollToRecent(scrollElFeas, rows);
+}
+
+function showBillingMonthDrilldown(ym, metric, ref){
+  const cacheKey = `${ref}|${metric}|${ym}`;
+  const label = metric === 'feasibility' ? 'Feasibility Plan' : (metric === 'billing' ? 'Billing' : 'Cash In');
+  
+  const patchDrilldownHtml = () => {
+     const el = document.getElementById('drilldownFinFeas');
+     if (el) {
+        let html = el.innerHTML;
+        html = html.replace(/Amount \(MB\)/g, 'Amount (THB)');
+        html = html.replace(/ M<\/div>/g, ' THB</div>');
+        el.innerHTML = html;
+     }
+  };
+
+  if (billingDrilldownCache[cacheKey]) {
+    renderDrilldown(ym, metric, billingDrilldownCache[cacheKey], label);
+    return;
+  }
+  
+  const el = document.getElementById('drilldownFinFeas');
+  if (el) { el.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 2px;">Loading ${ymLabel(ym)}…</div>`; el.classList.add('open'); }
+  
+  // Feasibility is matched server-side by the installment's own work period (not billing date),
+  // so 'feasibility' is passed straight through rather than aliased to 'billing'.
+  call('getInstallmentsForMonth', {ym, metric, refCode: ref}, res=>{
+    billingDrilldownCache[cacheKey] = res.rows;
+    renderDrilldown(ym, metric, res.rows, label);
+  }, e=>{ toast('Failed to load installment detail','err'); });
+
+  function renderDrilldown(ym, metric, rows, label) {
+    if (metric === 'feasibility') {
+      const el = document.getElementById('drilldownFinFeas');
+      let total = 0;
+
+      // The underlying rows are borrowed from the billing endpoint (one row per Sheet_FinancialPlan
+      // entry, which can mean one row per meter for the same project/period). Feasibility only needs
+      // one line per project, so keep the first occurrence per refCode and drop the rest.
+      const seenRef = {};
+      const projRows = rows.filter(r => {
+        if (seenRef[r.refCode]) return false;
+        seenRef[r.refCode] = true;
+        return true;
+      });
+
+      const body = projRows.map(r => {
+         // ✅ ดึงค่า feasPlanValue ที่เราแยกไว้ต่างหากมาใช้งาน
+         const amt = r.feasPlanValue || 0; 
+         total += amt;
+         return `<tr>
+           <td style="text-align:left; font-weight:600; color:var(--ink);">${projectCellHtml(r.refCode)}</td>
+           <td style="text-align:center; color:var(--ink);">${r.installment || '–'}</td>
+           <td style="text-align:center; color:var(--muted);">${r.workPeriod || '–'}</td>
+           <td class="num" style="text-align:right; font-weight:700; color:var(--ink);">${amt > 0 ? fmtNum(amt) : '0'}</td>
+         </tr>`;
+      }).join('');
+      
+      const thead = `<tr>
+        <th style="text-align:left">Project</th>
+        <th style="text-align:center">Installment</th>
+        <th style="text-align:center">Work Period</th>
+        <th class="num" style="text-align:right">Amount (THB)</th>
+      </tr>`;
+      
+      const tfoot = `<tfoot>
+        <tr style="background: rgba(0,0,0,0.015); border-top:1px solid var(--line-2)">
+          <td colspan="3" style="text-transform: uppercase; font-size: 11px; font-weight:800; letter-spacing: 0.5px; padding-left:14px; text-align:left;">TOTAL</td>
+          <td class="num" style="font-weight:800; font-size:13px; color:var(--ink); text-align:right;">${fmtNum(total)}</td>
+        </tr>
+      </tfoot>`;
+
+      el.innerHTML = `
+        <div class="drilldown-head">
+          <div>
+            <div class="drilldown-title" style="display:flex; align-items:center; gap:8px;">
+              <span class="dot-indicator" style="width:12px; height:12px; background-color:#2563EB; border-radius:3px; display:inline-block;"></span>
+              <span style="font-weight:700;">${ymLabel(ym)} · ${label}</span>
+            </div>
+            <div class="drilldown-sub" style="margin-top:2px; font-size:12px; color:var(--muted);">${projRows.length} project(s) · ${fmtNum(total)} THB</div>
+          </div>
+          <button class="drilldown-close" onclick="document.getElementById('drilldownFinFeas').classList.remove('open')">×</button>
+        </div>
+        <div class="table-wrap"><table class="oma-table">
+          <thead>${thead}</thead>
+          <tbody>${body || `<tr><td colspan="4" class="empty-row">No installment data for this month</td></tr>`}</tbody>
+          ${tfoot}
+        </table></div>`;
+      el.classList.add('open');
+    } else {
+      showDrilldown('drilldownFinFeas', ym, rows, label, v=>fmtNum(v), metric);
+      patchDrilldownHtml();
+    }
+  }
+}
+
+function renderFinCharts(p2, ref, scope){
+  const elAnn = document.getElementById('chartFinAnnual');
+  if(elAnn){
+    document.getElementById('annualChartSub').textContent = `${scope} · Unit: THB`;
+    const ann = p2.annualRows || [];
+    const labels2 = ann.map(r=>String(r.yr));
+    let investment = 0;
+    if(ref==='all'){ investment = (state.homepage && state.homepage.portfolio.totalInvestment) || 0; }
+    else { const p = state.projects.find(x=>x.refCode===ref); investment = p ? (p.investment||0) : 0; }
+    if(chartFinAnnual) chartFinAnnual.destroy();
+    chartFinAnnual = new Chart(elAnn, {
+      type: 'line',
+      data:{ labels:labels2, datasets:[
+        {type:'line', label:'Feasibility', data:ann.map(r=>toM(r.cumPlan)), borderColor:'#2563EB', borderWidth:2, pointRadius:2, tension:.3, datalabels:{display:false}},
+        {type:'line', label:'Actual', data:ann.map(r=>toM(r.cumActualCalc)), borderColor:'#16A249', borderWidth:2.5, borderDash:[6,3], pointRadius:2, tension:.3, datalabels:{display:false}},
+        {type:'line', label:'Investment', data:ann.map(()=>toM(investment)), borderColor:'#DC2828', borderWidth:1.5, borderDash:[6,4], pointRadius:0, datalabels:{display:false}},
+      ]},
+      options: lineOpts('M฿')
+    });
+    seriesToggler(()=>chartFinAnnual, 'togFinAnnual', [{label:'Feasibility',color:'#2563EB'},{label:'Actual',color:'#16A249'},{label:'Investment',color:'#DC2828'}]);
+  }
+}
+ 
+function refCodeCellHtml(assetCode){
+  const p = state.projects.find(x=>x.refCode===assetCode) || {};
+  const budgetCode = p.budgetCode || assetCode;
+  const group = p.group || '';
+  return `<div>${budgetCode}</div>${group ? `<div style="font-size:10px; color:var(--muted); font-weight:500; margin-top:1px;">${group}</div>` : ''}`;
+}
+
+function renderFinTable(p2, scope) {
+  const currentRef = state.filterRef || "all";
+  const container = document.getElementById('finTableWrap');
+  if(!container) return;
+  container.innerHTML = `<div class="empty-row">Loading installment data…</div>`;
+  
+  // ปรับหัวเรื่องย่อยของรายงานให้สอดคล้องกับภาพหน้าจอ
+  document.getElementById('finTableSub').textContent = `การวิเคราะห์สถานะหนี้ค้างรับและงวดเรียกเก็บเงินประจำพอร์ตโฟลิโอ · ${scope}`;
+  
+  // เรียกข้อมูลโครงสร้างค่างวดการเงินจากระบบแบคเอนด์
+  call('getInstallmentData', { refCode: currentRef }, data => {
+   try {
+    const collections = data.collections || [];
+    const details = data.details || [];
+    
+    // คำนวณมูลค่ารวมของการ์ดหลักฝั่งขวา (แสดงแบบไม่ย่อหน่วย)
+    const totalCollValue = collections.reduce((s, c) => s + c.value, 0);
+    
+    // ออปชันการจัดฟอร์แมตตัวเลขให้แสดงทศนิยมเฉพาะเมื่อมีเศษ (สูงสุด 2 ตำแหน่ง)
+    const numFormatOpt = { minimumFractionDigits: 0, maximumFractionDigits: 2 };
+    
+    // 🌟 1. ประกอบโครงสร้างแผงควบคุมหลักฝั่งบน: Outstanding Collections
+    let collCardsHtml = collections.map(c => {
+      const badgeCls = c.isOverdue ? 'pill--red' : 'pill--blue';
+      const statusLabel = c.isOverdue ? 'OVERDUE' : 'IN PROGRESS';
+      const dayLabel = c.isOverdue ? 'DAYS OVERDUE' : 'DAYS LEFT';
+      const tileBg = c.isOverdue ? '#FEF2F2' : '#FFF7EA';
+      const tileText = c.isOverdue ? 'var(--red)' : 'var(--amber)';
+      
+      return `
+        <div class="kpi" style="display:flex; align-items:center; gap:16px; flex:0 1 calc(33.333% - 14px); min-width:340px; padding:14px 16px; background:#fff; border-radius:12px; border:1px solid var(--line); box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+          <!-- ฝั่งซ้าย: จำนวนวัน -->
+          <div style="flex:0 0 65px; width:65px; height:60px; background:${tileBg}; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; flex-shrink:0;">
+            <span style="font-size:18px; font-weight:800; color:${tileText}; line-height:1;">${c.days}</span>
+            <span style="font-size:9px; font-weight:700; color:${tileText}; margin-top:4px; line-height:1.1;">${dayLabel}</span>
+          </div>
+          <!-- ฝั่งกลาง: ข้อมูลรายละเอียดโครงการ -->
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <div class="custom-ref-box" style="display:inline-flex; align-items:center; flex-wrap:wrap; gap:4px; line-height:1;">
+              ${refCodeCellHtml(c.refCode)}
+            </div>
+            <div style="font-weight:700; font-size:13px; color:var(--ink); word-break:break-word; margin-top:2px; line-height:1.3;">
+              ${c.projectName}
+            </div>
+            <div style="font-size:11.5px; color:var(--muted); margin-top:1px;">Inst. ${c.installment} · ${c.period}</div>
+            <div style="font-size:11.5px; color:var(--faint);">Due ${c.dateLabel} · <span style="color:var(--ink-2); font-weight:500;">${c.invoiceNo}</span></div>
+          </div>
+          <!-- ฝั่งขวา: สถานะอยู่บน ตัวเลขอยู่ล่าง ชิดขวาขอบสุด -->
+          <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:center; gap:6px; flex-shrink:0; text-align:right; margin-left:auto; padding-left:12px;">
+            <span class="pill ${badgeCls}" style="padding:3px 8px; font-size:10px; font-weight:700; line-height:1; text-transform:uppercase; letter-spacing:0.5px;">
+              ${statusLabel}
+            </span>
+            <div class="num" style="font-size:18px; font-weight:800; color:var(--ink); white-space:nowrap; line-height:1.1;">
+              ${c.value.toLocaleString('en-US', numFormatOpt)}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    
+    if(collections.length === 0) {
+      collCardsHtml = `<div style='padding:14px; color:var(--muted); font-size:12.5px;'>ไม่มีรายการค้างรับคงเหลือในขณะนี้</div>`;
+    }
+
+    // 🌟 2. ประกอบโครงสร้างแถวตารางแบบละเอียดด้านล่าง: Installment Detail
+    let tableRowsHtml = details.map(r => {
+      const actBillBadge = r.bActualDate ? `<span class="pill pill--green" style="font-size:11px; font-weight:600;">${r.bActualDate}</span>` : '—';
+      const actCashBadge = r.cActualDate ? `<span class="pill pill--green" style="font-size:11px; font-weight:600;">${r.cActualDate}</span>` : '—';
+      
+      return `
+        <tr>
+          <!-- 🌟 เปลี่ยนเป็น projectCellHtml เพื่อดึงสไตล์สีและชื่อโครงการแบบเดียวกับหน้า Showdrilldown -->
+          <td style="text-align:left; font-weight:500; color:var(--ink);">${projectCellHtml(r.refCode)}</td>
+          <td style="text-align:center; color:var(--ink-2);">${r.installment}</td>
+          <td style="text-align:center; color:var(--muted); font-size:11.5px;">${r.workPeriod}</td>
+          <td style="text-align:center; color:var(--ink-2);">${r.bPlanDate}</td>
+          <td style="text-align:center;">${actBillBadge}</td>
+          <td class="num" style="font-weight:700; color:var(--ink-2);">${r.bActualValue != null ? r.bActualValue.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—'}</td>
+          <td style="text-align:center; color:var(--ink-2);">${r.cPlanDate}</td>
+          <td style="text-align:center;">${actCashBadge}</td>
+          <td class="num" style="font-weight:700; color:var(--ink);">${r.cActualValue != null ? r.cActualValue.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—'}</td>
+        </tr>`;
+    }).join('');
+
+    if(details.length === 0) {
+      tableRowsHtml = `<tr><td colspan="10" class="empty-row">ไม่มีฐานข้อมูลค่างวดการเงินผูกอยู่กับเงื่อนไขนี้</td></tr>`;
+    }
+
+    const totalBActualValue = details.reduce((s, r) => s + (r.bActualValue||0), 0);
+    const totalCActualValue = details.reduce((s, r) => s + (r.cActualValue||0), 0);
+
+    // 🌟 4. วาดโครงสร้าง HTML หน้ากระดานและอินเจกต์เข้าสู่ DOM หลักของระบบ
+    container.innerHTML = `
+      <!-- สไตล์ควบคุมกล่องรหัสและชื่อสถานที่ของการ์ด KPI ด้านบนให้คงความมินิมอลตามเงื่อนไขเดิม -->
+      <style>
+        .custom-ref-box > *:first-child {
+          background: #DC2828 !important;
+          color: #fff !important;
+          padding: 2px 6px !important;
+          border-radius: 4px !important;
+          font-weight: 700 !important;
+          text-decoration: none !important;
+          font-size: 11px !important;
+          display: inline-block !important;
+        }
+        .custom-ref-box > *:nth-child(2),
+        .custom-ref-box > *:first-child * {
+          color: #71717a !important;
+          background: transparent !important;
+          padding: 0 !important;
+          margin-left: 6px !important;
+          font-weight: 500 !important;
+          font-size: 12px !important;
+          display: inline-block !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+      </style>
+
+      <!-- ส่วนบอร์ดที่ 1: Outstanding Collections -->
+      <div class="panel" style="margin-bottom: 18px; border: 1px solid var(--line);">
+        <div class="panel-head" style="background:#fff; display:flex; align-items:center; justify-content:between;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="panel-icon" style="color:var(--red); background:var(--red-soft);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="dsp panel-title" style="font-size:15px; font-weight:700;">Outstanding Collections</div>
+          </div>
+          <div style="margin-left:auto; text-align:right; font-size:12px; color:var(--muted);">
+            <span class="num" style="font-size:20px; font-weight:800; color:var(--amber); margin-right:8px;">${totalCollValue.toLocaleString('en-US', numFormatOpt)}</span> ${collections.length} installment(s) outstanding
+          </div>
+        </div>
+        <div class="panel-body" style="display:flex; flex-wrap:wrap; gap:14px; justify-content:flex-start; background:#fafafa; padding:16px;">
+          ${collCardsHtml}
+        </div>
+      </div>
+
+      <!-- ส่วนตารางละเอียดที่ 2: Installment Detail -->
+      <div class="accordion open" id="finInstallmentAccordion" style="border: 1px solid var(--line); border-radius:12px; overflow:hidden;">
+        <div class="accordion-head" style="background:#fff; padding:14px 20px; display:flex; align-items:center;" onclick="document.getElementById('finInstallmentAccordion').classList.toggle('open')">
+          <div class="dsp panel-title" style="font-size:15px; font-weight:700; color:var(--ink);">Installment Detail</div>
+          <button class="btn btn--secondary" style="margin-left:auto; padding:5px 12px; font-size:12px; border-radius:6px; display:flex; align-items:center; gap:4px;">
+            <span>Collapse / Expand</span>
+            <svg class="accordion-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+        <div class="accordion-body">
+          <div class="table-wrap" style="max-height:460px; overflow-y:auto; position:relative;">
+            <table class="oma-table" id="finInstallmentTable" style="width:100%; border-collapse:collapse;">
+              <thead>
+                <tr style="background:#FFF0F0;">
+                  <!-- 🌟 ปรับหัวข้อคอลัมน์จาก Ref. Code เป็น Project ให้สอดคล้องกันตามภาพที่ 1 -->
+                  <th style="text-align:left; color:#DC2828; padding:12px 14px; position:sticky; top:0; background:#FFF0F0; z-index:2;">Project</th>
+                  <th style="text-align:center; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Installment</th>
+                  <th style="text-align:center; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Work Period</th>
+                  <th style="text-align:center; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Billing Plan Date</th>
+                  <th style="text-align:center; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Billing Actual Date</th>
+                  <th style="text-align:right; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Billing Actual Value</th>
+                  <th style="text-align:center; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Cash In Plan Date</th>
+                  <th style="text-align:center; color:#DC2828; position:sticky; top:0; background:#FFF0F0; z-index:2;">Cash In Date</th>
+                  <th style="text-align:right; color:#DC2828; padding-right:14px; position:sticky; top:0; background:#FFF0F0; z-index:2;">Cash In Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml}
+              </tbody>
+              <tfoot>
+                <tr style="background:var(--red-soft); position:sticky; bottom:0; z-index:2;">
+                  <td colspan="4" style="text-align:left; font-weight:800; color:var(--red); padding:12px 14px; text-transform:uppercase; font-size:11px; letter-spacing:.5px;">Total</td>
+                  <td></td>
+                  <td class="num" style="font-weight:800; color:var(--ink);">${totalBActualValue.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                  <td></td>
+                  <td></td>
+                  <td class="num" style="font-weight:800; color:var(--ink); padding-right:14px;">${totalCActualValue.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+   } catch(err) {
+    console.error('[renderFinTable] render error:', err);
+    container.innerHTML = `<div class="info-banner warn">Could not render the installment table — ${err && err.message ? err.message : err}</div>`;
+   }
+   bootMark('installments', 'installments');
+  }, e=>{
+    console.error('[renderFinTable:getInstallmentData] failed:', e);
+    container.innerHTML = `<div class="info-banner warn">Failed to load installment data — ${e && e.message ? e.message : String(e)}</div>`;
+    bootMark('installments', 'installments');
+  });
+}
+ 
+/* ================= PRODUCTION TAB ================= */
+// เหลือแค่ chartProdMonthly และ chartFinAnnual (ลบ chartProdAnnual ออก)
+let chartProdMonthly, chartFinAnnual; 
+
+function renderProdCharts(prod, ref, scope){
+  const allRows = prod.rows || [];
+  const rows = state.filterYear==='all' ? allRows : allRows.filter(r=>r.yr===Number(state.filterYear));
+  const labels = rows.map(r=>ymLabel(r.ym));
+  const byProject = prod.byProject || {};
+  const yearScope = state.filterYear==='all' ? scope : `${scope} · ${state.filterYear}`;
+  document.getElementById('energyChartSub').textContent = `${yearScope} · Unit: kWh · click a bar for detail`;
+  const scrollEl = scrollableWidth('scrollProdMonthly','innerProdMonthly', rows.length);
+ 
+  if(chartProdMonthly) chartProdMonthly.destroy();
+  chartProdMonthly = new Chart(document.getElementById('chartProdMonthly'), {
+    type: 'bar',
+    data:{ labels, datasets:[
+      {label:'Consumption Load', data:rows.map(r=>r.consumption||0), backgroundColor:'rgba(224,134,0,.55)', borderColor:'#E08600', borderWidth:1, borderRadius:3, datalabels:dlCfg('#E08600', true)},
+      {label:'PV', data:rows.map(r=>r.actual!=null? r.actual:null), backgroundColor:'rgba(22,162,73,.75)', borderColor:'#16A249', borderWidth:1, borderRadius:3, datalabels:dlCfg('#16A249', true)},
+      {label:'Grid', data:rows.map(r=>r.importGrid||0), backgroundColor:'rgba(37,99,235,.5)', borderColor:'#2563EB', borderWidth:1, borderRadius:3, datalabels:dlCfg('#2563EB', true)},
+      {label:'Export', data:rows.map(r=>r.exported||0), backgroundColor:'rgba(124,58,237,.5)', borderColor:'#7C3AED', borderWidth:1, borderRadius:3, datalabels:dlCfg('#7C3AED', true)},
+    ]},
+    options: barOpts('kWh', idx=>showDrilldown('drilldownProdMonthly', rows[idx].ym, byProject[rows[idx].ym], 'Energy Profile', v=>fmtNum(v)+' kWh'))
+  });
+  seriesToggler(()=>chartProdMonthly, 'togProdMonthly', [
+    {label:'Consumption Load',color:'#E08600'},{label:'PV',color:'#16A249'},
+    {label:'Grid',color:'#2563EB'},{label:'Export',color:'#7C3AED'}]);
+  autoScrollToRecent(scrollEl, rows);
+}
+ 
+/* ---------------- shared chart options ---------------- */
+function barOpts(unit, onBarClick){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index', intersect:false},
+    layout:{padding:{top:18}},
+    onHover:(evt,els)=>{ if(onBarClick) evt.native.target.style.cursor = els.length? 'pointer':'default'; },
+    onClick: onBarClick ? (evt,els)=>{ if(els.length) onBarClick(els[0].index, els[0].datasetIndex); } : undefined,
+    plugins:{ legend:{display:false},
+      tooltip:{backgroundColor:'#fff', titleColor:'#101317', bodyColor:'#3C434F', borderColor:'#EAECEF', borderWidth:1, padding:10, cornerRadius:8,
+        callbacks:{label:ctx=>{
+          if(ctx.raw===null||ctx.raw===undefined) return null;
+          const ds = ctx.dataset;
+          if(ds.actualData){
+            const actual = ds.actualData[ctx.dataIndex];
+            const lines = [' '+ds.label+' Plan: '+Math.round(ctx.raw).toLocaleString()+' '+unit];
+            if(actual!=null && actual>0) lines.push(' '+ds.label+' Actual: '+Math.round(actual).toLocaleString()+' '+unit);
+            return lines;
+          }
+          return ' '+ds.label+': '+Math.round(ctx.raw).toLocaleString()+' '+unit;
+        }}}},
+    scales:{
+      x:{ticks:{color:'#9CA3AF', font:{size:10, family:'Inter'}, maxRotation:45}, grid:{display:false}},
+      y:{ticks:{color:'#9CA3AF', font:{size:10, family:'Inter'}, callback:v=> v>=1000? (v/1000).toFixed(0)+'K': v}, grid:{color:'#F1F2F4'}}
+    }
+  };
+}
+function lineOpts(unit){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index', intersect:false},
+    layout:{padding:{top:18}},
+    plugins:{ legend:{display:false},
+      tooltip:{backgroundColor:'#fff', titleColor:'#101317', bodyColor:'#3C434F', borderColor:'#EAECEF', borderWidth:1, padding:10, cornerRadius:8,
+        callbacks:{label:ctx=>{ if(ctx.raw===null||ctx.raw===undefined) return null; return ' '+ctx.dataset.label+': '+Math.round(ctx.raw).toLocaleString()+' '+unit; }}}},
+    scales:{
+      x:{ticks:{color:'#9CA3AF', font:{size:10.5, family:'Inter'}}, grid:{display:false}},
+      y:{ticks:{color:'#9CA3AF', font:{size:10.5, family:'Inter'}, callback:v=> v>=1000? (v/1000).toFixed(0)+'K': v}, grid:{color:'#F1F2F4'}}
+    }
+  };
+}
+if (window.Chart && window.ChartDataLabels) Chart.register(ChartDataLabels);
+Chart.defaults.set('plugins.datalabels', { display:false }); // opt-in per dataset only
+
+// 🌟 เปลี่ยนสไตล์ของ Tooltip Engine ให้ถอดแบบรูปทรงและมิติมาจาก Chart.js
+document.addEventListener('DOMContentLoaded', () => {
+  let glassTip = document.getElementById('gantt-glass-tooltip');
+  if(!glassTip) {
+    glassTip = document.createElement('div');
+    glassTip.id = 'gantt-glass-tooltip';
+    // ปรับดีไซน์ตามรูปแบบ Chart.js เป๊ะๆ: พื้นหลังขาวทึบ, ขอบเทาอ่อนบางเบา, เงาฟุ้งสม่ำเสมอ
+    glassTip.style.cssText = "position:fixed; display:none; z-index:9999; padding:10px 12px; background:#ffffff; border:1px solid #EAECEF; border-radius:8px; box-shadow:0 4px 12px rgba(16,19,23,0.09); font-size:12px; font-family:inherit; pointer-events:none; line-height:1.4;";
+    document.body.appendChild(glassTip);
+  }
+  
+  const ganttContainer = document.getElementById('ganttBody');
+  if(ganttContainer) {
+    ganttContainer.addEventListener('mouseover', (e) => {
+      const target = e.target.closest('.gantt-hover-tip');
+      if(target && target.dataset.tooltip) {
+        glassTip.innerHTML = target.dataset.tooltip;
+        glassTip.style.display = 'block';
+      }
+    });
+    
+    ganttContainer.addEventListener('mousemove', (e) => {
+      const target = e.target.closest('.gantt-hover-tip');
+      if(target) {
+        glassTip.style.left = (e.clientX + 14) + 'px';
+        glassTip.style.top = (e.clientY + 14) + 'px';
+      }
+    });
+    
+    ganttContainer.addEventListener('mouseout', (e) => {
+      if(e.target.closest('.gantt-hover-tip')) {
+        glassTip.style.display = 'none';
+      }
+    });
+  }
+});
+
+</script>
+</body>
+</html>
