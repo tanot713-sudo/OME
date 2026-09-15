@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operation &amp; Maintenance Performance</title>
+
+<?!= include('Theme') ?>
+
+<style>
+/* Additions only. The Design Kit theme and palette stay as they are. */
+body,table,input,select,button{font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1}
+#ovwrap{display:grid;grid-template-columns:368px minmax(0,1fr);gap:12px;
+  align-items:stretch;margin-bottom:12px}
+@media(max-width:1100px){#ovwrap{grid-template-columns:1fr}}
+#hero{display:flex;flex-direction:column;gap:12px;height:100%}
+@media(max-width:1100px){#hero{flex-direction:row;flex-wrap:wrap}
+  #hero .hbox{flex:1 1 210px}}
+.hbox{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--sh);padding:16px 18px;flex:1 1 0;min-height:0;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.hbox .cap{font-size:13.5px;font-weight:700;letter-spacing:-.1px;color:var(--ink);
+  margin-bottom:20px}
+.bignum{font-size:38px;font-weight:800;letter-spacing:-1.6px;line-height:1}
+.bigsub{font-size:13px;font-weight:600;color:var(--ink2);margin-top:10px}
+.pipline{display:flex;gap:5px;margin-top:18px;width:100%;max-width:210px}
+.pipline i{flex:1;height:6px;border-radius:4px;background:#E7ECF3}
+.pipcap{font-size:11.5px;color:var(--ink3);font-weight:600;margin-top:8px}
+
+table.ktb{width:100%;border-collapse:collapse;font-size:12.5px}
+table.ktb thead th{background:linear-gradient(180deg,#F7F9FC,#F1F4F9);color:var(--ink2);
+  font-weight:700;font-size:12px;letter-spacing:0;
+  padding:12px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+table.ktb thead th:first-child{text-align:left;padding-left:16px}
+table.ktb tbody td{padding:12px 10px;border-bottom:1px solid var(--line2);
+  vertical-align:middle;text-align:center}
+table.ktb tbody td:first-child{text-align:left;padding-left:16px}
+table.ktb tbody tr:last-child td{border-bottom:0}
+table.ktb tbody tr:hover td{background:#FAFBFE}
+.kmcell{max-width:340px;min-width:250px}
+.mname{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.15px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mdesc{font-size:11.5px;font-weight:500;color:var(--ink3);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.freq{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+  border-radius:7px;padding:3px 9px;white-space:nowrap}
+.tgt{font-size:13px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.wgt{font-size:13px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.res{font-size:21px;font-weight:800;letter-spacing:-.7px;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.delta{font-size:10.5px;font-weight:700;margin-top:3px;white-space:nowrap}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:11px;
+  grid-auto-rows:1fr}
+.kgrid .card.k{display:flex;flex-direction:column;justify-content:center;padding:15px 16px}
+.kgrid .card.k .vl{font-size:26px}
+.dhead{display:flex;align-items:center;gap:13px;margin-bottom:15px;flex-wrap:wrap}
+.dhead h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.35px}
+.dhead .gg{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  color:#fff;font-size:19px;font-weight:800;flex:none;
+  box-shadow:0 4px 10px -4px rgba(16,24,40,.5)}
+.dhead .gg.off{background:#E3E8F0;color:var(--ink3)}
+.dhead p{margin:3px 0 0;font-size:12.5px;color:var(--ink3);font-weight:500}
+.dsec{font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--ink3);margin:16px 0 8px}
+.warnbar{font-size:11.5px;font-weight:600;color:#B26B00;background:#FFF6E6;
+  border-radius:9px;padding:9px 12px;margin-top:12px}
+.kphead{display:grid;grid-template-columns:360px minmax(0,1fr);gap:14px;align-items:stretch}
+@media(max-width:900px){.kphead{grid-template-columns:1fr}}
+.kpgauge{background:#FAFBFD;border:1px solid var(--line2);border-radius:14px;
+  padding:14px 12px 12px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center}
+.kpgauge .val{font-size:30px;font-weight:800;letter-spacing:-1.2px;line-height:1;margin-top:4px}
+.kpgauge .tg{font-size:11.5px;font-weight:600;color:var(--ink3);margin-top:6px}
+.fbwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));
+  gap:12px}
+.fb{border:1px solid var(--line);border-radius:14px;padding:14px 16px 13px;
+  border-left:4px solid var(--c);background:#fff}
+.fb .top{display:flex;align-items:center;gap:9px;margin-bottom:10px;flex-wrap:wrap}
+.fb .top b{font-size:13px;font-weight:700;color:var(--ink)}
+.fb .top s{text-decoration:none;font-size:11.5px;color:var(--ink3);font-weight:500}
+.fb .top .sc{margin-left:auto;font-size:12px;font-weight:800;color:var(--c);white-space:nowrap}
+.fb .q{margin-bottom:11px}
+.fb .q:last-child{margin-bottom:0}
+.fb .q span{display:block;font-size:10.5px;font-weight:700;letter-spacing:.3px;
+  color:var(--ink3);margin-bottom:4px}
+.fb .q p{margin:0;font-size:13px;line-height:1.65;color:var(--ink);
+  padding-left:11px;border-left:2px solid var(--line)}
+.fb .q.good p{border-left-color:#1FA85C}
+.fb .q.fix p{border-left-color:#F5A623}
+.fb .none{font-size:12px;color:var(--ink3)}
+.fchips{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+.fchips .fc{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;
+  color:#fff;border-radius:9px;padding:5px 10px;cursor:pointer}
+.fchips .fc em{font-style:normal;opacity:.75}
+.fchips .hint{font-size:11.5px;color:var(--ink3);font-weight:500}
+.dtb tbody tr.sel td{background:#EEF3FE}
+#dbreak{display:flex;flex-direction:column;height:100%}
+#dbreak .tbl-wrap{flex:1;overflow:auto;border:0;border-radius:0}
+#d_chart,#d_tbl{height:100%}
+.grid.eq>.card>.pb#d_tbl{padding:0;display:block}
+.dtb tbody tr.clik{cursor:pointer}
+.ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:620px}
+.ladder .st{border:1px solid var(--line);border-radius:12px;padding:11px 10px 10px;
+  text-align:center;background:#FBFCFE}
+.ladder .st .lt{width:26px;height:26px;border-radius:8px;margin:0 auto 7px;display:grid;
+  place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--c);opacity:.32}
+.ladder .st .cr{font-size:11px;font-weight:700;color:var(--ink3);white-space:nowrap}
+.ladder .st .nm{font-size:10px;font-weight:600;color:var(--ink4);margin-top:3px}
+.ladder .st.on{background:#fff;border-color:var(--c);box-shadow:0 6px 16px -10px var(--c)}
+.ladder .st.on .lt{opacity:1}
+.ladder .st.on .cr{color:var(--ink)}
+.ladder .st.on .act{display:block;margin-top:7px;font-size:14px;font-weight:800;color:var(--c)}
+.ladder .st .act{display:none}
+@media(max-width:640px){.ladder{grid-template-columns:repeat(5,1fr);gap:5px}
+  .ladder .st{padding:8px 4px}.ladder .st .cr{font-size:9.5px}}
+.psel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.psel select{height:40px;min-width:300px;max-width:100%;border:1px solid var(--line);
+  border-radius:11px;background:#fff;color:var(--ink);font-size:13.5px;font-weight:700;
+  padding:0 34px 0 13px;cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238D97A5' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center}
+.cfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;
+  border-top:1px solid var(--line2)}
+.cfacts .f{padding:13px 16px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.cfacts .f span{display:block;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:4px}
+.cfacts .f b{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.4;
+  display:block;word-break:break-word}
+.rollup{display:grid;grid-template-columns:auto 1fr;gap:clamp(16px,2.4vw,30px);
+  align-items:center;background:#FAFBFD;border:1px solid var(--line2);border-radius:14px;
+  padding:16px 20px;margin-bottom:14px}
+.rollup .big{text-align:center}
+.rollup .big em{font-style:normal;display:block;font-size:38px;font-weight:800;
+  letter-spacing:-1.6px;line-height:1}
+.rollup .big u{text-decoration:none;display:block;font-size:11.5px;font-weight:700;
+  color:var(--ink3);margin-top:6px}
+.rollup .steps{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rollup .st{background:#fff;border:1px solid var(--line);border-radius:11px;
+  padding:9px 13px;min-width:104px}
+.rollup .st span{display:block;font-size:10.5px;font-weight:700;color:var(--ink3);
+  margin-bottom:3px}
+.rollup .st b{font-size:16px;font-weight:800;color:var(--ink)}
+.rollup .ar{color:var(--ink4);font-size:16px;font-weight:700}
+.rollup .note{font-size:11.5px;color:var(--ink3);line-height:1.6;margin-top:10px}
+@media(max-width:820px){.rollup{grid-template-columns:1fr}}
+.cline{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--ink3);
+  margin-bottom:14px}
+.cline b{color:var(--ink2);font-weight:700}
+.ctb2 tbody td.l{min-width:260px;max-width:420px}
+.ctb2 tbody tr.grp td{background:#F4F7FB;padding:8px 16px;text-align:left;
+  font-size:11px;font-weight:800;letter-spacing:.4px;color:var(--ink2)}
+.ctb2 tbody tr.grp td:before{content:'';display:inline-block;width:3px;height:11px;
+  background:var(--blue);border-radius:2px;margin-right:8px;vertical-align:-1px}
+.ctb2{width:100%;border-collapse:collapse;font-size:12.5px}
+.ctb2 thead th{background:#FBFCFE;color:var(--ink2);
+  font-weight:700;font-size:11.5px;padding:12px 8px;border-bottom:1px solid var(--line);
+  white-space:nowrap;text-align:center}
+.ctb2 thead th.l{text-align:left;padding-left:16px}
+.ctb2 tbody td{padding:9px 8px;border-bottom:1px solid #F2F5F9;text-align:center;
+  white-space:nowrap}
+.ctb2 tbody td.l{text-align:left;padding-left:16px;white-space:normal;min-width:230px;
+  font-weight:600;color:var(--ink);line-height:1.4}
+.ctb2 tbody td.r{text-align:right}
+.ctb2 tbody tr:last-child td{border-bottom:0}
+.ctb2 tbody tr:hover td{background:#FAFBFE}
+#ask{position:fixed;inset:0;z-index:300;display:none;align-items:center;
+  justify-content:center;background:rgba(19,26,36,.45);backdrop-filter:blur(3px);
+  padding:20px}
+#ask.on{display:flex}
+#ask .box{background:#fff;border-radius:18px;max-width:430px;width:100%;
+  padding:24px 26px 20px;box-shadow:0 30px 70px -20px rgba(16,24,40,.5);
+  animation:askin .16s ease}
+@keyframes askin{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1}}
+#ask h4{margin:0 0 9px;font-size:16.5px;font-weight:800;letter-spacing:-.2px;color:var(--ink)}
+#ask p{margin:0 0 20px;font-size:13px;line-height:1.65;color:var(--ink2)}
+#ask p b{color:var(--ink);font-weight:700}
+#ask .btns{display:flex;gap:9px;justify-content:flex-end}
+#ask button{height:39px;padding:0 18px;border-radius:11px;font-size:13px;
+  font-weight:700;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink2)}
+#ask button:hover{background:#F5F7FB}
+#ask button.go{border:0;background:#D64545;color:#fff;
+  box-shadow:0 8px 18px -10px rgba(214,69,69,.9)}
+#ask button.go:hover{background:#C13B3B}
+.pstat{background:#FBFCFE;border-radius:16px;padding:14px 16px;margin-top:14px}
+.pstat .grp{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:7px 0}
+.pstat .grp+.grp{border-top:1px solid #EFF3F8}
+.pstat .lb{width:150px;flex:none;font-size:11.5px;font-weight:700;color:var(--ink3);
+  padding-top:5px}
+.pstat .lb i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:50%;
+  margin-right:7px;vertical-align:0}
+.pstat .chips2{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.pchip{font-size:11.5px;font-weight:700;border-radius:9px;padding:5px 11px;cursor:pointer;
+  border:1px solid transparent}
+.pchip.filed{color:#fff}
+.pchip.wait{background:#FFF6E6;color:#B26B00;border-color:#F3DFB8}
+.pchip.ended{background:#F2F5F9;color:#8D97A5}
+.pchip.out{background:#FDEDEC;color:#A32B2B;border-color:#F3C9C6}
+.pstat .none{font-size:11.5px;color:var(--ink4);padding-top:5px}
+.ebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.elab{font-size:12px;font-weight:700;color:var(--ink3);white-space:nowrap}
+#topright .ebar select{height:38px;min-width:180px}
+.enote{font-size:12.5px;color:var(--ink2);background:#F6F9FC;border-radius:11px;
+  padding:11px 15px;margin-bottom:14px;line-height:1.55}
+.enote b{color:var(--ink);font-weight:800}
+.ebar select:disabled{opacity:.5}
+.ebar select{height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;
+  color:var(--ink);font-size:13px;font-weight:700;padding:0 36px 0 14px;cursor:pointer;
+  appearance:none;min-width:210px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238D97A5' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 13px center}
+.ebar select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,107,240,.12)}
+.esum{text-align:right;font-size:12.5px;font-weight:700;color:var(--ink);margin-right:6px}
+.esum s{text-decoration:none;display:block;font-size:11.5px;font-weight:500;
+  color:var(--ink3);margin-top:2px}
+.eacts{display:flex;gap:9px;align-items:center;justify-content:flex-end;
+  flex-wrap:wrap;margin-top:10px}
+.esave{height:40px;padding:0 22px;border:0;border-radius:12px;cursor:pointer;
+  background:#1FA85C;color:#fff;font-size:13px;font-weight:700;
+  box-shadow:0 8px 18px -10px rgba(31,168,92,.9)}
+.esave:hover:not(:disabled){background:#1B9552}
+.esave:disabled{background:#EDF1F6;color:#A9B3C1;cursor:default;box-shadow:none}
+.estat{font-size:10.5px;font-weight:700;margin-top:5px;display:block}
+.estat.saved{color:#7C8AA0}
+.estat.unsaved{color:#B26B00}
+.eclr{color:#C0392B;font-weight:700;cursor:pointer;text-decoration:underline;margin-left:5px}
+.eclr:hover{color:#8E2A20}
+.ewipe{height:40px;padding:0 16px;border:1px solid var(--line);border-radius:12px;
+  background:#fff;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer}
+.ewipe:hover{background:#FFF5F5;border-color:#F3C9C6;color:#B03A2E}
+.erow{display:grid;grid-template-columns:34px minmax(220px,1fr) 128px 132px 60px minmax(180px,1fr);
+  gap:14px;align-items:center;padding:14px 18px;border-top:1px solid var(--line2)}
+.erow:first-child{border-top:0}
+.erow:hover{background:#FAFBFE}
+.erow .no{font-size:11.5px;font-weight:700;color:var(--ink4);text-align:center}
+.erow .nm{font-size:13px;font-weight:700;color:var(--ink);line-height:1.4}
+.erow .nm s{text-decoration:none;display:block;font-size:11px;font-weight:500;
+  color:var(--ink3);margin-top:3px}
+.erow .tg{font-size:12px;font-weight:600;color:var(--ink3)}
+.erow input{width:100%;height:38px;border:1px solid var(--line);border-radius:10px;
+  background:#fff;padding:0 11px;font-size:13px;font-weight:700;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.erow input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,107,240,.12)}
+.erow input.ev{font-weight:500;font-size:12px}
+.erow input.dirty{border-color:var(--amber);background:#FFFCF4}
+.erow .gcell{text-align:center}
+.erow .gp{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;
+  border-radius:50%;color:#fff;font-size:12.5px;font-weight:800}
+.erow .gp.off{background:#EEF1F6;color:#C2C9D4}
+.ehead{display:grid;grid-template-columns:34px minmax(220px,1fr) 128px 132px 60px minmax(180px,1fr);
+  gap:14px;padding:12px 18px;background:#FBFCFE;border-bottom:1px solid var(--line);
+  font-size:11.5px;font-weight:700;color:var(--ink3)}
+.ehead div:nth-child(1),.ehead div:nth-child(5){text-align:center}
+.etoast{position:sticky;bottom:12px;margin-top:12px;padding:12px 16px;border-radius:12px;
+  font-size:12.5px;font-weight:700}
+.etoast.ok{background:#E9F7EF;color:#15733F}
+.etoast.err{background:#FDEDEC;color:#A32B2B}
+@media(max-width:900px){
+  .ehead{display:none}
+  .erow{grid-template-columns:1fr 1fr;gap:10px}
+  .erow .nm{grid-column:1/-1}
+  .erow .ev{grid-column:1/-1}
+}
+.tabrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.tabrow #tabs{margin-bottom:0}
+.tabrow #topright{margin-left:auto}
+.psel2{height:38px;min-width:250px;max-width:100%;border:1px solid var(--line);
+  border-radius:11px;background:#fff;color:var(--ink);font-size:13px;font-weight:700;
+  padding:0 36px 0 14px;cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238D97A5' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 13px center}
+.psel2:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,107,240,.12)}
+.delta{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;
+  margin-left:9px;vertical-align:2px}
+.ccard{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--sh);padding:16px 18px;margin-bottom:12px}
+.kgrid .card.k .sb{flex-wrap:wrap}
+.kgrid .card.k .sb .delta{margin-left:7px;font-size:11px;white-space:nowrap}
+.chdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:0 2px 12px}
+.chdr .sc{font-size:24px;font-weight:800;letter-spacing:-.9px}
+.chdr .nm{font-size:15px;font-weight:700;color:var(--ink)}
+.chdr .mm{font-size:11.5px;color:var(--ink3);font-weight:500}
+.chdr .mm b{color:var(--ink2);font-weight:700}
+.softgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0;
+  background:#FAFBFD;border-radius:16px;overflow:hidden}
+.softgrid .c{padding:15px 18px;border-right:1px solid #EEF2F7}
+.softgrid .c:last-child{border-right:0}
+.softgrid .c span{display:block;font-size:11px;font-weight:700;color:var(--ink3);
+  margin-bottom:6px}
+.softgrid .c em{font-style:normal;font-size:27px;font-weight:800;letter-spacing:-1.1px;
+  line-height:1;display:block}
+.softgrid .c u{text-decoration:none;display:block;font-size:11.5px;color:var(--ink3);
+  font-weight:500;margin-top:7px;line-height:1.45}
+@media(max-width:760px){.softgrid .c{border-right:0;border-bottom:1px solid #EEF2F7}}
+.trendbox{margin-top:14px;background:#FBFCFE;border-radius:16px;padding:12px 14px 6px}
+.trendbox .hd{display:flex;align-items:baseline;gap:10px;margin:0 4px 4px}
+.trendbox .hd b{font-size:12px;font-weight:700;color:var(--ink2)}
+.trendbox .hd span{margin-left:auto;font-size:11px;color:var(--ink4)}
+.roll2{display:flex;align-items:center;gap:clamp(14px,2.2vw,26px);flex-wrap:wrap;
+  background:linear-gradient(135deg,#FAFBFD,#F3F7FC);border:0;
+  border-radius:18px;padding:16px 20px}
+.roll2 .big{line-height:1}
+.roll2 .big em{font-style:normal;font-size:36px;font-weight:800;letter-spacing:-1.6px}
+.roll2 .big u{text-decoration:none;display:block;font-size:11px;font-weight:700;
+  color:var(--ink3);margin-top:6px}
+.roll2 .calc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;
+  color:var(--ink2);font-weight:600}
+.roll2 .calc b{font-weight:800;color:var(--ink)}
+.roll2 .calc .op{color:var(--ink4);font-weight:700}
+.roll2 .gpill{display:inline-flex;align-items:center;gap:6px;background:var(--c);
+  color:#fff;border-radius:99px;padding:4px 12px;font-size:12px;font-weight:800}
+.roll2 .meta{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--ink3);
+  margin-top:9px}
+.roll2 .meta b{color:var(--ink2);font-weight:700}
+.roll2 .rhs{flex:1;min-width:260px}
+
+.ctb2 tbody td.num{font-weight:800;font-variant-numeric:tabular-nums;font-size:12px;
+  border-radius:11px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+.ctb2 tbody td.blank{color:#CBD2DC;font-weight:600}
+.ctb2 tbody td.hasev{cursor:pointer;position:relative}
+.ctb2 tbody td.hasev:hover{filter:brightness(.96)}
+.evdot{position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;
+  background:currentColor;opacity:.75}
+.ctb2 tbody td.seq{width:38px;text-align:center;color:var(--ink4);font-weight:700;
+  font-size:11.5px}
+.ctb2 thead th.mth{font-weight:700;color:var(--ink3);font-size:11px}
+.ctb2 tbody tr:hover td{background-color:rgba(47,107,240,.04)}
+.mval{display:inline-flex;align-items:center;justify-content:center;min-width:52px;
+  height:28px;padding:0 9px;border-radius:9px;font-size:11.5px;font-weight:800;
+  font-variant-numeric:tabular-nums}
+.mval.na{background:#F4F6FA;color:#C7CEDA;font-weight:600;min-width:34px}
+.glegend{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding:12px 16px 0;
+  font-size:11px;color:var(--ink3);font-weight:600}
+.glegend i{font-style:normal;display:inline-flex;align-items:center;gap:5px}
+.glegend i b{width:9px;height:9px;border-radius:50%;display:inline-block}
+.mchip{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;
+  border-radius:50%;color:#fff;font-size:10.5px;font-weight:800}
+.mchip.na{background:#F1F4F9;color:#C2C9D4;font-weight:600}
+.grpband{background:#F6F8FB;font-size:11px;font-weight:800;letter-spacing:.4px;
+  color:var(--ink3);padding:9px 16px}
+.dtb{width:100%;border-collapse:collapse;font-size:12.5px}
+.dtb thead th{background:linear-gradient(180deg,#F7F9FC,#F1F4F9);color:var(--ink2);
+  font-weight:700;font-size:11.5px;padding:12px 18px;border-bottom:1px solid var(--line);
+  white-space:nowrap}
+.dtb tbody td{padding:12px 18px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.dtb .wrapcell{white-space:normal;min-width:190px;max-width:300px;
+  font-size:11.5px;color:var(--ink2);line-height:1.5}
+.rcode{font-size:11.5px;font-weight:700;color:var(--ink2);
+  background:#F1F4F9;border-radius:6px;padding:2px 8px;display:inline-block}
+.dtb tbody tr:last-child td{border-bottom:0}
+.dtb tbody tr:hover td{background:#FAFBFE}
+.dtb .l{text-align:left}.dtb .r{text-align:right}.dtb .c{text-align:center}
+.dtb .rc{font-size:10.5px;font-weight:700;color:var(--ink3);display:block;margin-top:2px}
+.dtb .pn{font-weight:700;color:var(--ink)}
+.dtb .pn.unk{color:#B26B00}
+.dtb .nofile{display:inline-block;margin-left:8px;font-size:10px;font-weight:700;
+  color:#B26B00;background:#FFF6E6;border-radius:6px;padding:1px 7px}
+.dtb .pn.unk:after{content:' · not in register';font-size:10px;font-weight:600}
+/* one grey track holding the whole set, so it reads as a single control
+   and never looks like a second row of page tabs */
+.chips{display:inline-flex;gap:2px;flex-wrap:wrap;align-items:center;margin-bottom:12px;
+  background:#EBEFF5;border-radius:13px;padding:4px}
+.chips button{border:0;background:transparent;border-radius:10px;
+  padding:8px 15px;font-size:12px;font-weight:600;color:var(--ink2);cursor:pointer;
+  transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.chips button:hover{background:rgba(255,255,255,.75);color:var(--ink)}
+.chips button.on{color:#fff;font-weight:700;box-shadow:0 4px 10px -4px rgba(16,24,40,.6)}
+.chips button.on:hover{color:#fff}
+.chips button.dis{opacity:.42;cursor:default}
+.chips button.dis:hover{background:transparent;color:var(--ink2)}
+.chips button.sel em{font-style:normal;opacity:.7;margin-left:4px}
+.midhead .ph{justify-content:center;text-align:center}
+.midhead .ph .ic{display:none}
+.mlist{margin-top:12px}
+.mlrow{display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--line2);font-size:12.5px}
+.mlrow:last-child{border-bottom:0}
+.mlrow .mo{width:70px;flex:none;font-weight:700;color:var(--ink2)}
+.mlrow .rv{flex:1;font-weight:700;color:var(--ink)}
+.mlrow .pt{font-size:10.5px;font-weight:700;color:var(--amber)}
+.ctb{width:100%;border-collapse:collapse;font-size:12.5px}
+.ctb thead th{background:linear-gradient(180deg,#F7F9FC,#F1F4F9);color:var(--ink2);
+  font-weight:700;font-size:12px;padding:12px 10px;border-bottom:1px solid var(--line);
+  text-align:center;white-space:nowrap}
+.ctb thead th:first-child{text-align:left;padding-left:16px}
+.ctb tbody td{padding:11px 10px;border-bottom:1px solid var(--line2);text-align:center}
+.ctb tbody td:first-child{text-align:left;padding-left:16px;font-weight:600;color:var(--ink)}
+.ctb tbody tr:last-child td{border-bottom:0}
+.ctb tbody tr:hover td{background:#FAFBFE}
+.cg{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:8px;color:#fff;font-size:12px;font-weight:800}
+.cg.off{background:#EFF2F6;color:#C2C9D4;font-weight:600}
+.band{position:relative;min-width:300px;padding:13px 0 20px}
+.band .lb{display:flex}
+.band .lb span{flex:1;text-align:center;font-size:9.5px;font-weight:700;color:var(--ink3);
+  white-space:nowrap;overflow:hidden}
+.band .bar{display:flex;height:15px;border-radius:9px;overflow:hidden;margin-top:4px}
+.band .bar i{flex:1;height:100%}
+.band .pin{position:absolute;bottom:0;transform:translateX(-50%);display:flex;
+  flex-direction:column;align-items:center}
+.band .pin u{text-decoration:none;width:0;height:0;border-left:5px solid transparent;
+  border-right:5px solid transparent;border-bottom:6px solid var(--c)}
+.band .pin b{font-size:10px;font-weight:800;color:#fff;background:var(--c);
+  border-radius:99px;padding:1px 9px;line-height:1.5}
+.gbig{display:inline-flex;align-items:center;gap:7px}
+.gbig i{font-style:normal;width:30px;height:30px;border-radius:9px;display:grid;
+  place-items:center;color:#fff;font-size:13.5px;font-weight:800}
+.gbig i.off{background:#E3E8F0;color:var(--ink3)}
+.stat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;
+  color:var(--ink2);white-space:nowrap}
+.stat b{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.asof{font-size:12.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.asof s{text-decoration:none;display:block;font-size:10.5px;font-weight:600;
+  color:var(--amber);margin-top:3px;white-space:normal;max-width:170px;line-height:1.4;
+  margin-left:auto;margin-right:auto}
+.gr{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:50%;color:#fff;font-size:11.5px;font-weight:800;
+  box-shadow:0 2px 5px -2px rgba(16,24,40,.45)}
+.gr.off{background:#E3E8F0;color:var(--ink3)}
+.lrow{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line2)}
+.lrow:last-child{border-bottom:0}
+.lrow .sq{width:9px;height:9px;border-radius:3px;flex:none}
+.lrow .tx{flex:1;min-width:0}
+.lrow .tx b{display:block;font-size:12.5px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .tx s{text-decoration:none;font-size:11px;color:var(--ink3)}
+.lrow .vv{font-size:13px;font-weight:700;white-space:nowrap}
+.crow{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line2)}
+.crow:last-child{border-bottom:0}
+.crow .nm{width:132px;flex:none;font-size:12.5px;font-weight:600;color:var(--ink2)}
+.crow .tr{flex:1;min-width:60px;height:7px;border-radius:4px;background:#EEF1F6;overflow:hidden}
+.crow .tr span{display:block;height:100%;border-radius:4px;background:var(--blue)}
+.crow .vv{font-size:11.5px;font-weight:600;color:var(--ink3);white-space:nowrap}
+@media(max-width:560px){.crow{flex-wrap:wrap}.crow .nm{width:100%}}
+.mtrack{display:flex;gap:4px;flex-wrap:wrap;margin-top:12px}
+.mtrack>div{flex:1 0 42px}
+.mcell{height:26px;border-radius:7px;display:grid;place-items:center;
+  font-size:10.5px;font-weight:700;color:#fff}
+.kv2{display:flex;justify-content:space-between;gap:14px;padding:8px 0;
+  border-bottom:1px solid var(--line2);font-size:12.5px}
+.kv2:last-child{border-bottom:0}
+.kv2 span{color:var(--ink3);font-weight:500}
+.kv2 b{font-weight:600;text-align:right}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="topfix">
+
+    <div class="card" id="head">
+      <div class="badge">OMA</div>
+      <div>
+        <h1>Operation &amp; Maintenance Performance</h1>
+        <p>Department KPI Scorecard - 2026</p>
+      </div>
+      <div class="rt"><b id="upd">—</b><span id="role">Last Updated</span></div>
+    </div>
+
+    <div class="tabrow"><div id="tabs"></div><div id="topright"></div></div>
+
+  </div>
+
+  <div id="view"></div>
+</div>
+
+<div id="ask" onclick="if(event.target===this) askClose()"><div class="box">
+  <h4 id="askTitle"></h4>
+  <p id="askText"></p>
+  <div class="btns">
+    <button onclick="askClose()">Cancel</button>
+    <button class="go" id="askGo">Remove</button>
+  </div>
+</div></div>
+
+<div id="tip"></div>
+<div id="load"><div class="spin"></div></div>
+
+<?!= include('Kit') ?>
+
+<script>
+/* ==========================================================================
+   APP CODE
+   ========================================================================== */
+
+/* the portal signs people in and hands the address over in the url */
+var PORTAL_USER = '<?= portalUser ?>';
+
+var D = null, FACTS = [], TAB = 'ov';
+var F = {}, FLAB = {};
+
+var TABS = [['ov','Overview','grid',C.red],
+            ['dept','KPI Detail','pulse',C.blue],
+            ['proj','Projects','box',C.teal],
+            ['entry','Data Entry','list',C.amber]];
+
+/* grades stay inside the Design Kit palette */
+var GC   = { 5:shade(C.green), 4:C.green, 3:C.amber, 2:C.orange, 1:C.red };
+var GLBL = { 5:'Excellent', 4:'Good', 3:'On target', 2:'Watch', 1:'Action needed' };
+var GLET = { 5:'A', 4:'B', 3:'C', 2:'D', 1:'E' };
+var FQC  = { 'Monthly':C.blue, 'Quarterly':C.teal, 'Half-year':C.purple, 'Yearly':C.ink };
+var NOGRADE = '#9AA6B6';
+var MTH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+TIP_COUNT_LABEL = 'Records';
+
+function gcol(g){ return GC[g] || NOGRADE; }
+function gr(g){
+  return (g===null||g===undefined)
+    ? '<span class="gr off">–</span>'
+    : '<span class="gr" style="background:'+gcol(g)+'">'+GLET[g]+'</span>';
+}
+/* the English half of a bilingual label, with any orphan bracket cleaned up */
+function enOnly(t){
+  if(!t) return '';
+  var out = String(t)
+    .replace(/[\-\u2013\u00B7]\s*[^\-\u2013\u00B7]*[\u0E00-\u0E7F][^\-\u2013\u00B7]*$/, ' ')
+    .replace(/\([^()]*[\u0E00-\u0E7F][^()]*\)/g, ' ')
+    .replace(/[\u0E00-\u0E7F]+/g, ' ');
+
+  var opens = (out.match(/\(/g)||[]).length, closes = (out.match(/\)/g)||[]).length;
+  if(closes > opens) out = out.replace(/\)/g, function(m){
+    return closes-- > opens ? '' : m; });
+  if(opens > closes) out = out.replace(/\(/g, function(m){
+    return opens-- > closes ? '' : m; });
+
+  out = out.replace(/\(\s*\)/g, ' ')
+    .replace(/\s*([),])/g, '$1')
+    .replace(/\(\s*/g, '(')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/[\s\-\u2013\u00B7,]+$/, '')
+    .replace(/^[\s\-\u2013\u00B7,]+/, '')
+    .trim();
+  return out;
+}
+
+function isVariance(k){ return k && k.unit==='Day' && /due\s*date/i.test(k.target||''); }
+/* wraps a card value in the colour it earned */
+function inColour(v, col){ return '<span style="color:'+col+'">'+v+'</span>'; }
+
+/* a single reading in days is always a whole day, while an average of
+   several is not, so trailing zeros are dropped instead of forcing a format */
+function trimNum(v, dp){
+  var n = Math.round(v*Math.pow(10,dp))/Math.pow(10,dp);
+  return String(n);
+}
+
+function nfmt(v,u,signed){
+  if(v===null||v===undefined||v==='') return '–';
+  if(u==='%') return (Math.round(v*100)/100).toFixed(2)+'%';
+  var n = trimNum(v, 2);
+  if(u==='Day') return ((signed && v>0)?'+':'')+n+'D';
+  return n;
+}
+function tidy(n){
+  var r = Math.round(n*10)/10;
+  return (Math.abs(r)>=1000) ? r.toLocaleString() : r;
+}
+function mlabel(p){
+  if(!p) return '';
+  if(p.indexOf('YTD')>-1) return 'Year to date';
+  if(p.indexOf('-H')>-1)  return 'Round '+p.split('-H')[1];
+  return (MTH[parseInt(p.split('-')[1],10)-1]||p)+' '+p.split('-')[0];
+}
+function mshort(p){
+  if(p.indexOf('YTD')>-1) return 'YTD';
+  if(p.indexOf('-H')>-1)  return 'R'+p.split('-H')[1];
+  return MTH[parseInt(p.split('-')[1],10)-1] || p;
+}
+function isSummary(p){ return p.indexOf('YTD')>-1 || p.indexOf('-H')>-1; }
+
+function deptDefs(){
+  return D.headlineOrder.map(function(k){
+    return D.kpis.filter(function(x){ return x.kpiId===k; })[0];
+  }).filter(Boolean);
+}
+function deptRows(kid){ return D.dept.filter(function(d){ return d.kpiId===kid; }); }
+function headline(kid){
+  var s = deptRows(kid).filter(function(d){ return isSummary(d.period); });
+  if(!s.length) return null;
+  var done = s.filter(function(d){ return d.graded; });
+  return done.length ? done[done.length-1] : s[s.length-1];
+}
+function inFlight(kid){
+  var h = headline(kid);
+  if(!h || !h.graded) return null;
+  var later = deptRows(kid).filter(function(d){
+    return isSummary(d.period) && d.period > h.period && !d.graded; });
+  return later.length ? later[later.length-1] : null;
+}
+/* an unfinished month is not a result yet, so it stays out of the charts
+   and out of anything that compares months */
+function months(kid){
+  return deptRows(kid).filter(function(d){
+      return !isSummary(d.period) && d.monthClosed !== false; })
+    .sort(function(a,b){ return a.period<b.period?-1:1; });
+}
+
+function monthsWithOpen(kid){
+  return deptRows(kid).filter(function(d){ return !isSummary(d.period); })
+    .sort(function(a,b){ return a.period<b.period?-1:1; });
+}
+function solidMonths(kid){
+  return months(kid).filter(function(m){ return !m.partialMonth; });
+}
+
+/* ==========================================================================
+   PROGRESS TRACK — bands behind, fill to the reading, marker on top
+   ========================================================================== */
+function track(kid, actual, graded, grade, kdef){
+  var labels = [1,2,3,4,5].map(function(g){
+    return '<span>'+esc(bandText(kid,g,kdef.unit))+'</span>'; }).join('');
+
+  var bar = [1,2,3,4,5].map(function(g){
+    return '<i style="background:'+(graded ? GC[g] : tint(GC[g],.28))+'"></i>'; }).join('');
+
+  var pin = '';
+  if(graded){
+    var left = (grade-0.5)/5*100;
+    pin = '<div class="pin" style="left:'+left+'%;--c:'+gcol(grade)+'">'+
+          '<u></u><b>'+GLET[grade]+'</b></div>';
+  }
+
+  var tip = '<b>'+esc(kdef.shortName||kdef.kpiId)+'</b><s>Target '+esc(kdef.target)+'</s>'+
+    [5,4,3,2,1].map(function(g){
+      return '<div class="kv"><span>'+g+' · '+GLET[g]+'</span><em>'+
+        esc(bandText(kid,g,kdef.unit))+'</em></div>'; }).join('');
+
+  return '<div class="band" data-tip="'+esc(tip)+'">'+
+    '<div class="lb">'+labels+'</div>'+
+    '<div class="bar">'+bar+'</div>'+ pin +'</div>';
+}
+
+/* the band shown in the tooltip, in the measure own unit */
+function bandText(kid, g, unit){
+  var bd = D.bands[kid];
+  if(!bd) return '-';
+  var rule = null, r2 = null;
+  bd.rules.forEach(function(r){
+    if(r.grade===g) rule = r;
+    if(r.grade===2) r2 = r;
+  });
+  var sfx = unit==='%' ? '%' : (unit==='Day' ? 'D' : '');
+  if(g===1){
+    if(!r2) return '-';
+    var flip = { '>=':'<', '>':'\u2264', '<=':'>', '<':'\u2265' }[r2.op] || '';
+    return flip+' '+tidy(r2.thr)+sfx;
+  }
+  if(!rule) return '-';
+  var op = { '>=':'\u2265', '>':'>', '<=':'\u2264', '<':'<', '=':'=' }[rule.op] || rule.op;
+  return op+' '+tidy(rule.thr)+sfx;
+}
+
+/* ---------- boot ---------- */
+/* the entry tab only exists for people who may save */
+function visibleTabs(){
+  return TABS.filter(function(t){
+    return t[0]!=='entry' || !D || D.canEdit !== false;
+  });
+}
+
+function drawTabs(){
+  document.getElementById('tabs').innerHTML = visibleTabs().map(function(t){
+    return '<button class="tb'+(t[0]===TAB?' on':'')+'" style="--c:'+t[3]+';--tint:'+tint(t[3],.11)+'"'+
+      ' onclick="setTab(\''+t[0]+'\')"><span style="display:flex">'+ico(t[2])+'</span>'+t[1]+'</button>';
+  }).join('');
+}
+function boot(){
+  drawTabs();
+  window.addEventListener('resize', function(){
+    clearTimeout(window._rz); window._rz = setTimeout(render, 220); });
+  kitInit();
+}
+function setTab(t){
+  if(t==='entry' && D && D.canEdit===false) t = 'ov';
+  if(t!=='entry' && STALE){
+    refreshIfStale(function(){ setTab(t); });
+    return;
+  }
+  TAB = t; drawTabs();
+  render(); window.scrollTo({top:0,behavior:'smooth'});
+  if(window._stick) window._stick();
+}
+function apply(){ render(); if(window._stick) window._stick(); }
+
+function render(){
+  if(TAB==='entry' && D && D.canEdit===false) TAB = 'ov';
+  FREG = [];
+  var tr = document.getElementById('topright');
+  if(tr && TAB!=='proj' && TAB!=='entry') tr.innerHTML = '';
+  var el = document.getElementById('view');
+  if(TAB==='ov')        ovView(el);
+  else if(TAB==='dept') deptView(el);
+  else if(TAB==='proj') projView(el);
+  else                  entryView(el);
+}
+
+/* ==========================================================================
+   OVERVIEW
+   ========================================================================== */
+var RSEL = { mode:'kpi', kpi:'MA-06', period:null };
+
+function monthSlots(){
+  var out = [];
+  for(var i=1;i<=12;i++){
+    var key = D.year+'-'+(i<10?'0':'')+i;
+    out.push({ key:key, month:MTH[i-1], label:MTH[i-1]+'-'+D.year });
+  }
+  return out;
+}
+
+function axis(s, w, L, R, T, ih){
+  [0,1,2,3,4,5].forEach(function(v){
+    var y = T + ih*(1 - v/5);
+    if(v===3) return;
+    s.push('<line x1="'+L+'" x2="'+(w-R)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+
+      '" stroke="'+(v===0?'#AEB8C6':'#DFE5EE')+'" stroke-width="'+(v===0?1.4:1)+
+      '" shape-rendering="crispEdges"/>'+
+      '<text x="'+(L-9)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-size="10.5" '+
+      'font-weight="700" fill="#8D97A5">'+v+'</text>');
+  });
+
+  s.push('<line x1="'+L+'" x2="'+L+'" y1="'+T+'" y2="'+(T+ih).toFixed(1)+
+    '" stroke="#AEB8C6" stroke-width="1.4" shape-rendering="crispEdges"/>'+
+    '<text x="2" y="'+(T-11)+'" text-anchor="start" font-size="10" '+
+    'font-weight="700" fill="#8D97A5">Grade</text>');
+
+  var ty = T + ih*(1 - 3/5);
+  s.push('<line x1="'+L+'" x2="'+(w-R)+'" y1="'+ty.toFixed(1)+'" y2="'+ty.toFixed(1)+
+    '" stroke="#151B23" stroke-width="1.6" stroke-dasharray="7 5" opacity=".62"/>'+
+    '<text x="'+(L-9)+'" y="'+(ty+4).toFixed(1)+'" text-anchor="end" font-size="10.5" '+
+    'font-weight="800" fill="#151B23">3</text>');
+}
+
+/* Department score month by month, from the measures that report monthly */
+var TSTYLE = 'line';
+
+function trendChart(){
+  var kids = deptDefs().filter(function(k){
+    return (k.frequency||'').toLowerCase()==='monthly'; });
+  var WD = Math.max(520, W('trendbox'));
+
+  var rows = {};
+  kids.forEach(function(k){
+    months(k.kpiId).forEach(function(m){
+      if(m.grade===null||m.grade===undefined) return;
+      (rows[m.period] = rows[m.period] || []).push(
+        { w:(k.weight||1), g:m.grade, name:k.shortName, kpiId:k.kpiId,
+          actual:m.actual, unit:k.unit, k:k });
+    });
+  });
+
+  var w = WD, h = 274, L = 32, R = 12, T = 26, B = 54;
+  var iw = w-L-R, ih = h-T-B, step = iw/12, bw = Math.min(40, step-14);
+  function Y(v){ return T + ih*(1 - v/5); }
+
+  var out = [];
+  axis(out, w, L, R, T, ih);
+  out.push('<text x="'+(w-R)+'" y="'+(Y(3)-7).toFixed(1)+'" text-anchor="end" font-size="10" '+
+    'font-weight="700" fill="#8D97A5">Target</text>');
+
+  var pts = monthSlots().map(function(sl,i){
+    var list = rows[sl.key] || [];
+    var ws = 0, sum = 0;
+    list.forEach(function(x){ ws += x.w; sum += x.g*x.w; });
+    return { key:sl.key, label:sl.label, cx:L+step*i+step/2,
+             score: ws ? sum/ws : null };
+  });
+
+  pts.forEach(function(pt){
+    out.push('<text x="'+pt.cx.toFixed(1)+'" y="'+(h-26)+'" text-anchor="middle" '+
+      'font-size="9.5" font-weight="700" letter-spacing="-.2" fill="#8D97A5">'+
+      pt.label+'</text>');
+  });
+
+  if(TSTYLE==='line'){
+    /* the line stops at the last month with data, so an empty rest of the
+       year never looks like a reading of zero */
+    var have = pts.filter(function(p){ return p.score!==null; });
+    if(have.length>1){
+      var d = have.map(function(p,i){
+        return (i?'L':'M')+p.cx.toFixed(1)+' '+Y(p.score).toFixed(1); }).join('');
+      out.push('<path d="'+d+'L'+have[have.length-1].cx.toFixed(1)+' '+Y(0)+
+        'L'+have[0].cx.toFixed(1)+' '+Y(0)+'Z" fill="rgba(47,107,240,.06)"/>');
+      out.push('<path d="'+d+'" fill="none" stroke="#8D97A5" stroke-width="2.4" '+
+        'stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    have.forEach(function(pt){
+      var g = Math.round(pt.score), y = Y(pt.score);
+      var sel = RSEL.mode==='month' && RSEL.period===pt.key;
+      out.push('<circle cx="'+pt.cx.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(sel?9:7)+
+        '" fill="#fff"/>'+
+        '<circle cx="'+pt.cx.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(sel?7:5.4)+
+        '" fill="'+gcol(g)+'" style="cursor:pointer" '+
+        'onclick="pickMonth(\''+pt.key+'\')"/>'+
+        (sel ? '<circle cx="'+pt.cx.toFixed(1)+'" cy="'+y.toFixed(1)+
+          '" r="11" fill="none" stroke="#151B23" stroke-width="2"/>' : '')+
+        '<text x="'+pt.cx.toFixed(1)+'" y="'+(y-14).toFixed(1)+'" text-anchor="middle" '+
+        'font-size="10.5" font-weight="800" fill="'+gcol(g)+'" pointer-events="none">'+
+        pt.score.toFixed(2)+'</text>');
+    });
+  }else{
+    pts.forEach(function(pt){
+      if(pt.score===null){
+        out.push('<rect x="'+(pt.cx-bw/2).toFixed(1)+'" y="'+(Y(0)-4)+'" width="'+bw+
+          '" height="4" rx="2" fill="#EEF1F6"/>');
+        return;
+      }
+      var g = Math.round(pt.score), y = Y(pt.score), bh = Y(0)-y;
+      var sel = RSEL.mode==='month' && RSEL.period===pt.key;
+      out.push('<rect x="'+(pt.cx-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+
+        '" height="'+bh.toFixed(1)+'" rx="5" fill="'+gcol(g)+'" style="cursor:pointer" '+
+        'onclick="pickMonth(\''+pt.key+'\')"/>'+
+        (sel ? '<rect x="'+(pt.cx-bw/2-3).toFixed(1)+'" y="'+(y-3).toFixed(1)+'" width="'+(bw+6)+
+          '" height="'+(bh+6).toFixed(1)+'" rx="7" fill="none" stroke="#151B23" stroke-width="2"/>' : '')+
+        '<text x="'+pt.cx.toFixed(1)+'" y="'+(y-6).toFixed(1)+'" text-anchor="middle" '+
+        'font-size="10.5" font-weight="800" fill="'+gcol(g)+
+        '" pointer-events="none">'+pt.score.toFixed(2)+'</text>');
+    });
+  }
+
+  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" height="'+h+'" '+
+         'preserveAspectRatio="xMidYMid meet">'+out.join('')+'</svg>';
+}
+
+function pickMonth(key){
+  RSEL = (RSEL.mode==='month' && RSEL.period===key)
+    ? { mode:'kpi', kpi:RSEL.kpi, period:null }
+    : { mode:'month', kpi:RSEL.kpi, period:key };
+  redrawPair();
+}
+function clearMonth(){ RSEL = { mode:'kpi', kpi:RSEL.kpi, period:null }; redrawPair(); }
+function pickKpi(kid){ RSEL = { mode:'kpi', kpi:kid, period:null }; redrawPair(); }
+
+function redrawPair(){
+  var a = document.getElementById('trendbox');
+  var b = document.getElementById('rightbox');
+  if(b) b.innerHTML = rightPanel();
+  alignBaselines();
+  if(a) a.innerHTML = trendChart();
+}
+
+/* the chip row on the right pushes its chart down, so the left chart
+   gets a matching spacer and both axes sit on the same line */
+function alignBaselines(){
+  var sp = document.getElementById('lspacer');
+  var ch = document.querySelector('#rightbox .chips');
+  if(!sp) return;
+  sp.style.height = ch ? (ch.offsetHeight + 12) + 'px' : '0px';
+}
+
+/* Every KPI gets a series. Monthly ones by month, the survey by round,
+   warranty closure by the month each warranty was actually closed. */
+function seriesFor(k){
+  var f = (k.frequency||'').toLowerCase();
+
+  if(f==='monthly' || f==='quarterly'){
+    var byP = {};
+    months(k.kpiId).forEach(function(m){ byP[m.period] = m; });
+    return { kind:'month', points: monthSlots().map(function(sl){
+      var m = byP[sl.key];
+      return { key:sl.key, label:sl.label,
+        actual: m?m.actual:null, grade: m?m.grade:null, partial: m?!!m.partialMonth:false };
+    })};
+  }
+
+  if(f.indexOf('half')===0){
+    var real = months(k.kpiId);
+    if(real.length){
+      var rp = {};
+      real.forEach(function(m){ rp[m.period] = m; });
+      return { kind:'month', points: monthSlots().map(function(sl){
+        var m = rp[sl.key];
+        return { key:sl.key, label:sl.label, actual:m?m.actual:null,
+          grade:m?m.grade:null, partial:false };
+      })};
+    }
+    var byPlan = {};
+    deptRows(k.kpiId).filter(function(d){ return d.period.indexOf('-H')>-1; })
+      .forEach(function(d){
+        var key = d.planPeriod || d.period;
+        byPlan[key] = { actual:d.actual, grade:d.grade, partial:!d.graded,
+          round:d.period.split('-H')[1] };
+      });
+    return { kind:'month', points: monthSlots().map(function(sl){
+      var e = byPlan[sl.key];
+      return { key:sl.key, label:sl.label, actual:e?e.actual:null,
+        grade:e?e.grade:null, partial:e?e.partial:false,
+        tag:e?('Round '+e.round):'' };
+    })};
+  }
+
+  /* yearly measures that carry a completion date can still be shown by month */
+  var h = headline(k.kpiId);
+  var det = (h && h.detail) ? h.detail : [];
+  var dateKey = (k.kpiId==='MA-04') ? 'closedOn' : null;
+  if(dateKey && det.length){
+    var bucket = {};
+    det.forEach(function(d){
+      var v = d[dateKey], val = d.days;
+      if(!v || val===null || val===undefined) return;
+      var key = String(v).slice(0,7);
+      (bucket[key] = bucket[key] || []).push(val);
+    });
+    if(Object.keys(bucket).length){
+      return { kind:'month', points: monthSlots().map(function(sl){
+        var arr = bucket[sl.key];
+        if(!arr) return { key:sl.key, label:sl.label, actual:null, grade:null, partial:false };
+        var avg = arr.reduce(function(x,y){ return x+y; },0)/arr.length;
+        avg = Math.round(avg*10)/10;
+        return { key:sl.key, label:sl.label, actual:avg,
+          grade: clientGrade(k.kpiId, avg), partial:false, n:arr.length };
+      })};
+    }
+  }
+  return { kind:'none', points: [] };
+}
+
+function kpiTrend(k, H, clickable){
+  var ser = seriesFor(k);
+  if(!ser.points.length) return null;
+  return drawBars(k, ser.points, H, clickable);
+}
+
+function drawBars(k, pts, H, clickable, handler, selKey){
+  handler = handler || 'pickDetailMonth';
+  if(selKey===undefined) selKey = DMON;
+  var box = document.getElementById('dchart') ? 'dchart'
+          : (document.getElementById('rightbox') ? 'rightbox' : 'view');
+  var w = Math.max(480, W(box)), h = H || 274, L = 32, R = 12, T = 26, B = 54;
+  var iw = w-L-R, ih = h-T-B, n = pts.length;
+  var step = iw/n, bw = Math.min(52, step-14);
+  function Y(v){ return T + ih*(1 - v/5); }
+
+  var out = [];
+  axis(out, w, L, R, T, ih);
+  out.push('<text x="'+(w-R)+'" y="'+(Y(3)-7).toFixed(1)+'" text-anchor="end" font-size="10" '+
+    'font-weight="700" fill="#8D97A5">Target</text>');
+
+  pts.forEach(function(pt,i){
+    var cx = L + step*i + step/2;
+    out.push('<text x="'+cx.toFixed(1)+'" y="'+(h-26)+'" text-anchor="middle" font-size="9.5" '+
+      'font-weight="700" letter-spacing="-.2" fill="#8D97A5">'+esc(pt.label)+'</text>');
+
+    if(pt.grade===null||pt.grade===undefined){
+      out.push('<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(Y(0)-4)+'" width="'+bw+
+        '" height="4" rx="2" fill="#EEF1F6"/>');
+      return;
+    }
+    var y = Y(pt.grade), bh = Y(0)-y;
+    var sel = clickable && selKey===pt.key;
+    out.push('<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+
+      '" height="'+bh.toFixed(1)+'" rx="5" fill="'+gcol(pt.grade)+'"'+
+      (clickable?' style="cursor:pointer" onclick="'+handler+'(\''+pt.key+'\')"':'')+'/>'+
+      (sel ? '<rect x="'+(cx-bw/2-3).toFixed(1)+'" y="'+(y-3).toFixed(1)+'" width="'+(bw+6)+
+        '" height="'+(bh+6).toFixed(1)+'" rx="7" fill="none" stroke="#151B23" stroke-width="2"/>' : '')+
+      (bh>=30
+        ? '<text x="'+cx.toFixed(1)+'" y="'+(y+17).toFixed(1)+'" text-anchor="middle" '+
+          'font-size="10.5" font-weight="800" fill="#fff" pointer-events="none">'+
+          nfmt(pt.actual,k.unit,isVariance(k))+'</text>'
+        : '<text x="'+cx.toFixed(1)+'" y="'+(y-6).toFixed(1)+'" text-anchor="middle" '+
+          'font-size="10" font-weight="700" fill="#8D97A5" pointer-events="none">'+
+          nfmt(pt.actual,k.unit,isVariance(k))+'</text>'));
+    if(pt.tag)
+      out.push('<text x="'+cx.toFixed(1)+'" y="'+(h-13)+'" text-anchor="middle" font-size="8.5" '+
+        'font-weight="700" fill="#8D97A5" pointer-events="none">'+esc(pt.tag)+'</text>');
+
+  });
+
+  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" height="'+h+'" '+
+         'preserveAspectRatio="xMidYMid meet">'+out.join('')+'</svg>';
+}
+
+function rightPanel(){
+  var defs = deptDefs();
+
+  var lead = RSEL.mode==='month'
+    ? '<button class="on sel" style="background:#151B23" onclick="clearMonth()">'+
+      esc(mlabel(RSEL.period))+' <em>&times;</em></button>'
+    : '';
+
+  var chips = lead + defs.map(function(k){
+    var monthly = (k.frequency||'').toLowerCase()==='monthly';
+    var on = RSEL.mode==='kpi' && RSEL.kpi===k.kpiId;
+    var h = headline(k.kpiId);
+    var col = (h && h.graded) ? gcol(h.grade) : C.ink;
+    return '<button class="'+(on?'on':'')+(monthly?'':' dis')+'"'+
+      (on?' style="background:'+col+'"':'')+
+      (monthly?' onclick="pickKpi(\''+k.kpiId+'\')"':'')+'>'+
+      esc(k.shortName||k.kpiId)+'</button>';
+  }).join('');
+
+  var body = '';
+
+  if(RSEL.mode==='month'){
+    var list = defs.filter(function(k){ return (k.frequency||'').toLowerCase()==='monthly'; })
+      .map(function(k){
+        var m = months(k.kpiId).filter(function(x){ return x.period===RSEL.period; })[0];
+        return { k:k, m:m };
+      });
+    body = '<div style="font-size:13px;font-weight:700;margin-bottom:2px">'+
+        mlabel(RSEL.period)+'</div>'+
+      '<div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">'+
+        'Click the dark chip above to go back</div>'+
+      '<div class="mlist">'+ list.map(function(x){
+        if(!x.m) return '<div class="mlrow"><span class="mo">'+esc(x.k.shortName)+
+          '</span><span class="rv" style="color:var(--ink3)">Not filed</span></div>';
+        return '<div class="mlrow">'+
+          '<span class="mo">'+gr(x.m.grade)+'</span>'+
+          '<span class="rv">'+esc(x.k.shortName)+' · '+
+            nfmt(x.m.actual,x.k.unit,isVariance(x.k))+'</span>'+
+
+          '</div>'; }).join('')+'</div>';
+  }else{
+    var k = defs.filter(function(x){ return x.kpiId===RSEL.kpi; })[0] || defs[0];
+    var chart = kpiTrend(k);
+    body = chart
+      ? chart
+      : '<div class="empty">'+esc(k.shortName)+' is measured '+
+        esc((k.frequency||'').toLowerCase())+', so there is no monthly series.</div>';
+  }
+
+  return '<div class="chips">'+chips+'</div>'+body;
+}
+
+function ovView(el){
+  var defs = deptDefs();
+  el.innerHTML =
+    '<div id="ovwrap">'+
+      hero(defs)+
+      '<div class="midhead">'+ panel('c_tbl','Department KPI Scorecard','list',C.blue,
+        ktable(defs), '', 'flush') +'</div>'+
+    '</div>'+
+    '<div class="grid g2 eq">'+
+      panel('c_trend','Department Performance Trend','chart',C.teal,
+        '<div id="lspacer"></div><div id="trendbox"></div>','')+
+      panel('c_right','Performance by KPI','pulse',C.purple,'<div id="rightbox"></div>','')+
+    '</div>';
+  redrawPair();
+}
+
+/* The dial answers one question only: which grade the department is on.
+   Five equal zones, needle in the middle of the one that was earned. The
+   score and the percentage live in the cards beside it, where there is room
+   to explain them. */
+function dial(grade, col){
+  var w=250, h=132, cx=125, cy=124, r=96, sw=27;
+  function pt(t,rr){ var an=Math.PI*(1-t); return [cx+rr*Math.cos(an), cy-rr*Math.sin(an)]; }
+  function arc(t0,t1,color){
+    var a=pt(t0,r), b=pt(t1,r), big=(t1-t0)>.5?1:0;
+    return '<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' A'+r+' '+r+' 0 '+big+' 1 '+
+      b[0].toFixed(1)+' '+b[1].toFixed(1)+'" fill="none" stroke="'+color+
+      '" stroke-width="'+sw+'" stroke-linecap="butt"/>';
+  }
+
+  var s = '';
+  [1,2,3,4,5].forEach(function(g,i){
+    s += arc(i*0.2+0.004, (i+1)*0.2-0.004, GC[g]);
+  });
+  [1,2,3,4,5].forEach(function(g,i){
+    var p = pt(i*0.2+0.1, r);
+    s += '<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+4.5).toFixed(1)+
+         '" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">'+
+         GLET[g]+'</text>';
+  });
+
+  if(grade){
+    var t = (grade-0.5)/5;
+    var tp = pt(t, r-22);
+    s += '<line x1="'+cx+'" y1="'+cy+'" x2="'+tp[0].toFixed(1)+'" y2="'+tp[1].toFixed(1)+
+         '" stroke="#151B23" stroke-width="4.5" stroke-linecap="round"/>'+
+         '<circle cx="'+cx+'" cy="'+cy+'" r="10" fill="#151B23"/>'+
+         '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#fff"/>';
+  }
+
+  return '<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" '+
+         'preserveAspectRatio="xMidYMid meet" style="max-width:'+w+'px;display:block;margin:0 auto">'+
+         s+'</svg>';
+}
+
+function hero(defs){
+  var sc = D.score, g = sc.value===null ? null : Math.round(sc.value);
+  var pct = sc.value===null ? 0 : sc.value/5*100;
+
+  function pips(n, total, col){
+    var out = '';
+    for(var i=0;i<total;i++) out += '<i style="background:'+(i<n?col:'#E7ECF3')+'"></i>';
+    return '<div class="pipline">'+out+'</div>';
+  }
+
+  return '<div id="hero">'+
+    '<div class="hbox">'+
+      '<div class="cap">Performance Grade</div>'+
+      dial(g, gcol(g))+
+    '</div>'+
+    '<div class="hbox">'+
+      '<div class="cap">Overall Performance</div>'+
+      '<div class="bignum" style="color:'+gcol(g)+'">'+
+        (sc.value===null?'–':pct.toFixed(2)+'%')+'</div>'+
+      '<div class="bigsub">'+(GLBL[g]||'Not yet rated')+'</div>'+
+      pips(sc.counted, sc.total, gcol(g))+
+      '<div class="pipcap">'+sc.counted+' of '+sc.total+' measures graded</div>'+
+    '</div>'+
+    '<div class="hbox">'+
+      '<div class="cap">Weighted KPI Score</div>'+
+      '<div class="bignum" style="color:'+gcol(g)+'">'+(sc.value===null?'–':sc.value)+
+        '<span style="font-size:20px;font-weight:600;color:var(--ink3)"> / 5</span></div>'+
+      pips(sc.counted, sc.total, gcol(g))+
+      '<div class="pipcap">'+sc.counted+' of '+sc.total+' measures graded</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function ktable(defs){
+  var rows = defs.map(function(k){
+    var h = headline(k.kpiId), later = inFlight(k.kpiId);
+    var graded = !!(h && h.graded && h.grade);
+    var g = graded ? h.grade : null;
+    var fq = FQC[k.frequency] || C.ink;
+
+    var statusText = graded
+      ? (h && h.provisional ? GLBL[g]+' · not final' : GLBL[g])
+      : (h ? h.statusLabel : 'Awaiting data');
+    var statusCol  = graded ? gcol(g) : NOGRADE;
+
+    var asOfTxt = h ? mlabel(h.asOf || h.period) : '–';
+    /* the column says how far the data goes; why it is not final belongs to
+       the status column, so nothing is explained twice */
+    /* a month count only describes the maths, which belongs on the KPI page,
+       so the column carries coverage and nothing else */
+    var warn = (h && h.progress && !/months?$/.test(h.progress))
+      ? '<s style="color:var(--ink3)">'+esc(h.progress)+'</s>' : '';
+
+    return '<tr onclick="openKpi(\''+k.kpiId+'\')" style="cursor:pointer">'+
+      '<td class="kmcell">'+
+        '<div class="mname">'+esc(k.kpiId)+' · '+esc(k.shortName||k.description)+'</div>'+
+        '<div class="mdesc">'+esc(enOnly(k.description))+'</div></td>'+
+      '<td><span class="freq" style="background:'+tint(fq,.13)+';color:'+fq+'">'+
+        esc(k.frequency)+'</span></td>'+
+      '<td class="wgt">'+(k.weight||0)+'%</td>'+
+      '<td class="tgt">'+esc(k.target)+'</td>'+
+      '<td><div class="res" style="color:'+(graded?gcol(g):'var(--ink)')+'">'+
+        nfmt(h?h.actual:null,k.unit,isVariance(k))+'</div></td>'+
+      '<td>'+track(k.kpiId, h?h.actual:null, graded, g, k)+'</td>'+
+      '<td><span class="stat"><b style="background:'+statusCol+'"></b>'+
+        esc(statusText)+'</span></td>'+
+      '<td><div class="asof">'+asOfTxt+warn+'</div></td></tr>';
+  }).join('');
+
+  return '<div class="tbl-wrap"><table class="ktb"><thead><tr>'+
+    '<th>KPI</th><th>Reporting Frequency</th><th>KPI Weight</th><th>Target</th>'+
+    '<th>Actual Performance</th><th>Performance Band</th><th>KPI Status</th>'+
+    '<th>Data As Of</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+function openKpi(kid){ DSEL = kid; setTab('dept'); }
+
+/* ==========================================================================
+   MEASURES
+   ========================================================================== */
+var DSEL = 'MA-02';
+
+/* One column spec per KPI so every breakdown reads the same way:
+   who, then what was planned, then what happened, then the verdict. */
+var SUMCOLS = {
+ 'MA-03':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['round1','Round 1','r','pct','keep'],['round2','Round 2','r','pct','keep'],
+          ['average','Average','r','pct','keep'],['responses','Responses','r','int'],
+          ['grade','Grade','c','grade','keep']],
+ 'MA-05':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['installments','Instalments','r','int'],['amount','Total Amount','r','money'],
+          ['daysEarlyLate','Average Variance','r','days'],['grade','Grade','c','grade']]
+};
+
+var COLS = {
+ 'MA-01':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['backlog','Backlog 2026','r','money'],['frontlog','Frontlog 2027','r','money'],
+          ['retention','Renewal Rate','r','pct'],['renewal','Renewal Status','l','text']],
+ 'MA-02':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['budget','Budget','r','money'],['actualCost','Actual Cost','r','money'],
+          ['purchaseCost','Purchase Cost','r','money'],['spent','Cost Used','r','money'],
+          ['costBasis','Basis','c','text'],['remaining','Remaining','r','money'],
+          ['saving','Saving','r','pct'],['asOf','Latest Reading','l','period'],
+          ['grade','Grade','c','grade']],
+ 'MA-03':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['completedOn','Completed On','l','date'],['round','Round','r','int'],
+          ['respondent','Respondent','l','text'],['responses','Responses','r','int'],
+          ['score','Score','r','pct'],['grade','Grade','c','grade']],
+ 'MA-04':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['warrantyEnd','Warranty End','l','date'],['closedOn','Closed On','l','date'],
+          ['days','Days To Close','r','days'],['status','Closure Status','l','text'],
+          ['grade','Grade','c','grade']],
+ 'MA-05':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['installment','Instalment','r','int'],['amount','Amount','r','money'],
+          ['dueOn','Due Date','l','date'],['receivedOn','Received On','l','date'],
+          ['daysEarlyLate','Variance','r','days'],['grade','Grade','c','grade']],
+ 'MA-06':[['refCode','Ref. Code','l','code'],['name','Project','l','name'],
+          ['measures','KPIs Measured','r','int'],['avgGrade','Average Grade','r','dec'],
+          ['score','Score','r','pct'],['grade','Grade','c','grade']]
+};
+
+/* a contract whose current term has not ended yet is simply not due */
+function renewalStatus(d){
+  if(d.frontlog > 0) return 'Renewed';
+  var p = D.projects.filter(function(x){ return x.refCode===d.refCode; })[0];
+  if(p && p.contractEnd){
+    var end = new Date(p.contractEnd+'T00:00:00');
+    if(!isNaN(end) && end >= new Date()) return 'Renewal Pending';
+  }
+  return 'Not Renewed';
+}
+
+function _s(v){ return (v===null||v===undefined) ? '' : String(v).trim(); }
+/* 01_Dim_Project is the only source of a contract name anywhere in the app.
+   Free text typed by customers is never shown. */
+function refName(ref){
+  if(!ref) return '–';
+  var p = D.projects.filter(function(x){ return x.refCode===ref; })[0];
+  return p ? (p.shortName || p.projectName || ref) : ref;
+}
+function refKnown(ref){
+  return D.projects.some(function(x){ return x.refCode===ref; });
+}
+function fmtDateShort(iso){
+  if(!iso) return '–';
+  var d = new Date(iso+'T00:00:00');
+  if(isNaN(d)) return esc(iso);
+  return d.getDate()+' '+MTH[d.getMonth()]+' '+d.getFullYear();
+}
+function clientGrade(kid, v){
+  var b = D.bands[kid];
+  if(!b || v===null || v===undefined) return null;
+  for(var i=0;i<b.rules.length;i++){
+    var r = b.rules[i];
+    if(r.op==='>=' && v>=r.thr) return r.grade;
+    if(r.op==='>'  && v> r.thr) return r.grade;
+    if(r.op==='<=' && v<=r.thr) return r.grade;
+    if(r.op==='<'  && v< r.thr) return r.grade;
+    if(r.op==='='  && Math.abs(v-r.thr)<1e-9) return r.grade;
+  }
+  return 1;
+}
+
+function cellVal(v, kind){
+  if(kind==='grade') return gr(v);
+  if(v===null||v===undefined||v==='') return '–';
+  if(kind==='money') return Math.round(v).toLocaleString();
+  if(kind==='pct')   return (Math.round(v*100)/100).toFixed(2)+'%';
+  if(kind==='days')  return trimNum(v, 2)+'D';
+  if(kind==='int')   return Math.round(v).toLocaleString();
+  if(kind==='dec')   return (Math.round(v*100)/100).toFixed(2);
+  if(kind==='date')  return fmtDateShort(v);
+  if(kind==='period') return mlabel(v);
+  return esc(v);
+}
+
+function breakdownRows(kid, det, mode){
+  det = det || [];
+  if(!det.length) return '<div class="empty">No records for this period</div>';
+
+  var base = (mode==='summary' && SUMCOLS[kid]) ? SUMCOLS[kid] : COLS[kid];
+  if(mode==='contract' && base)
+    base = [['period','Month','l','text']].concat(base.filter(function(c){
+      return c[3]!=='code' && c[3]!=='name'; }));
+  var spec = (base || Object.keys(det[0]).map(function(k){ return [k,k,'l','text']; }))
+    .filter(function(c){
+      if(c[4]==='keep') return true;
+      if(c[3]==='code' || c[3]==='name' || c[0]==='renewal') return true;
+      if(c[0]==='_blank') return false;
+      return det.some(function(d){
+        var v = d[c[0]];
+        return v!==null && v!==undefined && v!=='';
+      });
+    });
+
+  var head = spec.map(function(c){
+    return '<th class="'+c[2]+'">'+esc(c[1])+'</th>'; }).join('');
+
+  var body = det.map(function(d){
+    var clik = (mode==='summary' && d.refCode);
+    return '<tr'+(clik?' class="clik'+(DREF===d.refCode?' sel':'')+
+      '" onclick="pickRef(\''+d.refCode+'\')"':'')+'>'+spec.map(function(c){
+      if(c[3]==='code')
+        return '<td class="l"><span class="rcode">'+esc(d.refCode||'–')+'</span></td>';
+      if(c[3]==='name')
+        return '<td class="l pn'+(refKnown(d.refCode)?'':' unk')+'">'+
+          esc(refName(d.refCode))+
+          '</td>';
+      if(c[3]==='wrap')
+        return '<td class="l wrapcell">'+esc(d[c[0]]||'–')+'</td>';
+      if(c[0]==='renewal')
+        return '<td class="l">'+esc(renewalStatus(d))+'</td>';
+      return '<td class="'+c[2]+'">'+cellVal(d[c[0]], c[3])+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+
+  return '<div class="tbl-wrap"><table class="dtb"><thead><tr>'+head+
+         '</tr></thead><tbody>'+body+'</tbody></table></div>';
+}
+
+function kpiGauge(k, h, graded, grade){
+  var w=340, h2=170, cx=170, cy=152, r=100, sw=28;
+  function pt(t,rr){ var a=Math.PI*(1-t); return [cx+rr*Math.cos(a), cy-rr*Math.sin(a)]; }
+  function arc(t0,t1,color){
+    var a=pt(t0,r), b=pt(t1,r), big=(t1-t0)>.5?1:0;
+    return '<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' A'+r+' '+r+' 0 '+big+' 1 '+
+      b[0].toFixed(1)+' '+b[1].toFixed(1)+'" fill="none" stroke="'+color+
+      '" stroke-width="'+sw+'" stroke-linecap="butt"/>';
+  }
+
+  /* the needle sits in the middle of the band it earned, not on its edge */
+  var pct = graded ? (grade-0.5)/5*100 : 0;
+  var out = '';
+  [1,2,3,4,5].forEach(function(g,i){
+    out += arc(i*0.2+0.004, (i+1)*0.2-0.004, graded ? GC[g] : tint(GC[g],.30));
+  });
+  [1,2,3,4,5].forEach(function(g,i){
+    var p = pt(i*0.2+0.1, r);
+    out += '<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+4.5).toFixed(1)+
+      '" text-anchor="middle" font-size="12.5" font-weight="800" fill="'+
+      (graded?'#fff':'#98A2B3')+'">'+GLET[g]+'</text>';
+    var q = pt(i*0.2+0.1, r + sw/2 + 22);
+    out += '<text x="'+q[0].toFixed(1)+'" y="'+(q[1]+3.5).toFixed(1)+
+      '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#8D97A5">'+
+      esc(bandText(k.kpiId,g,k.unit))+'</text>';
+  });
+
+  var t = Math.max(0, Math.min(1, pct/100));
+  var tp = pt(t, r-22);
+  out += '<line x1="'+cx+'" y1="'+cy+'" x2="'+tp[0].toFixed(1)+'" y2="'+tp[1].toFixed(1)+
+    '" stroke="#151B23" stroke-width="4.5" stroke-linecap="round"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="10" fill="#151B23"/>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#fff"/>';
+
+  return '<div class="kpgauge">'+
+    '<svg width="100%" height="'+h2+'" viewBox="0 0 '+w+' '+h2+'" '+
+    'preserveAspectRatio="xMidYMid meet" style="max-width:'+w+'px">'+out+'</svg></div>';
+}
+
+function ladder(k, h, graded, grade){
+  var cells = [1,2,3,4,5].map(function(gg){
+    var on = graded && gg===grade;
+    return '<div class="st'+(on?' on':'')+'" style="--c:'+GC[gg]+'">'+
+      '<div class="lt">'+GLET[gg]+'</div>'+
+      '<div class="cr">'+esc(bandText(k.kpiId,gg,k.unit))+'</div>'+
+      '<div class="nm">'+GLBL[gg]+'</div>'+
+      '<div class="act">'+nfmt(h?h.actual:null,k.unit,isVariance(k))+'</div>'+
+      '</div>';
+  }).join('');
+  return '<div class="ladder">'+cells+'</div>';
+}
+
+var DMON = null;   /* selected month   */
+var DREF = null;   /* selected contract */
+
+function valOfRows(rows){
+  if(!rows.length) return null;
+  if(rows[0].saving!==undefined)  return rows[0].saving;
+  if(rows[0].average!==undefined) return rows[0].average;
+  if(rows[0].score!==undefined)   return rows[0].score;
+  if(rows[0].days!==undefined)   return rows[0].days;
+  if(rows[0].daysEarlyLate!==undefined)
+    return Math.round(rows.reduce(function(a,b){ return a+b.daysEarlyLate; },0)/rows.length*10)/10;
+  return null;
+}
+
+/* one contract across the year, built from the monthly breakdowns */
+function contractSeries(k, ref){
+  var byP = {};
+  months(k.kpiId).forEach(function(m){
+    var rows = (m.detail||[]).filter(function(d){ return d.refCode===ref; });
+    if(!rows.length) return;
+    var v = valOfRows(rows);
+    byP[m.period] = { actual:v, grade:clientGrade(k.kpiId, v),
+      partial:!!m.partialMonth, rows:rows };
+  });
+  return byP;
+}
+
+/* the contract order the department reports in, used by every table */
+var REF_ORDER = ['MA2024022','MA2025044','MA2025048','MA2025049','MA2025031',
+                 'ITS230013','SI2019008','NB230001','Admin','ADMIN_WAREHOUSE'];
+function orderIdx(ref){
+  var i = REF_ORDER.indexOf(ref);
+  return i < 0 ? REF_ORDER.length + 1 : i;
+}
+function byRefOrder(a,b){
+  var d = orderIdx(a.refCode) - orderIdx(b.refCode);
+  return d !== 0 ? d : String(a.refCode).localeCompare(String(b.refCode));
+}
+
+/* every contract that filed anything for this KPI this year, so a contract
+   that stopped filing still shows up as an empty row */
+function expectedRefs(k){
+  var seen = {}, out = [];
+  function add(list){
+    (list||[]).forEach(function(d){
+      if(d.refCode && !seen[d.refCode]){ seen[d.refCode] = 1; out.push(d.refCode); }
+    });
+  }
+  deptRows(k.kpiId).forEach(function(d){ add(d.detail); });
+  return out.sort(function(a,b){
+    return byRefOrder({refCode:a},{refCode:b}); });
+}
+
+function contractSummary(k){
+  if(k.kpiId==='MA-04'){
+    var h4 = headline('MA-04');
+    return ((h4 && h4.detail) ? h4.detail.slice() : []).sort(function(a,b){
+      return String(a.warrantyEnd||'9999').localeCompare(String(b.warrantyEnd||'9999'));
+    });
+  }
+  if(k.kpiId==='MA-03'){
+    var byRef = {};
+    deptRows('MA-03').filter(function(d){ return d.period.indexOf('-H')>-1; })
+      .forEach(function(d){
+        var n = d.period.split('-H')[1];
+        (d.detail||[]).forEach(function(x){
+          var r = byRef[x.refCode] = byRef[x.refCode] ||
+            { refCode:x.refCode, round1:null, round2:null, responses:0 };
+          r['round'+n] = x.score;
+          r.responses += (x.responses||0);
+        });
+      });
+    return Object.keys(byRef).map(function(ref){
+      var r = byRef[ref];
+      var vs = [r.round1, r.round2].filter(function(v){ return v!==null && v!==undefined; });
+      r.average = vs.length
+        ? Math.round(vs.reduce(function(a,b){ return a+b; },0)/vs.length*10)/10 : null;
+      r.grade = (r.average===null) ? null : clientGrade('MA-03', r.average);
+      return r;
+    }).sort(byRefOrder);
+  }
+  if(k.kpiId!=='MA-05'){
+    var h = headline(k.kpiId);
+    return (h && h.detail) ? h.detail : [];
+  }
+  var byRef = {};
+  months('MA-05').forEach(function(m){
+    (m.detail||[]).forEach(function(d){
+      var r = byRef[d.refCode] = byRef[d.refCode] ||
+        { refCode:d.refCode, installments:0, amount:0, vs:[] };
+      r.installments++; r.amount += (d.amount||0); r.vs.push(d.daysEarlyLate);
+    });
+  });
+  return Object.keys(byRef).map(function(ref){
+    var r = byRef[ref];
+    var avg = Math.round(r.vs.reduce(function(a,b){ return a+b; },0)/r.vs.length*10)/10;
+    return { refCode:ref, installments:r.installments, amount:r.amount,
+             daysEarlyLate:avg, grade:clientGrade('MA-05', avg) };
+  }).sort(byRefOrder);
+}
+
+/* what the table shows depends on which of the two filters is on */
+function detailFor(k){
+  if(DREF){
+    var ser = contractSeries(k, DREF), rows = [];
+    monthSlots().forEach(function(sl){
+      var e = ser[sl.key];
+      if(!e) return;
+      e.rows.forEach(function(r){
+        var o = {}; for(var q in r) o[q] = r[q];
+        o.period = sl.label;
+        rows.push(o);
+      });
+    });
+    return { rows:rows, mode:'contract' };
+  }
+  if(DMON){
+    var m = deptRows(k.kpiId).filter(function(d){ return d.period===DMON; })[0];
+    if(m) return { rows:(m.detail||[]), mode:'month' };
+  }
+  return { rows:contractSummary(k), mode:'summary' };
+}
+
+/* the survey free text, shown only once a contract is picked */
+function feedbackPanel(k){
+  if(!DREF) return '';
+  var rows = detailFor(k).rows.filter(function(r){
+    return r.strengths || r.improvements || r.feedback || r.comment; });
+  if(!rows.length) return '';
+
+  var cards = rows.map(function(r){
+    var col = gcol(r.grade);
+    function q(cls, label, text){
+      return text ? '<div class="q '+cls+'"><span>'+label+'</span><p>'+esc(text)+'</p></div>' : '';
+    }
+    var body = q('good','What went well', r.strengths)+
+               q('fix','What to improve', r.improvements)+
+               q('','Other comments', r.feedback);
+    if(!body) body = '<div class="q"><p>'+esc(r.comment)+'</p></div>';
+
+    return '<div class="fb" style="--c:'+col+'">'+
+      '<div class="top">'+gr(r.grade)+
+        '<div><b>'+esc(r.respondent||'Anonymous')+'</b>'+
+        (r.position?' <s>'+esc(r.position)+'</s>':'')+
+        '<s style="display:block">'+esc(r.period||fmtDateShort(r.completedOn))+
+          (r.round?' · Round '+r.round:'')+'</s></div>'+
+        '<span class="sc">'+nfmt(r.score,'%')+'</span>'+
+      '</div>'+ body +'</div>';
+  }).join('');
+
+  return '<div class="grid">'+ panel('d_fb','Customer Feedback','users',C.amber,
+    '<div class="fbwrap">'+cards+'</div>',
+    rows.length+' repl'+(rows.length>1?'ies':'y')) +'</div>';
+}
+
+function deptView(el){
+  var defs = deptDefs();
+  var k = defs.filter(function(x){ return x.kpiId===DSEL; })[0] || defs[0];
+  DSEL = k.kpiId;
+
+  var ser = seriesFor(k);
+  var clickable = (ser.kind==='month' && months(k.kpiId).length>0)
+               || ser.kind==='round';
+  if(!clickable) DMON = null;
+
+  var chips = defs.map(function(x){
+    var hh = headline(x.kpiId);
+    var col = (hh && hh.graded) ? gcol(hh.grade) : C.ink;
+    var on = x.kpiId===DSEL;
+    return '<button class="'+(on?'on':'')+'"'+(on?' style="background:'+col+'"':'')+
+      ' onclick="pickDetail(\''+x.kpiId+'\')">'+esc(x.shortName||x.kpiId)+'</button>';
+  }).join('');
+
+  var h = headline(k.kpiId), later = inFlight(k.kpiId);
+  var graded = !!(h && h.graded && h.grade);
+  var g = graded ? h.grade : null;
+  var col = graded ? gcol(g) : C.ink;
+
+  var cov = (h && h.coverage) ? h.coverage : null;
+  var partial = (h && h.partial && h.partial.length) ? h.partial[h.partial.length-1] : null;
+  var cards =
+    kpiCard(col,'chart','Actual Performance',
+      inColour(nfmt(h?h.actual:null,k.unit,isVariance(k)), col), '',
+      'Target '+k.target)+
+    kpiCard(col,'pulse','Grade', inColour(graded?GLET[g]:'–', col), '',
+      graded
+        ? (h && h.provisional ? GLBL[g]+' · not final' : GLBL[g])
+        : (h?h.statusLabel:'Awaiting data'))+
+    kpiCard(C.teal,'pin','Coverage',
+      inColour(cov ? cov.measured : '–', C.teal), cov ? (' of '+cov.inScope) : '',
+      (cov && cov.unitLabel) ? cov.unitLabel : 'Projects in scope')+
+    kpiCard(C.purple,'seat','Weight', inColour((k.weight||0), C.purple), '%',
+      'Share of the department score')+
+    kpiCard(C.blue,'clock','Reporting Frequency', inColour(k.frequency, C.blue), '',
+      partial ? ('Data as of '+mlabel(h.asOf||h.period)+' · '+mshort(partial.period)+' still open')
+              : (h ? ('Data as of '+mlabel(h.asOf||h.period)) : 'No data yet'));
+
+  var head =
+    '<div class="kphead">'+ kpiGauge(k,h,graded,g) +
+      '<div class="kgrid">'+cards+'</div></div>';
+
+  el.innerHTML =
+    '<div style="display:flex;justify-content:flex-end">'+
+      '<div class="chips">'+chips+'</div></div>'+
+    '<div class="grid">'+ panel('d_head', k.kpiId+' · '+(k.shortName||''), 'pulse', col, head) +'</div>'+
+    filterBar(k, clickable)+
+    '<div class="grid g2 eq">'+
+      panel('d_chart', DREF ? refName(DREF)+' by month' : chartTitle(k),
+        'chart',C.teal,'<div id="dchart"></div>','')+
+      panel('d_tbl', tableTitle(k),'db',C.purple,'<div id="dbreak"></div>','','flush')+
+    '</div>'+
+    feedbackPanel(k);
+
+  renderBreak(k);
+  drawDetailChart(k, clickable);
+}
+
+function chartTitle(k){
+  var f = (k.frequency||'').toLowerCase();
+  if(months(k.kpiId).length) return 'Monthly Performance';
+  if(f.indexOf('half')===0) return 'Survey Rounds by Plan Month';
+  if(f.indexOf('year')===0) return 'Closures by Month';
+  return 'Monthly Performance';
+}
+
+function tableTitle(k){
+  if(DREF) return refName(DREF)+' · period by period';
+  if(DMON) return 'Records · '+mlabel(DMON);
+  return 'Project Status';
+}
+
+function filterBar(k, clickable){
+  var bits = [];
+  if(DREF) bits.push('<span class="fc" style="background:'+C.teal+'" onclick="clearRef()">'+
+    esc(refName(DREF))+' <em>&times;</em></span>');
+  if(DMON) bits.push('<span class="fc" style="background:'+C.blue+'" onclick="clearDetailMonth()">'+
+    esc(mlabel(DMON))+' <em>&times;</em></span>');
+
+  if(!bits.length) return '';
+  return '<div class="fchips">'+bits.join('')+'</div>';
+}
+
+/* fields that belong to the contract rather than to the month stay visible
+   even when nothing was filed, so the row still reads as a real contract */
+var CARRY = { 'MA-02':['budget'], 'MA-01':['backlog'],
+              'MA-04':['warrantyEnd'], 'MA-05':['amount'] };
+
+function blankRow(k, ref){
+  var row = { refCode:ref, _blank:true };
+  var keep = CARRY[k.kpiId];
+  if(!keep) return row;
+
+  var src = null;
+  deptRows(k.kpiId).slice().reverse().some(function(d){
+    (d.detail||[]).some(function(x){
+      if(x.refCode===ref){ src = x; return true; }
+      return false;
+    });
+    return !!src;
+  });
+  if(src) keep.forEach(function(f){
+    if(src[f]!==undefined && src[f]!==null) row[f] = src[f];
+  });
+  return row;
+}
+
+function renderBreak(k){
+  var d = detailFor(k);
+  var rows = d.rows;
+
+  if(d.mode!=='contract' && k.kpiId!=='MA-04'){
+    var have = {};
+    rows.forEach(function(r){ if(r.refCode) have[r.refCode] = r; });
+    rows = expectedRefs(k).map(function(ref){
+      return have[ref] || blankRow(k, ref);
+    }).concat(rows.filter(function(r){ return !r.refCode; }));
+  }
+
+  document.getElementById('dbreak').innerHTML = breakdownRows(k.kpiId, rows, d.mode);
+}
+
+function drawDetailChart(k, clickable){
+  var box = document.getElementById('dchart');
+  if(!box) return;
+  var right = document.getElementById('d_tbl');
+  var target = right ? Math.max(300, Math.min(620, right.parentNode.offsetHeight - 70)) : 300;
+  var svg = DREF ? refTrend(k, target) : kpiTrend(k, target, clickable);
+  box.innerHTML = svg || '<div class="empty">No series available for this KPI</div>';
+}
+
+/* the same chart shape, but for one contract */
+function refTrend(k, H){
+  var ser = contractSeries(k, DREF);
+  var pts = monthSlots().map(function(sl){
+    var e = ser[sl.key];
+    return { key:sl.key, label:sl.label,
+      actual:e?e.actual:null, grade:e?e.grade:null, partial:e?e.partial:false };
+  });
+  if(!pts.some(function(p){ return p.grade!==null; }))
+    return '<div class="empty">No monthly records for this contract</div>';
+  return drawBars(k, pts, H, false);
+}
+
+function pickRef(ref){ DREF = (DREF===ref) ? null : ref; DMON = null; render(); }
+function clearRef(){ DREF = null; render(); }
+function pickDetailMonth(key){ DMON = (DMON===key) ? null : key; DREF = null; render(); }
+function clearDetailMonth(){ DMON = null; render(); }
+
+function pickDetail(kid){
+  DSEL = kid; DMON = null; DREF = null;
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ==========================================================================
+   PROJECTS — MA-06 only, from the department roll-up down to each project
+   ========================================================================== */
+var PSEL = null;
+var PMON = null;
+
+function money(v){ return (v===null||v===undefined) ? '–' : Math.round(v).toLocaleString(); }
+
+/* one contract across the year, taken from the monthly quality rows */
+function contractMonthly(ref){
+  var out = {};
+  months('MA-06').forEach(function(m){
+    var r = (m.detail||[]).filter(function(x){ return x.refCode===ref; })[0];
+    if(r) out[m.period] = r;
+  });
+  return out;
+}
+
+function deltaTag(cur, prev, label){
+  if(cur===null || cur===undefined || prev===null || prev===undefined) return '';
+  var d = Math.round((cur-prev)*100)/100;
+  var vs = label ? ' vs '+label : '';
+  if(d===0)
+    return '<span class="delta" style="color:var(--ink4)">same'+vs+'</span>';
+  var up = d > 0;
+  return '<span class="delta" style="color:'+(up?C.green:C.red)+'">'+
+    (up?'▲ +':'▼ ')+d.toFixed(2)+'%'+vs+'</span>';
+}
+
+/* who filed, who has not, and who is simply out of the picture this month */
+function monthRoster(refList, det, key){
+  var filed = {}, out = { filed:[], waiting:[], ended:[], outside:[] };
+  (det||[]).forEach(function(d){ if(d.refCode) filed[d.refCode] = d; });
+
+  var expect = {}, e = expectedProjects(key);
+  e.forEach(function(p){ expect[p.refCode] = true; });
+
+  var scope = (D.scope && D.scope['MA-06']) ? D.scope['MA-06'] : null;
+
+  refList.forEach(function(p){
+    if(scope && scope.indexOf(p.refCode) < 0){ out.outside.push(p); return; }
+    if(!expect[p.refCode]){ out.ended.push(p); return; }
+    if(filed[p.refCode]) out.filed.push({ p:p, d:filed[p.refCode] });
+    else out.waiting.push(p);
+  });
+  return out;
+}
+
+function rosterBlock(refList, det, key){
+  var r = monthRoster(refList, det, key);
+  function chips(arr, cls, fn2){
+    if(!arr.length) return '<div class="none">none</div>';
+    return '<div class="chips2">'+arr.map(fn2).join('')+'</div>';
+  }
+
+  var rows =
+    '<div class="grp"><div class="lb"><i style="background:'+C.green+'"></i>Filed</div>'+
+      chips(r.filed, 'filed', function(x){
+        return '<span class="pchip filed" style="background:'+gcol(x.d.grade)+'" '+
+          'onclick="pickProject(\''+x.p.refCode+'\')">'+esc(x.p.shortName)+
+          ' · '+nfmt(x.d.score,'%')+'</span>'; })+'</div>'+
+
+    '<div class="grp"><div class="lb"><i style="background:'+C.amber+'"></i>'+
+      'Waiting</div>'+
+      chips(r.waiting, 'wait', function(p){
+        return '<span class="pchip wait" onclick="pickProject(\''+p.refCode+'\')">'+
+          esc(p.shortName)+'</span>'; })+'</div>';
+
+  if(r.ended.length)
+    rows += '<div class="grp"><div class="lb"><i style="background:#C2C9D4"></i>'+
+      'Outside the term</div>'+
+      chips(r.ended, 'ended', function(p){
+        return '<span class="pchip ended">'+esc(p.shortName)+' · ends '+
+          fmtDateShort(p.contractEnd)+'</span>'; })+'</div>';
+
+  if(r.outside.length)
+    rows += '<div class="grp"><div class="lb"><i style="background:'+C.red+'"></i>'+
+      'Not in the MA-06 list</div>'+
+      chips(r.outside, 'out', function(p){
+        return '<span class="pchip out">'+esc(p.shortName)+'</span>'; })+'</div>';
+
+  return '<div class="pstat">'+rows+'</div>';
+}
+
+function projView(el){
+  var list = D.projects.filter(function(p){ return ma06Kpis(p.refCode).length; })
+    .sort(byRefOrder);
+
+  var seen = {};
+  list = list.filter(function(p){
+    var key = (p.shortName||p.refCode).toLowerCase();
+    if(seen[key]) return false;
+    seen[key] = 1; return true;
+  });
+  if(!list.length){ el.innerHTML='<div class="card empty">No projects to show</div>'; return; }
+  if(PSEL && !list.some(function(p){ return p.refCode===PSEL; })) PSEL = null;
+
+  var k6 = D.kpis.filter(function(x){ return x.kpiId==='MA-06'; })[0];
+  var q  = headline('MA-06');
+  var ms = months('MA-06');
+  if(PMON && !ms.some(function(m){ return m.period===PMON; })) PMON = null;
+
+  /* the filter drives the summary, the trend and the panels below */
+  var series, ytd, monthVal, prevVal, det, scopeN, kpiCount, prevLabel = '';
+
+  if(PSEL){
+    var cm = contractMonthly(PSEL);
+    series = monthSlots().map(function(sl){
+      var r = cm[sl.key];
+      return { key:sl.key, label:sl.label,
+               actual:r?r.score:null, grade:r?r.grade:null, partial:false };
+    });
+    var vals = series.filter(function(x){ return x.actual!==null && x.actual!==undefined; });
+    ytd = vals.length ? vals.reduce(function(a,b){ return a+b.actual; },0)/vals.length : null;
+    var idx = PMON ? vals.map(function(x){ return x.key; }).indexOf(PMON) : vals.length-1;
+    if(idx < 0) idx = vals.length-1;
+    monthVal = vals[idx] || null;
+    prevVal  = idx > 0 ? vals[idx-1] : null;
+    prevLabel = prevVal ? mshort(prevVal.key) : '';
+    kpiCount = monthVal ? (cm[monthVal.key]||{}).measures : null;
+    det = []; scopeN = 0;
+  }else{
+    series = seriesFor(k6).points;
+    ytd = q ? q.actual : null;
+    var mv = PMON ? ms.filter(function(m){ return m.period===PMON; })
+                  : (ms.length ? [ms[ms.length-1]] : []);
+    monthVal = mv.length ? { key:mv[0].period, actual:mv[0].actual, grade:mv[0].grade } : null;
+    var pi = monthVal ? ms.map(function(m){ return m.period; }).indexOf(monthVal.key) : -1;
+    prevVal = pi > 0 ? { actual:ms[pi-1].actual, key:ms[pi-1].period } : null;
+    prevLabel = prevVal ? mshort(prevVal.key) : '';
+    det = (monthVal ? ms[pi].detail : (q?q.detail:[])) || [];
+    scopeN = (monthVal && ms[pi].coverage) ? ms[pi].coverage.inScope
+           : ((q && q.coverage) ? q.coverage.inScope : det.length);
+  }
+
+  var gY = ytd===null ? null : clientGrade('MA-06', ytd);
+  var ytdOf5 = ytd===null ? null : (Math.round(ytd/100*5*100)/100).toFixed(2);
+  var gP = monthVal ? monthVal.grade : null;
+
+  var options = '<option value=""'+(PSEL?'':' selected')+'>All projects</option>'+
+    list.map(function(x){
+      return '<option value="'+esc(x.refCode)+'"'+(x.refCode===PSEL?' selected':'')+'>'+
+        esc(pickerLabel(x))+'</option>'; }).join('');
+  var tr = document.getElementById('topright');
+  if(tr) tr.innerHTML = '<select class="psel2" onchange="pickProject(this.value)">'+
+    options+'</select>';
+
+  function cell(label, value, col, sub){
+    return '<div class="c"><span>'+label+'</span>'+
+      '<em style="color:'+col+'">'+value+'</em><u>'+sub+'</u></div>';
+  }
+
+  function val(v, col, extra){ return inColour(v, col)+(extra||''); }
+
+  var fourth = PSEL
+    ? kpiCard(C.purple,'db','KPIs Measured', (kpiCount||'–'), '',
+        monthVal ? 'Behind the '+mlabel(monthVal.key)+' score' : 'No reading yet')
+    : kpiCard(C.teal,'box','Projects Reporting', inColour(det.length, C.teal), ' of '+scopeN,
+        (function(){
+          if(!monthVal) return 'No period selected';
+          var r = monthRoster(list, det, monthVal.key);
+          var bits = [];
+          if(r.waiting.length) bits.push(r.waiting.length+' waiting');
+          if(r.ended.length)   bits.push(r.ended.length+' outside the term');
+          return bits.length ? bits.join(' · ') : 'Everyone has filed';
+        })());
+
+  var head =
+    '<div class="kgrid">'+
+      kpiCard(gcol(gY),'chart','Year To Date', val(nfmt(ytd,'%'), gcol(gY)), '',
+        PSEL ? 'Average of this project' : 'Average of every contract')+
+      kpiCard(gcol(gY),'cup','Grade', val(gY?GLET[gY]:'–', gcol(gY)), '',
+        (gY?GLBL[gY]:'Not yet rated')+(ytdOf5?' · '+ytdOf5+' of 5':''))+
+      kpiCard(gcol(gP),'clock', monthVal?mlabel(monthVal.key):'Latest Month',
+        val(nfmt(monthVal?monthVal.actual:null,'%'), gcol(gP)), '',
+        (gP ? GLET[gP]+' · '+GLBL[gP] : 'No reading yet')+
+          deltaTag(monthVal?monthVal.actual:null, prevVal?prevVal.actual:null,
+            prevVal&&prevVal.key ? mshort(prevVal.key) : (prevLabel||'')))+
+      fourth +
+    '</div>'+
+
+    (PSEL ? '' : rosterBlock(list, det, monthVal?monthVal.key:''))+
+    '<div class="trendbox"><div class="hd"><b>Monthly trend</b>'+
+      (PMON?'<span>Showing '+mlabel(PMON)+'</span>':'')+'</div>'+
+      '<div id="p_trend"></div></div>';
+
+  var shown = PSEL ? list.filter(function(x){ return x.refCode===PSEL; }) : list;
+  var detFor = PSEL ? ((monthVal && contractMonthly(PSEL)[monthVal.key])
+                        ? [contractMonthly(PSEL)[monthVal.key]] : []) : det;
+
+  el.innerHTML =
+    '<div class="grid">'+ panel('p_top','MA-06 · Project Quality','grid',
+      gcol(gY), head, esc(enOnly(k6?k6.description:'')||'')) +'</div>'+
+    shown.map(function(p){ return contractPanel(p, detFor, !!PSEL); }).join('');
+
+  var tb = document.getElementById('p_trend');
+  if(tb && k6) tb.innerHTML = drawBars(k6, series, 210, true, 'pickPMonth', PMON) || '';
+}
+
+/* anyone can open an evidence link, whether or not they may edit */
+function openEvidence(url){
+  if(!url) return;
+  window.open(url, '_blank', 'noopener');
+}
+
+function pickProject(ref){ PSEL = ref || null; PMON = null; render(); }
+function pickPMonth(key){ PMON = (PMON===key) ? null : key; render(); }
+
+function contractPanel(p, det, solo){
+  var row = det.filter(function(x){ return x.refCode===p.refCode; })[0];
+  var g = row ? row.grade : null;
+  var col = g ? gcol(g) : C.ink;
+
+  var hdr = solo ? '' :
+    '<div class="chdr">'+
+      '<span class="sc" style="color:'+(row?col:'var(--ink3)')+'">'+
+        (row?nfmt(row.score,'%'):'–')+'</span>'+
+      '<span class="nm">'+esc(p.shortName)+'</span>'+
+      (row ? '<span class="gpill" style="--c:'+col+'">'+GLET[g]+' · '+GLBL[g]+'</span>'+
+             '<span class="mm">from <b>'+row.measures+'</b> KPIs · average grade <b>'+
+             row.avgGrade.toFixed(2)+'</b> of 5</span>'
+           : '<span class="mm">Not measured in this period</span>')+
+      '<span class="mm" style="margin-left:auto">'+esc(p.customer||'')+
+        ' · '+esc(p.owner||'')+'</span>'+
+    '</div>';
+
+  return '<div class="ccard">'+ hdr + contractKpiTable(p.refCode) +'</div>';
+}
+
+function contractKpiTable(ref){
+  var defs = ma06Kpis(ref);
+  if(!defs.length)
+    return '<div class="empty">This project has no KPI set of its own</div>';
+
+  var byKpi = {};
+  defs.forEach(function(k){
+    var m = byKpi[k.kpiId] = {};
+    FACTS.forEach(function(f){
+      if(f.kpiId!==k.kpiId || isSummary(f.period)) return;
+      m[f.period] = f;
+    });
+  });
+
+  var slots = monthSlots();
+
+  var head = '<tr><th class="seq">#</th><th class="l">KPI</th>'+
+    '<th>Target</th><th>Frequency</th>'+
+    slots.map(function(sl){ return '<th class="mth">'+sl.month+'</th>'; }).join('')+
+    '<th>Grade</th></tr>';
+
+  var body = defs.map(function(k, i){
+    var m = byKpi[k.kpiId];
+    var keys = Object.keys(m).sort();
+    var last = keys.length ? m[keys[keys.length-1]] : null;
+
+    /* the criteria are reference data, so they live one hover away */
+    function bandRows(hit){
+      return [5,4,3,2,1].map(function(gg){
+        return '<div class="kv"><span>'+(hit===gg?'▸ ':'')+'Grade '+gg+' · '+GLET[gg]+
+          '</span><em>'+esc(bandText(k.kpiId, gg, k.unit))+'</em></div>';
+      }).join('');
+    }
+    var targetTip = '<b>'+esc(k.description)+'</b><s>Target '+esc(k.target)+'</s>'+
+      bandRows(last?last.grade:null);
+
+    return '<tr><td class="seq">'+(i+1)+'</td>'+
+      '<td class="l">'+esc(k.description)+'</td>'+
+      '<td data-tip="'+esc(targetTip)+'" style="cursor:help">'+esc(k.target)+'</td>'+
+      '<td>'+esc(k.frequency)+'</td>'+
+      slots.map(function(sl){
+        var f = m[sl.key];
+        if(!f) return '<td class="blank">·</td>';
+        var c = gcol(f.grade);
+        return '<td class="num" style="background:'+tint(c,.13)+';color:'+shade(c)+
+          '" data-tip="'+esc('<b>'+esc(k.description)+'</b><s>'+sl.label+'</s>'+
+            '<div class="kv"><span>Reading</span><em>'+nfmt(f.actual,k.unit)+'</em></div>'+
+            '<div class="kv"><span>Target</span><em>'+esc(k.target)+'</em></div>'+
+            '<div class="kv"><span>Grade</span><em>'+GLET[f.grade]+' · '+
+              GLBL[f.grade]+'</em></div>')+'">'+
+          nfmt(f.actual,k.unit)+'</td>';
+      }).join('')+
+      '<td>'+(last?gr(last.grade):gr(null))+'</td></tr>';
+  }).join('');
+
+  return '<div class="tbl-wrap"><table class="ctb2"><thead>'+
+    head+'</thead><tbody>'+body+'</tbody></table></div>';
+}
+
+/* ==========================================================================
+   DATA ENTRY — one contract, one month, every KPI on one screen
+   ========================================================================== */
+var ESEL = null, EMON = null, EDITS = {}, EBUSY = false;
+
+/* add ?today=2026-10-05 to the web app url to rehearse a different date;
+   it only moves the defaults and the labels, never the stored data */
+var NOWD = new Date();
+function applyDateOverride(){
+  if(typeof google==='undefined' || !google.script || !google.script.url) return;
+  google.script.url.getLocation(function(loc){
+    var v = loc && loc.parameter && loc.parameter.today;
+    if(!v) return;
+    var d = new Date(v+'T12:00:00');
+    if(isNaN(d)) return;
+    NOWD = d;
+    EMON = null;
+    if(TAB==='entry') render();
+  });
+}
+
+/* the KPI set that makes up MA-06 for one project */
+function ma06Kpis(ref){
+  return D.kpis.filter(function(k){
+    return k.level==='PROJECT' && k.refCode===ref && k.parentKpi==='MA-06'; });
+}
+
+/* the projects a month is expected from: inside the MA-06 scope and with a
+   contract term that covers the month. Both pages divide by this same set. */
+function expectedProjects(key){
+  if(!key) return [];
+  var scope = (D.scope && D.scope['MA-06']) ? D.scope['MA-06'] : null;
+  var first = key+'-01', last = key+'-31';
+  return entryContracts().filter(function(p){
+    if(scope && scope.indexOf(p.refCode) < 0) return false;
+    if(p.contractStart && p.contractStart > last) return false;
+    if(p.contractEnd && p.contractEnd < first) return false;
+    return true;
+  });
+}
+
+/* the whole department for one month, used by the month picker */
+function monthFillAll(key){
+  var done = 0, total = 0;
+  entryContracts().forEach(function(p){
+    var f = monthFill(p.refCode, key);
+    done += f.done; total += f.total;
+  });
+  return { done:done, total:total };
+}
+
+/* how much of one project is filled in for one month */
+function monthFill(ref, key){
+  var defs = ma06Kpis(ref);
+  var done = 0;
+  defs.forEach(function(k){
+    var f = FACTS.filter(function(x){
+      return x.kpiId===k.kpiId && x.period===key; })[0];
+    if(f && f.actual!==null && f.actual!==undefined && f.actual!=='') done++;
+  });
+  return { done:done, total:defs.length };
+}
+
+function entryContracts(){
+  var seen = {};
+  return D.projects.filter(function(p){
+    if(!ma06Kpis(p.refCode).length) return false;
+    var key = (p.shortName||p.refCode).toLowerCase();
+    if(seen[key]) return false;
+    seen[key] = 1; return true;
+  }).sort(byRefOrder);
+}
+
+/* the entry screen updates itself from the saved rows, and the dashboards
+   are marked stale so they refresh only when someone opens them */
+var STALE = false;
+
+function mergeFacts(rows){
+  (rows||[]).forEach(function(r){
+    var at = -1;
+    for(var i=0;i<FACTS.length;i++){
+      if(FACTS[i].kpiId===r.kpiId && FACTS[i].period===r.period){ at = i; break; }
+    }
+    if(at > -1){
+      var f = FACTS[at];
+      f.actual = r.actual; f.grade = r.grade; f.evidence = r.evidence;
+      f.updatedBy = r.updatedBy; f.updatedAt = r.updatedAt;
+    }else{
+      FACTS.push(r);
+    }
+  });
+  STALE = true;
+}
+
+function dropFacts(test){
+  FACTS = FACTS.filter(function(f){ return !test(f); });
+  STALE = true;
+}
+
+function refreshIfStale(after){
+  if(!STALE){ after(); return; }
+  var veil = document.getElementById('load');
+  if(veil) veil.style.display = '';
+  google.script.run
+    .withSuccessHandler(function(fresh){
+      STALE = false;
+      onData(fresh, true);
+      if(veil) veil.style.display = 'none';
+      after();
+    })
+    .withFailureHandler(function(){
+      if(veil) veil.style.display = 'none';
+      after();
+    })
+    .refreshData(PORTAL_USER);
+}
+
+function entryKey(kid){ return ESEL+'|'+EMON+'|'+kid; }
+
+/* an email is too long for the row, so only the name part is shown */
+function shortUser(email){
+  var e = String(email||'').trim();
+  if(!e) return '';
+  return e.indexOf('@') > -1 ? e.split('@')[0] : e;
+}
+
+function savedNote(f){
+  var who = shortUser(f.updatedBy);
+  var when = f.updatedAt || '';
+  if(!who && !when) return 'Saved · type to correct';
+  return 'Saved'+(when?' '+esc(when):'')+(who?' · '+esc(who):'');
+}
+
+/* "Admin & Warehouse · Admin" reads as a repeat, so the code is dropped there */
+function pickerLabel(p){
+  var n = String(p.shortName||p.refCode);
+  var c = String(p.refCode||'');
+  return (!c || n.toLowerCase().indexOf(c.toLowerCase()) > -1) ? n : n+' · '+c;
+}
+
+function entryView(el){
+  if(D.canEdit===false){
+    el.innerHTML = '<div class="card empty">This account can read the scorecard '+
+      'but cannot save results.</div>';
+    return;
+  }
+
+  var list = entryContracts();
+  if(!list.length){ el.innerHTML='<div class="card empty">No projects to fill in</div>'; return; }
+  if(!ESEL || !list.some(function(p){ return p.refCode===ESEL; })) ESEL = list[0].refCode;
+
+  /* you measure the month that has just finished, so that is the default */
+  var now = NOWD;
+  var curM = now.getMonth()+1, curY = now.getFullYear();
+  var prevM = curM-1, prevY = curY;
+  if(prevM===0){ prevM = 12; prevY = curY-1; }
+  var curKey  = curY+'-'+(curM<10?'0':'')+curM;
+  var prevKey = prevY+'-'+(prevM<10?'0':'')+prevM;
+  if(!EMON) EMON = (prevY===D.year) ? prevKey : (D.year+'-01');
+
+  var defs = ma06Kpis(ESEL);
+
+  var current = {};
+  FACTS.forEach(function(f){
+    if(f.refCode===ESEL && f.period===EMON) current[f.kpiId] = f;
+  });
+
+  var filled = defs.filter(function(k){
+    var e = EDITS[entryKey(k.kpiId)];
+    var v = e ? e.actual : (current[k.kpiId] ? current[k.kpiId].actual : null);
+    return v!==null && v!==undefined && v!=='';
+  }).length;
+  var pct = defs.length ? Math.round(filled/defs.length*100) : 0;
+
+  var pending = Object.keys(EDITS).filter(function(kk){ return kk.indexOf(ESEL+'|')===0; }).length;
+
+  var rows = defs.map(function(k, i){
+    var cur = current[k.kpiId];
+    var ed  = EDITS[entryKey(k.kpiId)];
+    var val = ed ? ed.actual : (cur ? cur.actual : '');
+    var ev  = ed ? ed.evidence : (cur ? (cur.evidence||'') : '');
+    var num = (val===''||val===null||val===undefined) ? null : Number(val);
+    var g   = num===null || isNaN(num) ? null : clientGrade(k.kpiId, num);
+
+    var bandTip = [5,4,3,2,1].map(function(gg){
+      return '<div class="kv"><span>Grade '+gg+' · '+GLET[gg]+'</span><em>'+
+        esc(bandText(k.kpiId, gg, k.unit))+'</em></div>'; }).join('');
+
+    return '<div class="erow">'+
+      '<div class="no">'+(i+1)+'</div>'+
+      '<div class="nm">'+esc(k.description)+
+        '<s>'+esc(k.kpiId)+' · '+esc(k.frequency)+'</s></div>'+
+      '<div class="tg" data-tip="'+esc('<b>'+esc(k.description)+'</b><s>Target '+
+        esc(k.target)+'</s>'+bandTip)+'" style="cursor:help">'+esc(k.target)+'</div>'+
+      '<div><input type="number" step="any" value="'+esc(val)+'" '+
+        'placeholder="'+esc(k.unit==='%'?'0.00':'0')+'" '+
+        (ed?'class="dirty" ':'')+
+        'oninput="onEntry(\''+k.kpiId+'\',this.value,null)">'+
+        '<span class="estat '+(ed?'unsaved':(cur?'saved':''))+'">'+
+          (ed ? 'Not saved yet' : (cur ? savedNote(cur) : ''))+
+          (cur && !ed ? ' <a class="eclr" onclick="clearOne(\''+k.kpiId+'\')">clear</a>' : '')+
+        '</span></div>'+
+      '<div class="gcell">'+
+        (g ? '<span class="gp" style="background:'+gcol(g)+'">'+GLET[g]+'</span>'
+           : '<span class="gp off">–</span>')+'</div>'+
+      '<div><input class="ev'+(ed?' dirty':'')+'" type="url" value="'+esc(ev)+'" '+
+        'placeholder="Evidence link" '+
+        'oninput="onEntry(\''+k.kpiId+'\',null,this.value)"></div>'+
+    '</div>';
+  }).join('');
+
+  /* the picker only picks; status is reported below where it can be spelled out */
+  var months = monthSlots().map(function(sl){
+    return '<option value="'+sl.key+'"'+(sl.key===EMON?' selected':'')+
+      (sl.key > curKey ? ' disabled':'')+'>'+sl.label+'</option>'; }).join('');
+
+  var expect = expectedProjects(EMON);
+  var allP = expect.length, doneP = 0;
+  expect.forEach(function(pp){
+    var f = monthFill(pp.refCode, EMON);
+    if(f.total && f.done >= f.total) doneP++;
+  });
+
+
+
+  var contracts = list.map(function(x){
+    return '<option value="'+esc(x.refCode)+'"'+(x.refCode===ESEL?' selected':'')+'>'+
+      esc(pickerLabel(x))+'</option>'; }).join('');
+
+  var tr = document.getElementById('topright');
+  if(tr) tr.innerHTML =
+    '<div class="ebar" style="margin:0">'+
+      '<span class="elab">Project</span>'+
+      '<select onchange="pickEntryContract(this.value)">'+contracts+'</select>'+
+      '<span class="elab">Results for</span>'+
+      '<select onchange="pickEntryMonth(this.value)">'+months+'</select>'+
+    '</div>'+
+    '<div class="eacts">'+
+      '<div class="esum">'+filled+' of '+defs.length+' filled in'+
+        '<s>'+doneP+' of '+allP+' projects complete across the department</s></div>'+
+      '<button class="esave" id="eSave"'+(pending&&!EBUSY?'':' disabled')+
+        ' onclick="saveEntries()">'+(EBUSY?'Saving…':'Save '+(pending||'')+' change'+
+        (pending===1?'':'s'))+'</button>'+
+      (filled ? '<button class="ewipe" onclick="clearEntryMonth()">Clear this month</button>' : '')+
+    '</div>';
+
+  el.innerHTML =
+    '<div class="grid">'+ panel('e_tbl', 'Monthly Results', 'list', C.amber,
+      '<div class="ehead"><div>#</div><div>KPI</div><div>Target</div>'+
+        '<div>Result</div><div>Grade</div><div>Evidence</div></div>'+rows,
+      'Results for '+mlabel(EMON), 'flush') +'</div>'+
+    '<div id="eToast"></div>';
+}
+
+function onEntry(kid, val, ev){
+  var k = entryKey(kid);
+  var cur = FACTS.filter(function(f){
+    return f.kpiId===kid && f.refCode===ESEL && f.period===EMON; })[0];
+  var e = EDITS[k] || { kpiId:kid,
+    actual: cur ? cur.actual : '',
+    evidence: cur ? (cur.evidence||'') : '' };
+  if(val!==null) e.actual = val;
+  if(ev!==null)  e.evidence = ev;
+  EDITS[k] = e;
+
+  /* redraw only the grade chip and the save button, so typing is not interrupted */
+  var defs = ma06Kpis(ESEL);
+  var idx = defs.map(function(x){ return x.kpiId; }).indexOf(kid);
+  var rowEl = document.querySelectorAll('#e_tbl .erow')[idx];
+  if(rowEl){
+    var num = (e.actual===''||e.actual===null) ? null : Number(e.actual);
+    var g = (num===null || isNaN(num)) ? null : clientGrade(kid, num);
+    var cell = rowEl.querySelector('.gcell');
+    cell.innerHTML = g ? '<span class="gp" style="background:'+gcol(g)+'">'+GLET[g]+'</span>'
+                       : '<span class="gp off">–</span>';
+    [].forEach.call(rowEl.querySelectorAll('input'), function(inp){ inp.classList.add('dirty'); });
+    var st = rowEl.querySelector('.estat');
+    if(st){ st.className = 'estat unsaved'; st.textContent = 'Not saved yet'; }
+  }
+  var n = Object.keys(EDITS).filter(function(kk){ return kk.indexOf(ESEL+'|')===0; }).length;
+  var btn = document.getElementById('eSave');
+  if(btn){ btn.disabled = !n; btn.textContent = 'Save '+n+' change'+(n===1?'':'s'); }
+}
+
+function pickEntryContract(ref){ ESEL = ref; render(); }
+function pickEntryMonth(key){ EMON = key; render(); }
+
+function saveEntries(){
+  var payload = Object.keys(EDITS).filter(function(k){ return k.indexOf(ESEL+'|')===0; })
+    .map(function(k){
+      var e = EDITS[k];
+      return { kpiId:e.kpiId, period:EMON, actual:e.actual, evidence:e.evidence };
+    }).filter(function(r){ return r.actual!=='' && r.actual!==null; });
+
+  if(!payload.length) return;
+
+  EBUSY = true;
+  var btn = document.getElementById('eSave');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  google.script.run
+    .withSuccessHandler(function(res){
+      EBUSY = false;
+      EDITS = {};
+      mergeFacts(res.rows);
+      render();
+      toast(res.failed.length
+        ? { cls:'err', msg:res.saved+' saved, '+res.failed.length+' failed · '+
+            res.failed.map(function(f){ return f.kpiId+': '+f.message; }).join(' · ') }
+        : { cls:'ok', msg:res.saved+' result'+(res.saved===1?'':'s')+' saved for '+
+            mlabel(EMON)+(res.evidenceColumn?'':
+            ' · add a column named Evidence in 05_Fact_KPI_Monthly to keep links') });
+    })
+    .withFailureHandler(function(err){
+      EBUSY = false;
+      render();
+      toast({ cls:'err', msg:(err && err.message) || String(err) });
+    })
+    .saveKpiBatch(payload, PORTAL_USER);
+}
+
+/* the browser dialog shows the script host url, which reads as a warning,
+   so confirmations are handled inside the app */
+function askConfirm(title, html, label, fn){
+  document.getElementById('askTitle').textContent = title;
+  document.getElementById('askText').innerHTML = html;
+  var go = document.getElementById('askGo');
+  go.textContent = label || 'Remove';
+  /* the callback is held here, not in a shared variable that close would wipe */
+  go.onclick = function(){
+    askClose();
+    if(typeof fn === 'function') fn();
+  };
+  document.getElementById('ask').classList.add('on');
+}
+function askClose(){
+  document.getElementById('ask').classList.remove('on');
+}
+
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape') askClose();
+});
+
+function clearOne(kid){
+  var k = D.kpis.filter(function(x){ return x.kpiId===kid; })[0];
+  askConfirm('Remove this reading',
+    'The <b>'+esc(mlabel(EMON))+'</b> result for <b>'+esc(k?k.description:kid)+
+    '</b> will be deleted from the sheet.', 'Remove',
+    function(){ doClearOne(kid); });
+}
+
+function doClearOne(kid){
+  var period = EMON;
+  delete EDITS[entryKey(kid)];
+  google.script.run
+    .withSuccessHandler(function(){
+      dropFacts(function(f){ return f.kpiId===kid && f.period===period; });
+      render();
+      toast({ cls:'ok', msg:'Reading removed for '+mlabel(period) });
+    })
+    .withFailureHandler(function(err){
+      toast({ cls:'err', msg:(err && err.message) || String(err) });
+    })
+    .clearKpiResult(kid, period, PORTAL_USER);
+}
+
+function clearEntryMonth(){
+  var p = D.projects.filter(function(x){ return x.refCode===ESEL; })[0];
+  askConfirm('Clear the whole month',
+    'Every <b>'+esc(mlabel(EMON))+'</b> result for <b>'+esc(p?p.shortName:ESEL)+
+    '</b> will be deleted. This cannot be undone.', 'Clear month',
+    function(){ doClearMonth(); });
+}
+
+function doClearMonth(){
+  var ref = ESEL, period = EMON;
+  EDITS = {};
+  google.script.run
+    .withSuccessHandler(function(res){
+      dropFacts(function(f){ return f.refCode===ref && f.period===period; });
+      render();
+      toast({ cls:'ok', msg:res.removed+' reading'+(res.removed===1?'':'s')+
+        ' removed for '+mlabel(period) });
+    })
+    .withFailureHandler(function(err){
+      toast({ cls:'err', msg:(err && err.message) || String(err) });
+    })
+    .clearKpiMonth(ref, period, PORTAL_USER);
+}
+
+function toast(t){
+  var el = document.getElementById('eToast');
+  if(!el) return;
+  el.innerHTML = '<div class="etoast '+t.cls+'">'+esc(t.msg)+'</div>';
+  setTimeout(function(){ if(el.firstChild) el.innerHTML = ''; }, 9000);
+}
+
+/* ---------- load ---------- */
+function onData(res, skipRender){
+  D = res; FACTS = res.facts;
+  document.getElementById('upd').textContent = res.updated;
+  var role = document.getElementById('role');
+  if(role) role.textContent = (res.canEdit===false) ? 'View only' : 'Last Updated';
+  D.projects.forEach(function(p){ nameColor(p.refCode); });
+  if(!skipRender) apply();
+  document.getElementById('load').style.display = 'none';
+}
+function onErr(e){
+  document.getElementById('load').innerHTML =
+    '<div style="text-align:center;color:#EF3B41;font-weight:600">Could not load the data'+
+    '<br><span style="color:#8D97A5;font-weight:500;font-size:12px">'+
+    (e && e.message || e)+'</span></div>';
+}
+
+boot();
+applyDateOverride();
+if(typeof google!=='undefined' && google.script && google.script.run){
+  google.script.run.withSuccessHandler(onData).withFailureHandler(onErr).getAppData(PORTAL_USER);
+}else if(typeof MOCK!=='undefined'){ onData(MOCK); }
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!-- ============================================================
+     OMA Design Kit — Kit.html
+     Shared helpers: icons, colours, charts, tooltip, sticky header,
+     cross-filtering. Never edit per project.
+     Use with:  <?!= include('Kit') ?>   (after Theme)
+
+     The app must define, before calling anything here:
+       var F    = {q:''};      // current filter values
+       var FLAB = {};          // filter key -> label shown on the chip
+       function apply(){}      // re-filters the data then calls render()
+     ============================================================ -->
+<script>
+/* ---------- icons ---------- */
+var IC={
+ grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/>',
+ tree:'<rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-3h14v3"/>',
+ pulse:'<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+ db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+ box:'<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8"/>',
+ cup:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+ pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ cake:'<path d="M4 21h16M4 21v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6M12 8v3M12 4v1"/>',
+ chart:'<path d="M3 3v18h18M7 15l4-5 3 3 5-7"/>',
+ seat:'<path d="M4 18v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6M7 10V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v4M4 18h16"/>',
+ dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+ eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+ list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+ expand:'<path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6"/>',
+ shrink:'<path d="M3 9h6V3M21 9h-6V3M3 15h6v6M21 15h-6v6"/>'
+};
+function ico(n,c,w){return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(c||'currentColor')+'" stroke-linecap="round" stroke-linejoin="round" stroke-width="'+(w||2)+'">'+IC[n]+'</svg>';}
+
+/* ---------- palette ---------- */
+var C={red:'#EF3B41',green:'#1FA85C',blue:'#2F6BF0',teal:'#12B5A6',amber:'#F5A623',
+  purple:'#7C5CF5',pink:'#EC4899',cyan:'#0EA5E9',orange:'#F97316',indigo:'#4F46E5',
+  rose:'#E11D48',lime:'#65A30D',ink:'#5A6472'};
+var SERIES=[C.blue,C.green,C.amber,C.purple,C.teal,C.pink,C.orange,C.cyan,C.rose,C.lime,C.indigo,'#94A3B8'];
+function tint(h,a){var n=parseInt(h.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
+function shade(h){var n=parseInt(h.slice(1),16),r=Math.round((n>>16&255)*.72),
+  g=Math.round((n>>8&255)*.72),b=Math.round((n&255)*.72);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+/* Levels come from the sheet, so their names and colours are built at load time */
+function tint(h,a){var n=parseInt(h.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';}
+function shade(h){var n=parseInt(h.slice(1),16),r=Math.round((n>>16&255)*.72),
+  g=Math.round((n>>8&255)*.72),b=Math.round((n&255)*.72);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+
+/* One colour per name for the whole app: if a name is blue in one chart it is
+   blue in every chart, chip and pill. Charts about a different subject keep
+   their own palette. Call nameColor(x) everywhere that dimension appears. */
+var NAMEC={};
+var ORGPAL=[C.blue,C.green,C.amber,C.purple,C.teal,C.pink,C.orange,C.cyan,C.rose,C.lime,
+  C.indigo,'#0891B2','#B45309','#7E22CE','#15803D','#BE123C','#0369A1','#A16207','#4D7C0F',
+  '#9333EA','#EA580C','#0D9488','#DB2777','#475569'];
+function nameColor(x){
+  var k=String(x||'');
+  if(!k)return C.ink;
+  if(!NAMEC[k])NAMEC[k]=ORGPAL[Object.keys(NAMEC).length%ORGPAL.length];
+  return NAMEC[k];}
+
+/* ---------- small helpers ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function W(id){var e=document.getElementById(id);return e?Math.max(250,e.clientWidth):600;}
+function cut(s,n){s=String(s);return s.length>n?s.slice(0,n-1)+'\u2026':s;}
+function fmtDate(iso){if(!iso)return '\u2014';var d=new Date(iso+'T00:00:00'),
+  M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear();}
+function uniqOf(a,k){var s={};a.forEach(function(r){if(r[k])s[r[k]]=1;});return Object.keys(s);}
+function cnt(a,k){var m={};a.forEach(function(r){var v=r[k];if(!v)return;(m[v]=m[v]||[]).push(r);});
+  return Object.keys(m).map(function(x){return{label:x,value:m[x].length,rows:m[x]};})
+    .sort(function(p,q){return q.value-p.value;});}
+
+/* ---------- tooltip ----------
+   Set TIP_COUNT_LABEL in your app if the rows are not people. */
+var TIP_COUNT_LABEL='People';
+function tipInit(){
+  var t=document.getElementById('tip');
+  document.addEventListener('mousemove',function(e){
+    var el=e.target&&e.target.closest?e.target.closest('[data-tip]'):null;
+    if(!el){t.classList.remove('on');return;}
+    var html=el.getAttribute('data-tip');
+    if(t._h!==html){t.innerHTML=html;t._h=html;}
+    t.classList.add('on');
+    var r=t.getBoundingClientRect(),x=e.clientX+15,y=e.clientY+17;
+    if(x+r.width>window.innerWidth-10)x=e.clientX-r.width-15;
+    if(y+r.height>window.innerHeight-10)y=e.clientY-r.height-15;
+    t.style.left=Math.max(8,x)+'px';t.style.top=Math.max(8,y)+'px';});
+  document.addEventListener('mouseleave',function(){t.classList.remove('on');});
+  window.addEventListener('scroll',function(){t.classList.remove('on');},true);}
+function tipList(rows){
+  if(!rows||!rows.length)return '';
+  var show=rows.slice(0,14),
+    html='<div class="nl">'+show.map(function(r){
+      var n=r.name||r.label||'';
+      return '<u>'+esc(n)+(r.nick?' <i>('+esc(r.nick)+')</i>':'')+'</u>';}).join('')+
+    (rows.length>show.length?'<div class="more">+'+(rows.length-show.length)+' more</div>':'')+'</div>';
+  return html;}
+
+function tipBar(title,sub,val,rows){
+  return '<b>'+esc(title)+'</b>'+(sub?'<s>'+esc(sub)+'</s>':'')+
+    '<div class="kv"><span>'+TIP_COUNT_LABEL+'</span><em>'+val+'</em></div>'+tipList(rows);}
+
+/* ---------- charts ---------- */
+function hbars(items,o){
+  o=o||{};var max=Math.max.apply(null,items.map(function(i){return i.value;}))||1,
+    tot=items.reduce(function(a,b){return a+b.value;},0)||1;
+  return '<div class="hbars">'+items.map(function(it,i){
+    var col=it.color||SERIES[i%SERIES.length];
+    return '<div class="hbrow"'+(o.fk?' '+fclick([[o.fk,it.label]]):'')+
+      ' data-tip="'+esc(tipBar(it.label,o.sub||'',it.value,it.rows))+'">'+
+      '<div class="hb-l">'+esc(it.label)+'</div>'+
+      '<div class="hb-t"><span style="width:'+Math.max(3,it.value/max*100)+'%;background:'+col+'"></span></div>'+
+      '<div class="hb-v" style="color:'+col+'">'+it.value+'</div></div>';}).join('')+'</div>';}
+function barV(items,o){
+  o=o||{};var w=o.w||600,h=o.h||230,bot=40,top=22,
+    max=Math.max.apply(null,items.map(function(i){return i.value;}))||1,
+    tot=items.reduce(function(a,b){return a+b.value;},0)||1,
+    n=items.length,step=(w-20)/n,bw=Math.min(o.bw||44,step-14),s='';
+  [0,.5,1].forEach(function(t){var y=top+(h-top-bot)*(1-t);
+    s+='<line x1="10" x2="'+(w-10)+'" y1="'+y+'" y2="'+y+'" stroke="#EEF1F6"/>';});
+  items.forEach(function(it,i){
+    var bh=Math.max(3,(h-top-bot)*it.value/max),x=10+step*i+(step-bw)/2,y=h-bot-bh,
+      col=it.color||SERIES[i%SERIES.length];
+    s+='<rect x="'+(10+step*i)+'" y="'+top+'" width="'+step+'" height="'+(h-top-bot)+'" fill="transparent" '+
+       (o.fk?fclick([[o.fk,it.label]]):'')+' data-tip="'+esc(tipBar(it.label,o.sub||'',it.value,it.rows))+'"/>'+
+       '<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="6" fill="'+col+'" pointer-events="none"/>'+
+       '<text x="'+(x+bw/2)+'" y="'+(y-7)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#151B23">'+it.value+'</text>'+
+       '<text x="'+(x+bw/2)+'" y="'+(h-bot+18)+'" text-anchor="middle" font-size="10.5" font-weight="600" fill="#8D97A5">'+esc(it.label)+'</text>';});
+  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" height="'+h+'">'+s+'</svg>';}
+function donut(items,center,label,sz,sub,fk){
+  sz=sz||186;var r=sz/2,ir=r*.50,tot=items.reduce(function(a,b){return a+b.value;},0)||1,
+    ang=-Math.PI/2,s='';
+  items.forEach(function(it,i){
+    var a2=ang+2*Math.PI*it.value/tot,col=it.color||SERIES[i%SERIES.length],
+      x1=r+r*Math.cos(ang),y1=r+r*Math.sin(ang),x2=r+r*Math.cos(a2),y2=r+r*Math.sin(a2),
+      x3=r+ir*Math.cos(a2),y3=r+ir*Math.sin(a2),x4=r+ir*Math.cos(ang),y4=r+ir*Math.sin(ang),
+      big=(a2-ang)>Math.PI?1:0;
+    s+='<path d="M'+x1+' '+y1+'A'+r+' '+r+' 0 '+big+' 1 '+x2+' '+y2+'L'+x3+' '+y3+'A'+ir+' '+ir+' 0 '+big+' 0 '+x4+' '+y4+'Z" '+
+       'fill="'+col+'" stroke="#fff" stroke-width="2" '+(fk?fclick([[fk,it.label]]):'')+
+       ' data-tip="'+esc(tipBar(it.label,sub||'',it.value,it.rows))+'"/>';
+    ang=a2;});
+  s+='<text x="'+r+'" y="'+(r+2)+'" text-anchor="middle" font-size="'+Math.round(sz*0.145)+'" font-weight="800" fill="#151B23">'+center+'</text>'+
+     '<text x="'+r+'" y="'+(r+Math.round(sz*0.105))+'" text-anchor="middle" font-size="10" font-weight="600" fill="#8D97A5">'+esc(label)+'</text>';
+  return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 '+sz+' '+sz+'">'+s+'</svg>';}
+function legend(items,tot,fk){
+  return items.map(function(it,i){var col=it.color||SERIES[i%SERIES.length];
+    return '<div class="lgrow"'+(fk?' '+fclick([[fk,it.label]]):'')+
+      ' data-tip="'+esc(tipBar(it.label,'',it.value,it.rows))+'">'+
+      '<span class="sw" style="background:'+col+'"></span>'+
+      '<span class="nm">'+esc(it.label)+'</span>'+
+      '<span class="vv" style="color:'+col+'">'+it.value+'</span>'+
+      '<span class="lgp">'+Math.round(it.value/tot*100)+'%</span></div>';}).join('');}
+function combo(years,hires,cum,o){
+  o=o||{};var w=o.w||700,h=o.h||250,L=34,R=34,T=24,B=34,
+    iw=w-L-R,ih=h-T-B,n=years.length,step=iw/Math.max(1,n),
+    mb=Math.max.apply(null,hires)||1,mc=Math.max.apply(null,cum)||1,s='';
+  [0,.5,1].forEach(function(t){var y=T+ih*(1-t);
+    s+='<line x1="'+L+'" x2="'+(w-R)+'" y1="'+y+'" y2="'+y+'" stroke="#EEF1F6"/>';});
+  var pts=years.map(function(_,i){return [L+step*i+step/2,T+ih*(1-cum[i]/mc)];});
+  s+='<path d="'+pts.map(function(p,i){return (i?'L':'M')+p[0]+' '+p[1];}).join('')+
+     'L'+pts[n-1][0]+' '+(T+ih)+'L'+pts[0][0]+' '+(T+ih)+'Z" fill="'+tint(C.green,.10)+'"/>';
+  years.forEach(function(y,i){
+    var bw=Math.min(26,step-10),bh=hires[i]?Math.max(3,ih*.62*hires[i]/mb):0,
+      x=L+step*i+(step-bw)/2,yy=T+ih-bh,
+      tp='<b>'+y+'</b><div class="kv"><span>Joined</span><em>'+hires[i]+'</em></div>'+
+         '<div class="kv"><span>Team size</span><em>'+cum[i]+'</em></div>'+
+         tipList(o.rowsBy?o.rowsBy[y]:null);
+    s+='<rect x="'+(L+step*i)+'" y="'+T+'" width="'+step+'" height="'+ih+'" fill="transparent" '+
+       (hires[i]?fclick([['year',y]]):'')+' data-tip="'+esc(tp)+'"/>';
+    if(hires[i]){
+      s+='<rect x="'+x+'" y="'+yy+'" width="'+bw+'" height="'+bh+'" rx="5" fill="'+tint(C.amber,.85)+'" pointer-events="none"/>'+
+         '<text x="'+(x+bw/2)+'" y="'+(yy-5)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#B26B00">'+hires[i]+'</text>';}
+    if(n<=16||i%2===0)s+='<text x="'+(L+step*i+step/2)+'" y="'+(h-12)+'" text-anchor="middle" font-size="10" font-weight="600" fill="#8D97A5">'+y+'</text>';});
+  s+='<path d="'+pts.map(function(p,i){return (i?'L':'M')+p[0]+' '+p[1];}).join('')+'" fill="none" stroke="'+C.green+'" stroke-width="2.5" stroke-linejoin="round"/>';
+  pts.forEach(function(p){s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.6" fill="#fff" stroke="'+C.green+'" stroke-width="2.2"/>';});
+  s+='<text x="'+(w-R+6)+'" y="'+(T+8)+'" font-size="10" font-weight="700" fill="'+C.green+'">'+mc+'</text>';
+  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" height="'+h+'">'+s+'</svg>';}
+function scatter(pts,o){
+  o=o||{};var w=o.w||600,h=o.h||290,L=38,R=14,T=14,B=40,iw=w-L-R,ih=h-T-B,
+    xs=pts.map(function(p){return p.x;}),ys=pts.map(function(p){return p.y;}),
+    x0=Math.floor(Math.min.apply(null,xs)/5)*5-2,x1=Math.ceil(Math.max.apply(null,xs)/5)*5+2,
+    y1=Math.ceil(Math.max.apply(null,ys))+1,s='';
+  function X(v){return L+iw*(v-x0)/(x1-x0);}
+  function Y(v){return T+ih*(1-v/y1);}
+  for(var g=0;g<=4;g++){var y=T+ih*g/4;
+    s+='<line x1="'+L+'" x2="'+(w-R)+'" y1="'+y+'" y2="'+y+'" stroke="#EEF1F6"/>'+
+       '<text x="'+(L-7)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#B4BCC8">'+Math.round(y1*(1-g/4))+'</text>';}
+  for(var x=x0;x<=x1;x+=5)s+='<text x="'+X(x)+'" y="'+(h-20)+'" text-anchor="middle" font-size="10" fill="#B4BCC8">'+x+'</text>';
+  s+='<text x="'+(L+iw/2)+'" y="'+(h-5)+'" text-anchor="middle" font-size="10.5" font-weight="600" fill="#8D97A5">Age (years)</text>';
+  pts.forEach(function(p){s+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="7" fill="'+p.color+'" fill-opacity=".85" stroke="#fff" stroke-width="1.5" data-tip="'+esc(p.tip)+'"/>';});
+  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" height="'+h+'">'+s+'</svg>';}
+
+/* ---------- shell components ---------- */
+function panel(id,title,icon,color,body,sub,pad){
+  return '<div class="card"><div class="ph"><div class="ic" style="background:'+tint(color,.12)+'">'+ico(icon,color)+'</div>'+
+    '<h3>'+title+'</h3>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>'+
+    '<div class="pb'+(pad?' '+pad:'')+'" id="'+id+'">'+body+'</div></div>';}
+function kpiCard(c,icon,label,value,unit,sub,tip){
+  return '<div class="card k" style="--c:'+c+'"'+(tip?' data-tip="'+esc(tip)+'"':'')+'>'+
+    '<div class="t"><div class="ic" style="background:'+tint(c,.12)+'">'+ico(icon,c)+'</div><div class="lb">'+label+'</div></div>'+
+    '<div class="vl">'+value+(unit?'<i>'+unit+'</i>':'')+'</div>'+
+    '<div class="sb"><span class="dot"></span>'+sub+'</div></div>';}
+
+/* ---------- cross-filtering ---------- */
+var FREG=[];
+function fclick(pairs){FREG.push(pairs);
+  return 'onclick="fapply('+(FREG.length-1)+')" style="cursor:pointer"';}
+function fapply(i){
+  var p=FREG[i],same=p.every(function(x){return F[x[0]]===String(x[1]);});
+  p.forEach(function(x){F[x[0]]=same?'':String(x[1]);});
+  syncSel();apply();}
+function clearF(k){F[k]='';syncSel();apply();}
+function syncSel(){
+  var m=(typeof selMap==='function')?selMap():[];
+  m.forEach(function(x){var el=document.getElementById(x[0]);if(el)el.value=F[x[1]]||'';});}
+
+function renderChips(){
+  var box=document.getElementById('chips'),act=Object.keys(FLAB).filter(function(k){return F[k];});
+  box.innerHTML=act.length?act.map(function(k){
+    return '<span class="fchip">'+FLAB[k]+': <b>'+esc(F[k])+'</b>'+
+      '<i onclick="clearF(\''+k+'\')">×</i></span>';}).join('')+
+    '<span class="fchip clr" onclick="resetF()">Clear all</span>':'';}
+
+/* ---------- pinned header ---------- */
+function stickInit(){
+  var top=document.getElementById('topfix');
+  function measure(){
+    top.classList.remove('nofix');
+    var h=top.getBoundingClientRect().height;
+    if(h>window.innerHeight*0.55){top.classList.add('nofix');h=0;}
+    document.documentElement.style.setProperty('--stick',Math.round(h)+'px');}
+  function onScroll(){
+    top.classList.toggle('stuck',window.scrollY>4&&!top.classList.contains('nofix'));}
+  window._stick=function(){measure();onScroll();};
+  window.addEventListener('scroll',onScroll,{passive:true});
+  window.addEventListener('resize',function(){measure();onScroll();});
+  measure();onScroll();setTimeout(window._stick,300);}
+
+/* Call once from the app after the DOM is ready */
+function kitInit(){stickInit();tipInit();}
+</script>
