@@ -319,15 +319,59 @@ function frameSrc(menu) {
   return menu.src + (menu.src.indexOf('?') === -1 ? '?' : '&') + q.join('&');
 }
 
-function openMenu(id) {
+/* ยืนยันสิทธิ์สดกับ Hub ทุกครั้งก่อนเข้าเมนู — กันแท็บที่เปิดค้างไว้เห็นหน้าที่
+   admin เพิ่งตัดสิทธิ์ไปเมื่อครู่ ถ้าเน็ตหลุดชั่วคราวจะใช้สิทธิ์เดิมต่อไปก่อน
+   ไม่บล็อกผู้ใช้ (กันเน็ตกระตุกแล้วเด้งออกทั้งที่สิทธิ์ยังปกติ) */
+async function revalidateSession() {
+  try {
+    const r = await api('verify', {});
+    if (!r.success) { logout(true); return; }
+    applySession({
+      user: { email: r.email, name: r.name, role: r.role, roleLabel: r.roleLabel,
+              projectScope: r.projectScope, projects: r.projects, isAdmin: r.isAdmin },
+      menus: r.menus, projects: r.projectList
+    });
+    renderNav();
+    renderProjectSelect();
+    $('#userChip').textContent = state.user.name || state.user.email;
+    $('#sideName').textContent = state.user.name || state.user.email;
+    $('#sideRole').textContent = state.user.roleLabel || state.user.role;
+    $('#sideScope').innerHTML  = state.user.projectScope === 'all'
+      ? '<span class="tag on">ทุกโครงการ</span>'
+      : state.projects.map(p => '<span class="tag">' + esc(p.code) + '</span>').join('');
+  } catch (err) { /* เน็ตหลุดชั่วคราว — ใช้สิทธิ์เดิมต่อไปก่อน ไม่บล็อกผู้ใช้ */ }
+}
+
+let deniedPane = null;
+function showDenied(message) {
+  if (!deniedPane) {
+    deniedPane = document.createElement('div');
+    deniedPane.className = 'pane';
+    deniedPane.dataset.pane = 'denied';
+    $('#content').appendChild(deniedPane);
+  }
+  deniedPane.innerHTML = '<div class="empty">' + esc(message) + '</div>';
+  deniedPane.classList.remove('hidden');
+}
+
+async function openMenu(id) {
   if (!id) { $('#content').innerHTML = '<div class="empty">ยังไม่มีหน้าที่คุณมีสิทธิ์เข้าถึง</div>'; return; }
+
+  await revalidateSession();
+
+  $$('#nav a').forEach(a => a.classList.toggle('active', a.dataset.id === id));
+  $$('#content > *').forEach(el => el.classList.add('hidden'));
+
   const menu = state.menus.find(m => m.id === id);
-  if (!menu) return;
+  if (!menu) {
+    state.current = '';
+    $('#pageTitle').textContent = 'ไม่มีสิทธิ์เข้าถึง';
+    showDenied('คุณไม่มีสิทธิ์เข้าหน้านี้แล้ว (สิทธิ์อาจเพิ่งถูกปรับ) — เลือกเมนูอื่นจากด้านซ้าย');
+    return;
+  }
 
   state.current = id;
   $('#pageTitle').textContent = menu.label;
-  $$('#nav a').forEach(a => a.classList.toggle('active', a.dataset.id === id));
-  $$('#content > *').forEach(el => el.classList.add('hidden'));
 
   if (menu.id === 'sec-settings') { openSettings(); return; }
   if (!menu.isIframe) return;
@@ -336,10 +380,13 @@ function openMenu(id) {
     const wrap = document.createElement('div');
     wrap.className = 'frame-wrap';
     wrap.dataset.frame = id;
-    wrap.innerHTML = '<iframe title="' + esc(menu.label) + '" src="' + esc(frameSrc(menu)) + '" allow="clipboard-write"></iframe>';
+    wrap.innerHTML = '<iframe title="' + esc(menu.label) + '" allow="clipboard-write"></iframe>';
     $('#content').appendChild(wrap);
     state.frames[id] = wrap;
   }
+  // กำหนด src ใหม่ทุกครั้งที่เข้าเมนูนี้ (ไม่ใช่แค่ตอนสร้าง iframe ครั้งแรก) เพื่อ
+  // บังคับให้ doGet/การ verify สดของแอปลูกทำงานทุกครั้ง — ไม่ใช่แค่ตอนเปิดครั้งแรก
+  $('iframe', state.frames[id]).src = frameSrc(menu);
   state.frames[id].classList.remove('hidden');
 
   const sel = $('#projectSelect');

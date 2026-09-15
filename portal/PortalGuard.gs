@@ -5,14 +5,28 @@
    ใครที่รู้ URL ของแอปลูกก็ยังเปิดตรงได้ ดังนั้นแอปลูกต้องตรวจสิทธิ์เองด้วย
    โดยเอา token ที่พอร์ทัลส่งมากับ URL ไปยืนยันกับ Hub ทุกครั้ง
 
+   ⚠️ ไม่มี cache ข้ามคำขอในไฟล์นี้โดยตั้งใจ — เพื่อให้ตรงกับกฎ "แก้สิทธิ์แล้วต้องมีผล
+   ทันที ห้ามหน่วง" cache ที่ทำได้อย่างปลอดภัย (แบบมีเลขเวอร์ชัน) อยู่ฝั่ง Hub
+   (Auth.gs) เท่านั้น เพราะ Hub เป็นจุดเดียวที่ล้าง cache เดิมทั้งหมดได้ทันทีตอนที่
+   admin กดบันทึก ส่วนไฟล์นี้ (รันอยู่คนละ script project กับ Hub) เอื้อมไปล้าง
+   cache ของ Hub ไม่ได้ จึงต้องยิงถาม Hub สดทุกครั้งแทน — มีแค่ memo ในหน่วยความจำ
+   ระดับการทำงานครั้งเดียว (ถูกทิ้งเมื่อจบ execution) กันแค่การยิงซ้ำซ้อนภายในคำขอ
+   เดียวกันเท่านั้น
+
    วิธีใช้ใน doGet ของแอปลูก
    ------------------------------------------------
-   function doGet(e) {
-     const access = portalAccess(e);
-     if (!access.ok) return portalDenied(access.message);
+   const PORTAL_MENU_ID = 'sec-xxx-dash';   // id เมนูของแอปนี้ใน MASTER_MENUS
+   const PORTAL_ENFORCE = false;            // true เมื่อพร้อมเปิดใช้งานจริง (ดูด้านล่าง)
 
-     const project = e.parameter.project || '';
-     if (project && !canSeeProject(access, project)) return portalDenied('ไม่มีสิทธิ์ดูโครงการนี้');
+   function doGet(e) {
+     const g = portalGuard(e, PORTAL_MENU_ID);
+     if (g.deny) return g.deny;               // ถูกปฏิเสธ (และ PORTAL_ENFORCE = true)
+     const access = g.access;                 // สิทธิ์จริง หรือสิทธิ์แบบผ่อนปรนช่วง shadow-mode
+
+     const project = (e && e.parameter && e.parameter.project) || '';
+     if (project && PORTAL_ENFORCE && !canSeeProject(access, project)) {
+       return portalDenied('ไม่มีสิทธิ์ดูโครงการนี้');
+     }
 
      const t = HtmlService.createTemplateFromFile('index');
      t.access = access;                       // ส่งสิทธิ์เข้าไปให้หน้าเว็บใช้ซ่อนปุ่ม
@@ -21,60 +35,150 @@
 
    และตอนอ่านข้อมูลให้กรองด้วย scopeRows() เสมอ
      const rows = scopeRows(allRows, access, 'project');
+
+   ส่วนฟังก์ชันที่ถูกเรียกผ่าน google.script.run (ไม่มี e ให้ใช้) ให้รับ portalToken
+   เป็นพารามิเตอร์แรกเสมอ แล้วเรียก portalAccessFromToken ตรงๆ:
+     function saveTask(portalToken, payload) {
+       const access = portalAccessFromToken(portalToken);
+       if (!access.ok) return { ok:false, error: access.message };
+       if (!canWrite(access)) return { ok:false, error: 'สิทธิ์ไม่พอ' };
+       ...
+     }
+
+   PORTAL_ENFORCE คือสวิตช์ rollout ต่อแอป (ไม่ใช่ด่านความปลอดภัยจริง):
+   ตอน false ระบบยังยิงไปถาม Hub และตัดสินใจเหมือนเดิมทุกอย่าง (ดู log ได้ว่า
+   ถ้าบังคับใช้จริงจะปฏิเสธใครบ้าง) แต่จะไม่บล็อกใคร — คืนสิทธิ์แบบผ่อนปรนเต็มที่
+   แทน เพื่อให้แอปทำงานเหมือนวันนี้จนกว่าจะยืนยันว่า role/โครงการของผู้ใช้จริงทุกคน
+   แมปถูกต้องแล้ว ค่อยเปลี่ยนเป็น true แล้ว deploy ใหม่
    ================================================================ */
 
-const PORTAL_HUB_URL = 'https://script.google.com/macros/s/XXXXXXXX/exec';  // ← ใส่ /exec ของ Auth service
-const PORTAL_CACHE_SEC = 300;
+var PORTAL_HUB_URL = 'https://script.google.com/macros/s/XXXXXXXX/exec';  // ← ใส่ /exec ของ Auth service (Hub)
 
-/* ตรวจ token ที่พอร์ทัลส่งมา → คืนสิทธิ์ของผู้ใช้คนนั้น */
-function portalAccess(e) {
-  const token = (e && e.parameter && e.parameter.portalToken) || '';
+/* memo ระดับการทำงานครั้งเดียว — ไม่ใช่ cache ข้ามคำขอ (ดูคำอธิบายด้านบน) */
+var _portalMemo = {};
+
+/* ยืนยัน token กับ Hub สดทุกครั้ง (ไม่มี cache ข้ามคำขอ)
+   ใส่ menuId (optional) เพื่อให้ Hub เช็คสิทธิ์หน้านี้มาให้เลยในคำขอเดียวกัน
+   (ผลจะมี access.menuAllowed ติดมาด้วย ใช้แทนการเทียบ access.menuIds เอง) */
+function portalAccessFromToken(token, menuId) {
   if (!token) return { ok: false, message: 'กรุณาเข้าใช้งานผ่านหน้า OMA Portal' };
 
-  const cache = CacheService.getScriptCache();
-  const key   = 'portal_' + Utilities.base64Encode(token).slice(0, 40);
-  const hit   = cache.get(key);
-  if (hit) return JSON.parse(hit);
+  var memoKey = token + '|' + (menuId || '');
+  if (_portalMemo.hasOwnProperty(memoKey)) return _portalMemo[memoKey];
 
-  let result;
+  var result;
   try {
-    const res = UrlFetchApp.fetch(
-      PORTAL_HUB_URL + '?action=verify&token=' + encodeURIComponent(token),
-      { muteHttpExceptions: true, followRedirects: true }
-    );
-    const json = JSON.parse(res.getContentText());
+    var payload = { action: 'verify', token: token };
+    if (menuId) payload.menuId = menuId;
+
+    var res = UrlFetchApp.fetch(PORTAL_HUB_URL, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+    var json = JSON.parse(res.getContentText());
+
     result = json.success
       ? { ok: true, email: json.email, name: json.name, role: json.role,
           projectScope: json.projectScope, projects: json.projects || [],
-          menuIds: json.menuIds || [], isAdmin: !!json.isAdmin }
-      : { ok: false, message: json.message || 'ไม่มีสิทธิ์เข้าใช้งาน' };
+          menuIds: json.menuIds || [], isAdmin: !!json.isAdmin,
+          menuAllowed: json.menuAllowed }
+      : { ok: false, message: json.message || 'ไม่มีสิทธิ์เข้าใช้งาน', code: json.code };
   } catch (err) {
     result = { ok: false, message: 'ตรวจสอบสิทธิ์ไม่สำเร็จ: ' + err.message };
   }
 
-  if (result.ok) cache.put(key, JSON.stringify(result), PORTAL_CACHE_SEC);
+  _portalMemo[memoKey] = result;
   return result;
 }
 
-/* true ถ้าผู้ใช้คนนี้ดูโครงการนี้ได้ (admin/manager = ทุกโครงการ) */
+/* ตรวจ token จาก e.parameter.portalToken (ใช้ใน doGet) */
+function portalAccess(e, menuId) {
+  var token = (e && e.parameter && e.parameter.portalToken) || '';
+  return portalAccessFromToken(token, menuId);
+}
+
+/* จุดเรียกหลักสำหรับ doGet — ครบทั้งเช็ค token + เช็คเมนู + สวิตช์ PORTAL_ENFORCE
+   คืน { deny, access } เสมอ: ถ้า deny ไม่ใช่ null ให้ return มันตรงๆ ทันที
+   ไม่งั้นใช้ access ตัวที่คืนมาไปสร้างหน้าเว็บต่อ (ในโหมด shadow ที่ PORTAL_ENFORCE
+   ยังเป็น false นี่จะเป็นสิทธิ์แบบผ่อนปรนเต็มที่ ไม่ใช่สิทธิ์จริงของผู้ใช้) */
+function portalGuard(e, menuId) {
+  var enforce = (typeof PORTAL_ENFORCE !== 'undefined') ? PORTAL_ENFORCE : true; // ลืมประกาศ = เข้มงวดไว้ก่อน
+  var access  = portalAccess(e, menuId);
+
+  var problem = null;
+  if (!access.ok) problem = access.message || 'กรุณาเข้าใช้งานผ่านหน้า OMA Portal';
+  else if (menuId && !requireMenu(access, menuId)) problem = 'ไม่มีสิทธิ์เข้าหน้านี้';
+
+  if (!problem) return { deny: null, access: access };
+
+  if (enforce) return { deny: portalDenied(problem), access: null };
+
+  try {
+    Logger.log('[PORTAL_ENFORCE=false] จะปฏิเสธถ้าบังคับใช้จริง (' + menuId + '): ' + problem +
+      (access && access.email ? ' · ผู้ใช้: ' + access.email : ''));
+  } catch (logErr) { /* log ล้มเหลวไม่ควรทำให้แอปล่ม */ }
+
+  // โหมดเงา: ปล่อยผ่านด้วยสิทธิ์ผ่อนปรนเต็มที่ ให้แอปทำงานเหมือนวันนี้ทุกอย่าง
+  return {
+    deny: null,
+    access: {
+      ok: true, email: (access && access.email) || '', name: (access && access.name) || '',
+      role: 'legacy', isAdmin: true, projectScope: 'all', projects: [], menuIds: [],
+      menuAllowed: true
+    }
+  };
+}
+
+/* true ถ้าผู้ใช้คนนี้เข้าหน้านี้ได้ — ใช้ access.menuAllowed ถ้ามีมาแล้ว (จากการยิง
+   verify พร้อม menuId คำขอเดียว) ไม่งั้นเทียบกับ access.menuIds เอง */
+function requireMenu(access, menuId) {
+  if (!access || !access.ok) return false;
+  if (typeof access.menuAllowed === 'boolean') return access.menuAllowed;
+  return (access.menuIds || []).indexOf(menuId) !== -1;
+}
+
+/* คงชื่อเดิมไว้เผื่อโค้ดส่วนอื่นเรียกอยู่ — พฤติกรรมเหมือน requireMenu */
+function canSeeMenu(access, menuId) {
+  return requireMenu(access, menuId);
+}
+
+/* true ถ้าผู้ใช้คนนี้ดูโครงการนี้ได้ (admin/manager/legacy = ทุกโครงการ) */
 function canSeeProject(access, project) {
   if (!access || !access.ok) return false;
   if (access.projectScope === 'all') return true;
-  const target = String(project || '').trim().toLowerCase();
-  return (access.projects || []).some(p => String(p).trim().toLowerCase() === target);
+  var target = String(project || '').trim().toLowerCase();
+  return (access.projects || []).some(function (p) { return String(p).trim().toLowerCase() === target; });
 }
 
 /* กรองแถวข้อมูลให้เหลือเฉพาะโครงการที่ผู้ใช้เห็นได้ */
 function scopeRows(rows, access, field) {
   if (!access || !access.ok) return [];
   if (access.projectScope === 'all') return rows;
-  const key = field || 'project';
-  return rows.filter(r => canSeeProject(access, r[key]));
+  var key = field || 'project';
+  return rows.filter(function (r) { return canSeeProject(access, r[key]); });
 }
 
-/* ตรวจว่าผู้ใช้มีสิทธิ์เข้าหน้านี้ไหม (ใส่ id ของเมนูใน MASTER_MENUS) */
-function canSeeMenu(access, menuId) {
-  return !!access && access.ok && (access.menuIds || []).indexOf(menuId) !== -1;
+/* สิทธิ์เขียนข้อมูล — ค่าเริ่มต้น: ทุก role ยกเว้น viewer เขียนได้
+   (ปรับ default ตรงนี้ได้ถ้าบางแอปต้องการกฎเข้มกว่านี้) */
+function canWrite(access) {
+  if (!access || !access.ok) return false;
+  if (access.role === 'legacy') return true; // shadow mode เท่านั้น
+  return access.role !== 'viewer';
+}
+
+/* สิทธิ์ระดับองค์กร (เพิ่ม/ลบโครงการ, จัดการสมาชิก, ตั้งค่าที่กระทบทุกคน) */
+function isAdminish(access) {
+  return !!access && access.ok && (access.isAdmin || access.role === 'manager' || access.role === 'legacy');
+}
+
+/* กรองรายการรหัสโครงการให้เหลือเฉพาะที่ผู้ใช้เห็นได้ — ใช้แทนการวนเช็คทีละอันเอง */
+function allowedProjectSet(access, codes) {
+  if (!access || !access.ok) return [];
+  if (access.projectScope === 'all') return codes.slice();
+  return codes.filter(function (c) { return canSeeProject(access, c); });
 }
 
 function portalDenied(message) {

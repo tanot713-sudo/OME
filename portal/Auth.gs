@@ -42,6 +42,23 @@ const TOKEN_TTL   = 8 * 60 * 60 * 1000;   // อายุ session 8 ชั่ว
 const PW_SALT     = 'OMA_PORTAL_2024';
 const BOOTSTRAP_ADMIN = { email: 'admin@oma.local', password: 'admin1234' };
 
+/* PERM_VERSION — กันแอปลูก cache สิทธิ์เก่าค้าง (ดู README หัวข้อ "cache เก็บได้ตรงไหน")
+   ทุกครั้งที่ admin แก้ user/role/project ให้เรียก bumpPermVersion() เลขจะขยับ
+   ทำให้ cache key เดิมทั้งหมด (ทั้งใน apiVerify เองและใน apiVerify ของแอปลูกทุกตัว
+   ที่ยิงมาถามผ่าน ?action=verify) เข้าถึงไม่ได้อีกในทันที — คำขอถัดไปจึงอ่านสด
+   เสมอ โดยไม่ต้องไล่ล้าง cache key เดิมทีละตัว */
+const VERIFY_CACHE_TTL = 300; // วินาที — ปลอดภัยเพราะ key มีเลขเวอร์ชันฝังอยู่แล้ว
+
+function permVersion() {
+  return PropertiesService.getScriptProperties().getProperty('PERM_VERSION') || '0';
+}
+function bumpPermVersion() {
+  const props = PropertiesService.getScriptProperties();
+  const next  = (parseInt(props.getProperty('PERM_VERSION') || '0', 10) + 1).toString();
+  props.setProperty('PERM_VERSION', next);
+  return next;
+}
+
 /* หน้า/เมนูทั้งหมดของพอร์ทัล
    adminOnly:true = ล็อกไว้ให้ admin เท่านั้น ไม่ว่าจะตั้งค่าอย่างไรก็ตาม
    scoped:true    = เป็นหน้าที่ผูกกับโครงการ (จะส่ง scope โครงการเข้า iframe ด้วย) */
@@ -178,32 +195,56 @@ function apiLogin(data) {
 }
 
 /* แอปลูกเรียกมาเช็คว่า token ยังใช้ได้ไหม + ได้สิทธิ์โครงการอะไรบ้าง
-   คืน projects: [] พร้อม projectScope 'all' = เข้าได้ทุกโครงการ */
+   คืน projects: [] พร้อม projectScope 'all' = เข้าได้ทุกโครงการ
+   ส่ง data.menuId มาด้วยได้ (optional) เพื่อให้แอปลูกเช็คสิทธิ์หน้าตัวเองในคำขอเดียวกัน
+   ================================================================
+   หมายเหตุเรื่อง cache: session (token) ยังเช็คสดทุกครั้งเสมอ (ถูก/ผิด/หมดอายุ
+   ต้องรู้ทันที) — ที่ cache คือ "ผลการคำนวณสิทธิ์" ของอีเมลนั้น (role/menus/projects)
+   ซึ่งขึ้นกับข้อมูลใน Sheet_Users/Sheet_Roles/Sheet_Projects เท่านั้น คีย์ cache
+   ฝัง permVersion() ไว้ ทำให้ admin แก้อะไรก็ตามที่กระทบสิทธิ์ (bumpPermVersion())
+   จะทำให้ cache เดิมของทุกอีเมลเข้าถึงไม่ได้ทันที ไม่ใช่แค่ของคนที่ถูกแก้ */
 function apiVerify(data) {
   const session = getSession(data.token);
   if (!session) return { success: false, code: 'INVALID_TOKEN', message: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่' };
 
-  const user = findUser(session.email);
-  if (!user || String(user.active).toLowerCase() === 'false') {
-    apiLogout(data);
-    return { success: false, code: 'USER_INACTIVE', message: 'บัญชีนี้ถูกปิดการใช้งาน' };
+  const email    = String(session.email).toLowerCase().trim();
+  const cache    = CacheService.getScriptCache();
+  const cacheKey = 'v' + permVersion() + '|verify|' + email;
+
+  let result = null;
+  try {
+    const hit = cache.get(cacheKey);
+    if (hit) result = JSON.parse(hit);
+  } catch (e) { result = null; }
+
+  if (!result) {
+    const user = findUser(session.email);
+    if (!user || String(user.active).toLowerCase() === 'false') {
+      apiLogout(data);
+      return { success: false, code: 'USER_INACTIVE', message: 'บัญชีนี้ถูกปิดการใช้งาน' };
+    }
+
+    const access = resolveAccess(user);
+    result = {
+      success: true,
+      email:        user.email,
+      name:         user.name || user.email,
+      role:         access.role,
+      roleLabel:    access.roleLabel,
+      projectScope: access.projectScope,
+      projects:     access.projects,
+      isAdmin:      access.role === 'admin',
+      menus:        access.menus,
+      menuIds:      access.menus.map(m => m.id),
+      projectList:  listVisibleProjects(access)
+    };
+    try { cache.put(cacheKey, JSON.stringify(result), VERIFY_CACHE_TTL); } catch (e) { /* cache ล้มเหลวไม่ควรทำให้ verify ล่ม */ }
   }
 
-  // อ่านสิทธิ์สด ๆ ทุกครั้ง เผื่อแอดมินเพิ่งแก้สิทธิ์ระหว่างที่ผู้ใช้ยังล็อกอินค้างอยู่
-  const access = resolveAccess(user);
-  return {
-    success: true,
-    email:        user.email,
-    name:         user.name || user.email,
-    role:         access.role,
-    roleLabel:    access.roleLabel,
-    projectScope: access.projectScope,
-    projects:     access.projects,
-    isAdmin:      access.role === 'admin',
-    menus:        access.menus,
-    menuIds:      access.menus.map(m => m.id),
-    projectList:  listVisibleProjects(access)
-  };
+  if (data.menuId) {
+    result = Object.assign({}, result, { menuAllowed: result.menuIds.indexOf(data.menuId) !== -1 });
+  }
+  return result;
 }
 
 function apiLogout(data) {
@@ -228,6 +269,7 @@ function apiChangePassword(data) {
     if (String(rows[i][0]).toLowerCase().trim() === String(session.email).toLowerCase()) {
       sh.getRange(i + 1, 2).setValue(hashPw(newPassword));
       sh.getRange(i + 1, 4).setValue('N');
+      bumpPermVersion();
       writeLog(session.email, 'changePassword', '');
       return { success: true };
     }
@@ -273,7 +315,7 @@ function expandMenuSpec(spec) {
 }
 
 function getRoleConfig(role) {
-  const rows = readObjects(SHEETS.ROLES, ROLE_HEADERS);
+  const rows = cachedReadObjects('roles', SHEETS.ROLES, ROLE_HEADERS);
   const rec  = rows.find(r => String(r.role).toLowerCase().trim() === role);
   if (rec && String(rec.active).toLowerCase() !== 'false') {
     return {
@@ -290,7 +332,7 @@ function getRoleConfig(role) {
 
 /* รายชื่อโครงการที่ผู้ใช้คนนี้เห็นได้ — admin/manager เห็นทุกโครงการ, ที่เหลือเห็นเฉพาะของตัวเอง */
 function listVisibleProjects(access) {
-  const all = readObjects(SHEETS.PROJECTS, PROJECT_HEADERS)
+  const all = cachedReadObjects('projects', SHEETS.PROJECTS, PROJECT_HEADERS)
     .filter(p => p.code && String(p.active).toLowerCase() !== 'false')
     .map(p => ({ code: String(p.code).trim(), name: p.name || p.code }));
 
@@ -438,6 +480,7 @@ function apiSaveUser(data, session) {
     if (roleChanged || u.active === false || u.password) revokeSessions(email);
   }
 
+  bumpPermVersion();
   writeLog(session.email, 'saveUser', email + ' · ' + role);
   return { success: true };
 }
@@ -460,6 +503,7 @@ function apiDeleteUser(data, session) {
     if (String(rows[i][0]).toLowerCase().trim() === email) sh.deleteRow(i + 1);
   }
   revokeSessions(email);
+  bumpPermVersion();
   writeLog(session.email, 'deleteUser', email);
   return { success: true };
 }
@@ -487,6 +531,7 @@ function apiSaveRoles(data, session) {
   });
   sh.getRange(2, 1, values.length, ROLE_HEADERS.length).setValues(values);
 
+  bumpPermVersion();
   writeLog(session.email, 'saveRoles', values.map(v => v[0]).join(','));
   return { success: true };
 }
@@ -501,6 +546,7 @@ function apiSaveProjects(data, session) {
     .map(p => [String(p.code).trim(), p.name || p.code, p.active === false ? 'false' : 'true']);
   if (values.length) sh.getRange(2, 1, values.length, PROJECT_HEADERS.length).setValues(values);
 
+  bumpPermVersion();
   writeLog(session.email, 'saveProjects', values.length + ' โครงการ');
   return { success: true };
 }
@@ -549,6 +595,22 @@ function sheet(name, headers) {
     sh.setFrozenRows(1);
   }
   return sh;
+}
+
+/* เหมือน readObjects แต่ cache ผลไว้ตามเลขเวอร์ชันสิทธิ์ปัจจุบัน — ใช้กับชีตที่
+   bumpPermVersion() ครอบคลุมอยู่แล้ว (Sheet_Roles, Sheet_Projects) เพื่อให้แม้แต่
+   ตอน cache miss ของ apiVerify ก็ยังไม่ต้องอ่านชีตซ้ำถ้ามีคนเพิ่ง verify ไปหมาดๆ */
+function cachedReadObjects(cacheName, name, headers) {
+  const cache = CacheService.getScriptCache();
+  const key   = 'v' + permVersion() + '|sheet|' + cacheName;
+  try {
+    const hit = cache.get(key);
+    if (hit) return JSON.parse(hit);
+  } catch (e) { /* ตกไปอ่านสดด้านล่าง */ }
+
+  const rows = readObjects(name, headers);
+  try { cache.put(key, JSON.stringify(rows), VERIFY_CACHE_TTL); } catch (e) { /* ไม่เป็นไรถ้า cache ไม่สำเร็จ */ }
+  return rows;
 }
 
 function readObjects(name, headers) {
