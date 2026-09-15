@@ -37,9 +37,10 @@
      const rows = scopeRows(allRows, access, 'project');
 
    ส่วนฟังก์ชันที่ถูกเรียกผ่าน google.script.run (ไม่มี e ให้ใช้) ให้รับ portalToken
-   เป็นพารามิเตอร์แรกเสมอ แล้วเรียก portalAccessFromToken ตรงๆ:
+   เป็นพารามิเตอร์แรกเสมอ แล้วเรียก portalAccessForCall — ตัวนี้เคารพ PORTAL_ENFORCE
+   เหมือน portalGuard ทุกประการ (shadow mode จะไม่บล็อกใครเลย ไม่ใช่แค่ตอนโหลดหน้า):
      function saveTask(portalToken, payload) {
-       const access = portalAccessFromToken(portalToken);
+       const access = portalAccessForCall(portalToken);   // ใส่ menuId ด้วยก็ได้
        if (!access.ok) return { ok:false, error: access.message };
        if (!canWrite(access)) return { ok:false, error: 'สิทธิ์ไม่พอ' };
        ...
@@ -105,30 +106,62 @@ function portalAccess(e, menuId) {
    ไม่งั้นใช้ access ตัวที่คืนมาไปสร้างหน้าเว็บต่อ (ในโหมด shadow ที่ PORTAL_ENFORCE
    ยังเป็น false นี่จะเป็นสิทธิ์แบบผ่อนปรนเต็มที่ ไม่ใช่สิทธิ์จริงของผู้ใช้) */
 function portalGuard(e, menuId) {
-  var enforce = (typeof PORTAL_ENFORCE !== 'undefined') ? PORTAL_ENFORCE : true; // ลืมประกาศ = เข้มงวดไว้ก่อน
   var access  = portalAccess(e, menuId);
-
-  var problem = null;
-  if (!access.ok) problem = access.message || 'กรุณาเข้าใช้งานผ่านหน้า OMA Portal';
-  else if (menuId && !requireMenu(access, menuId)) problem = 'ไม่มีสิทธิ์เข้าหน้านี้';
-
+  var problem = _portalProblem(access, menuId);
   if (!problem) return { deny: null, access: access };
 
-  if (enforce) return { deny: portalDenied(problem), access: null };
+  if (_portalEnforcing()) return { deny: portalDenied(problem), access: null };
+  _portalLogShadow(menuId, problem, access);
+  return { deny: null, access: _legacyAccess(access) };
+}
 
+/* เหมือน portalGuard แต่สำหรับฟังก์ชันที่เรียกผ่าน google.script.run (ไม่มี e ให้ใช้
+   และไม่ต้องสร้างหน้า HTML ปฏิเสธ) — คืนแค่ access object เดียว พฤติกรรม shadow-mode
+   (PORTAL_ENFORCE=false) เหมือน portalGuard ทุกประการ: ไม่บล็อกใคร ให้ฟังก์ชันที่
+   เรียกใช้ทำงานเหมือนวันนี้จนกว่าจะเปิดใช้งานจริง
+     function saveTask(portalToken, payload) {
+       const access = portalAccessForCall(portalToken);   // หรือใส่ menuId ด้วยก็ได้
+       if (!access.ok) return { ok:false, error: access.message };
+       if (!canWrite(access)) return { ok:false, error: 'สิทธิ์ไม่พอ' };
+       ...
+     } */
+function portalAccessForCall(token, menuId) {
+  var access  = portalAccessFromToken(token, menuId);
+  var problem = _portalProblem(access, menuId);
+  if (!problem) return access;
+
+  if (_portalEnforcing()) {
+    // access.ok อาจยังเป็น true อยู่ (token ถูกต้อง แค่ไม่มีสิทธิ์เมนูนี้) —
+    // ต้องพลิกเป็น ok:false เอง ไม่งั้นผู้เรียกที่เช็คแค่ !access.ok จะหลุดผ่านไป
+    return access.ok ? { ok: false, message: problem, code: access.code } : access;
+  }
+  _portalLogShadow(menuId, problem, access);
+  return _legacyAccess(access);
+}
+
+function _portalEnforcing() {
+  return (typeof PORTAL_ENFORCE !== 'undefined') ? PORTAL_ENFORCE : true; // ลืมประกาศ = เข้มงวดไว้ก่อน
+}
+
+function _portalProblem(access, menuId) {
+  if (!access.ok) return access.message || 'กรุณาเข้าใช้งานผ่านหน้า OMA Portal';
+  if (menuId && !requireMenu(access, menuId)) return 'ไม่มีสิทธิ์เข้าหน้านี้';
+  return null;
+}
+
+function _portalLogShadow(menuId, problem, access) {
   try {
     Logger.log('[PORTAL_ENFORCE=false] จะปฏิเสธถ้าบังคับใช้จริง (' + menuId + '): ' + problem +
       (access && access.email ? ' · ผู้ใช้: ' + access.email : ''));
   } catch (logErr) { /* log ล้มเหลวไม่ควรทำให้แอปล่ม */ }
+}
 
-  // โหมดเงา: ปล่อยผ่านด้วยสิทธิ์ผ่อนปรนเต็มที่ ให้แอปทำงานเหมือนวันนี้ทุกอย่าง
+/* โหมดเงา: ปล่อยผ่านด้วยสิทธิ์ผ่อนปรนเต็มที่ ให้แอปทำงานเหมือนวันนี้ทุกอย่าง */
+function _legacyAccess(access) {
   return {
-    deny: null,
-    access: {
-      ok: true, email: (access && access.email) || '', name: (access && access.name) || '',
-      role: 'legacy', isAdmin: true, projectScope: 'all', projects: [], menuIds: [],
-      menuAllowed: true
-    }
+    ok: true, email: (access && access.email) || '', name: (access && access.name) || '',
+    role: 'legacy', isAdmin: true, projectScope: 'all', projects: [], menuIds: [],
+    menuAllowed: true
   };
 }
 
