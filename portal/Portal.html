@@ -9,7 +9,7 @@
 <style>
 :root{
   --bg:#f4f6fa; --card:#fff; --ink:#152033; --muted:#6b7a90; --line:#e3e8f0;
-  --brand:#1f4fd8; --brand-soft:#eaf0ff; --danger:#d63b4a; --ok:#18915f;
+  --brand:#DC2828; --brand-soft:#FEF2F2; --danger:#B91C1C; --ok:#18915f;
   --radius:14px; --shadow:0 10px 30px rgba(21,32,51,.08);
 }
 *{box-sizing:border-box}
@@ -18,7 +18,7 @@ button,input,select{font-family:inherit;font-size:inherit}
 .hidden{display:none !important}
 
 /* ── LOGIN ─────────────────────────────────────────── */
-#login,#pwGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#1b2b4b,#0e1626);padding:20px;z-index:50}
+#login,#pwGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#2a1418,#17181c);padding:20px;z-index:50}
 .auth-card{width:100%;max-width:380px;background:var(--card);border-radius:18px;padding:28px;box-shadow:var(--shadow)}
 .auth-card h2{margin:0 0 4px;font-size:20px}
 .auth-card .sub{color:var(--muted);margin-bottom:20px}
@@ -36,16 +36,16 @@ button,input,select{font-family:inherit;font-size:inherit}
 
 /* ── SHELL ─────────────────────────────────────────── */
 #app{display:flex;min-height:100vh}
-#sidebar{width:246px;flex:0 0 246px;background:#0e1626;color:#c9d4e6;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+#sidebar{width:246px;flex:0 0 246px;background:#17181c;color:#c7cad1;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
 .brand{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
 .brand b{display:block;color:#fff;font-size:16px;letter-spacing:.5px}
-.brand span{font-size:12px;color:#7e8da5}
+.brand span{font-size:12px;color:#8b8f99}
 .nav{flex:1;overflow:auto;padding:12px 10px}
-.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#c9d4e6;text-decoration:none;cursor:pointer;margin-bottom:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#c7cad1;text-decoration:none;cursor:pointer;margin-bottom:2px}
 .nav a:hover{background:rgba(255,255,255,.06);color:#fff}
 .nav a.active{background:var(--brand);color:#fff}
 .nav a i{font-size:16px}
-.side-foot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:#8ea0ba}
+.side-foot{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:#8b8f99}
 .side-foot b{display:block;color:#fff;font-size:13px}
 #main{flex:1;min-width:0;display:flex;flex-direction:column}
 .topbar{display:flex;align-items:center;gap:12px;padding:12px 18px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
@@ -89,7 +89,7 @@ input[type=text],input[type=email],input[type=password],select.cell{padding:8px 
 .field label{display:block;font-weight:500;margin-bottom:6px}
 .modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 .empty{padding:26px;text-align:center;color:var(--muted)}
-#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#152033;color:#fff;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#17181c;color:#fff;padding:11px 18px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60}
 #toast.show{opacity:1}
 
 @media(max-width:820px){
@@ -193,7 +193,7 @@ async function api(action, payload) {
 function toast(text, isError) {
   const t = $('#toast');
   t.textContent = text;
-  t.style.background = isError ? '#d63b4a' : '#152033';
+  t.style.background = isError ? '#B91C1C' : '#17181c';
   t.classList.add('show');
   clearTimeout(toast._t);
   toast._t = setTimeout(() => t.classList.remove('show'), 2600);
