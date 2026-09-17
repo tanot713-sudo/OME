@@ -180,7 +180,7 @@ button,input,select{font-family:var(--font)}
 .kpi-l{font-size:9px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
 .kpi-v{font-family:var(--display);font-size:24px;font-weight:700;color:var(--ink);line-height:1}
 .kpi-m{font-size:9px;color:var(--ink4);margin-top:2px}
-.c2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.c2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:start}
 .card{background:var(--glass);border:1px solid var(--line);border-radius:var(--rl);backdrop-filter:blur(20px);box-shadow:var(--glow);overflow:hidden;}
 .card-h{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
 .card-t{font-family:var(--display);font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px;}
@@ -205,6 +205,8 @@ button,input,select{font-family:var(--font)}
 .bt:hover{filter:brightness(1.06)}
 .bf{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 7px;font-size:9px;font-weight:700;color:rgba(255,255,255,.9);transition:width .75s ease;min-width:24px;white-space:nowrap;}
 .bn{font-size:10px;color:var(--ink3);min-width:20px;font-weight:600}
+.empty-note{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;color:var(--ink4);font-size:11px;text-align:center;padding:14px;}
+.empty-note svg{width:24px;height:24px;stroke:var(--ink4);fill:none;stroke-width:1.6;opacity:.5}
 .dw{display:flex;align-items:center;gap:14px}
 .dsv{width:110px;height:110px;min-width:110px}
 .dl-wrap{flex:1;display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:120px}
@@ -849,12 +851,12 @@ function renderDash(){
   document.getElementById('typeGrid').innerHTML=sT.map(([t,rows])=>{const m=tm(t);return`<div class="tc ${selType===t?'sel':''}" style="--tc:${m.c}" onclick="setType('${esc(t)}')"><div class="tc-i" style="color:${m.c}">${getSVG(m.ic)}</div><div class="tc-n" title="${t}">${t}</div><div class="tc-c">${rows.length} รายการ</div><div class="tc-bar"><div class="tc-bf" style="width:${Math.round(rows.length/mxT*100)}%;background:${m.c}"></div></div></div>`;}).join('');
   document.getElementById('typeBadge').textContent=sT.length+' ประเภท';
   const byB=grp(eq,'Brand (ยี่ห้อ)');const sB=Object.entries(byB).sort((a,b)=>b[1].length-a[1].length).slice(0,7);const mxB=sB[0]?.[1].length||1;
-  document.getElementById('brandBar').innerHTML=sB.map(([b,r],i)=>`<div class="br"><div class="bl" title="${b}">${b}</div><div class="bt"><div class="bf" style="width:${Math.round(r.length/mxB*100)}%;background:${PAL[i%PAL.length]}">${r.length}</div></div><div class="bn">${r.length}</div></div>`).join('');
+  document.getElementById('brandBar').innerHTML=sB.length?sB.map(([b,r],i)=>`<div class="br"><div class="bl" title="${b}">${b}</div><div class="bt"><div class="bf" style="width:${Math.round(r.length/mxB*100)}%;background:${PAL[i%PAL.length]}">${r.length}</div></div><div class="bn">${r.length}</div></div>`).join(''):'<div class="empty-note"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>ยังไม่มีข้อมูลแบรนด์</div>';
   renderDonut(sT.slice(0,7).map(([t,r],i)=>({lbl:t,val:r.length,c:PAL[i%PAL.length]})));
   const lv2=all.filter(r=>r['level']===2);const byL={};
   lv2.forEach(r=>{const id=r['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)'];const cnt=eq.filter(e=>(e['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']||'').startsWith(id+'-')||e['id (รหัสอุปกรณ์แหน่งที่ใช้งาน)']===id).length;if(cnt>0)byL[r['detail (รายละเอียดอุปกรณ์)']||id]=cnt;});
   const sL=Object.entries(byL).sort((a,b)=>b[1]-a[1]);const mxL=sL[0]?.[1]||1;
-  document.getElementById('locBar').innerHTML=sL.length?sL.map(([l,c],i)=>`<div class="br"><div class="bl" title="${l}">${l}</div><div class="bt"><div class="bf" style="width:${Math.round(c/mxL*100)}%;background:${PAL[(i+3)%PAL.length]}">${c}</div></div><div class="bn">${c}</div></div>`).join(''):'<div style="color:var(--ink4);font-size:11px;text-align:center;padding:14px">ไม่มีข้อมูลพื้นที่ Lv2</div>';
+  document.getElementById('locBar').innerHTML=sL.length?sL.map(([l,c],i)=>`<div class="br"><div class="bl" title="${l}">${l}</div><div class="bt"><div class="bf" style="width:${Math.round(c/mxL*100)}%;background:${PAL[(i+3)%PAL.length]}">${c}</div></div><div class="bn">${c}</div></div>`).join(''):'<div class="empty-note"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>ยังไม่มีข้อมูลพื้นที่ระดับ 2</div>';
   const tData=flt.filter(r=>r['level']>=5);
   document.getElementById('tblTitle').innerHTML=`<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" style="width:13px;height:13px;color:var(--red)"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>รายการอุปกรณ์`;
   document.getElementById('tblBadge').textContent=tData.length;
@@ -873,7 +875,7 @@ function openInTree(encId){const id=dId(encId);selNode=id;goTab('tree');setTimeo
 // ════════════════════════════
 function renderDonut(items){
   const svg=document.getElementById('donutSvg');const leg=document.getElementById('donutLeg');
-  const tot=items.reduce((s,i)=>s+i.val,0);if(!tot){svg.innerHTML='';leg.innerHTML='';return;}
+  const tot=items.reduce((s,i)=>s+i.val,0);if(!tot){svg.innerHTML='';leg.innerHTML='<div class="empty-note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 010 20"/></svg>ยังไม่มีข้อมูล</div>';return;}
   const R=38,S=13,cx=50,cy=50,circ=2*Math.PI*R;
   let off=0,paths='';
   items.forEach(it=>{const pct=it.val/tot,dash=pct*circ,rot=off*360-90;
