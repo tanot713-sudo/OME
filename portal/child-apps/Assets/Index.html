@@ -102,36 +102,31 @@ button,input,select{font-family:var(--font)}
 .dd-step-dot.active{background:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
 
 /* ══ SHELL ══ */
-.shell{display:flex;height:100vh;overflow:hidden}
+.shell{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
-/* ══ SIDEBAR ══ */
-.sidebar{width:var(--sw);min-width:var(--sw);background:var(--glass);backdrop-filter:blur(28px) saturate(1.4);
-  -webkit-backdrop-filter:blur(28px) saturate(1.4);border-right:1px solid var(--line2);
-  display:flex;flex-direction:column;z-index:20;transition:width var(--ease),min-width var(--ease);
-  overflow:hidden;box-shadow:2px 0 20px rgba(0,0,0,.06);}
-.sidebar.col{width:52px;min-width:52px}
-.sb-brand{height:var(--th);min-height:var(--th);display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);overflow:hidden;}
+/* ══ NAVBAR (เดิมเป็น sidebar ซ้ายมือ — ย้ายมาเป็นแถบบนแทน กันซ้อนกับแถบเมนูซ้าย
+   ของ OMA Portal Hub ตอนถูกฝังเป็น iframe) ══ */
+.navbar{width:100%;height:var(--th);min-height:var(--th);background:var(--glass);backdrop-filter:blur(28px) saturate(1.4);
+  -webkit-backdrop-filter:blur(28px) saturate(1.4);border-bottom:1px solid var(--line2);
+  display:flex;align-items:center;z-index:20;overflow-x:auto;overflow-y:hidden;
+  box-shadow:0 2px 20px rgba(0,0,0,.06);}
+.sb-brand{height:100%;display:flex;align-items:center;gap:10px;padding:0 14px;margin-right:6px;
+  border-right:1px solid var(--line);overflow:hidden;flex-shrink:0;}
 .sb-logo-wrap{width:30px;height:30px;min-width:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .sb-texts{overflow:hidden;white-space:nowrap}
 .sb-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.2px}
 .sb-sub{font-size:10px;color:var(--ink3);font-weight:400}
-.sb-nav{flex:1;padding:10px 8px;overflow-y:auto;overflow-x:hidden}
-.nav-sect{font-size:9px;font-weight:700;color:var(--ink4);letter-spacing:.9px;text-transform:uppercase;padding:10px 8px 4px;white-space:nowrap;overflow:hidden;}
-.sidebar.col .nav-sect{opacity:0}
-.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r);cursor:pointer;
-  transition:var(--ease);white-space:nowrap;overflow:hidden;color:var(--ink3);margin-bottom:2px;position:relative;}
+.sb-nav{flex:1;height:100%;padding:0 8px;display:flex;align-items:center;gap:3px;overflow-x:auto;overflow-y:hidden}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--r);cursor:pointer;
+  transition:var(--ease);white-space:nowrap;overflow:hidden;color:var(--ink3);position:relative;flex-shrink:0;}
 .ni:hover{background:var(--surf3);color:var(--ink)}
 .ni.on{background:var(--red-bg);color:var(--red);box-shadow:var(--glow-r);}
-.ni.on::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:2.5px;border-radius:99px;background:var(--red);}
-.ni-ic{width:28px;height:28px;min-width:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:var(--ease);background:transparent;}
+.ni.on::before{content:'';position:absolute;left:16%;right:16%;bottom:-1px;height:2.5px;border-radius:99px;background:var(--red);}
+.ni-ic{width:24px;height:24px;min-width:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:var(--ease);background:transparent;}
 .ni.on .ni-ic{background:rgba(214,40,40,.1)}
-.ni-ic svg{width:16px;height:16px;stroke-width:1.8;fill:none;stroke:currentColor}
+.ni-ic svg{width:15px;height:15px;stroke-width:1.8;fill:none;stroke:currentColor}
 .ni-lbl{font-size:12px;font-weight:500;letter-spacing:.1px}
-.ni-badge{margin-left:auto;font-size:9px;font-weight:700;padding:2px 6px;border-radius:99px;background:var(--red);color:#fff;flex-shrink:0;box-shadow:0 1px 4px rgba(214,40,40,.35);}
-.sidebar.col .ni-lbl,.sidebar.col .ni-badge{display:none}
-.sb-foot{padding:8px;border-top:1px solid var(--line)}
-.sb-tog{width:100%;padding:8px;border-radius:var(--r);border:none;background:transparent;color:var(--ink4);cursor:pointer;transition:var(--ease);display:flex;align-items:center;justify-content:center;font-size:11px;}
-.sb-tog:hover{background:var(--surf3);color:var(--ink)}
+.ni-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:99px;background:var(--red);color:#fff;flex-shrink:0;box-shadow:0 1px 4px rgba(214,40,40,.35);}
 
 /* ══ MAIN ══ */
 .main{flex:1;display:flex;flex-direction:column;overflow:visible;min-width:0;position:relative}
@@ -362,7 +357,7 @@ button,input,select{font-family:var(--font)}
 .t-ok{background:rgba(26,127,75,.12);color:var(--green);border:1px solid rgba(26,127,75,.2)}
 .t-err{background:rgba(214,40,40,.1);color:var(--red);border:1px solid var(--red-rim)}
 @media(max-width:900px){.c2{grid-template-columns:1fr}.tree-left{width:240px;min-width:240px}}
-@media(max-width:640px){.sidebar{display:none}.kpi-row{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.sb-texts{display:none}.kpi-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -374,8 +369,9 @@ button,input,select{font-family:var(--font)}
 </div>
 
 <div class="shell">
-  <!-- ════ SIDEBAR ════ -->
-  <aside class="sidebar" id="sb">
+  <!-- ════ NAVBAR (เดิมเป็น sidebar ซ้ายมือ — ย้ายมาเป็นแถบบนแทนกันซ้อนกับแถบเมนู
+       ซ้ายของ OMA Portal Hub) ════ -->
+  <div class="navbar" id="sb">
     <div class="sb-brand" style="gap:8px">
       <div class="sb-logo-wrap">
         <img src="https://img1.pic.in.th/images/AMR_LOGO_01_NO_BG.png" alt="Logo" style="width:30px;height:30px;object-fit:contain;border-radius:4px">
@@ -386,7 +382,6 @@ button,input,select{font-family:var(--font)}
       </div>
     </div>
     <nav class="sb-nav">
-      <div class="nav-sect">MAIN</div>
       <div class="ni on" id="ni-dashboard" onclick="goTab('dashboard')">
         <div class="ni-ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
         <span class="ni-lbl">Dashboard</span>
@@ -395,7 +390,6 @@ button,input,select{font-family:var(--font)}
         <div class="ni-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 15H5a2 2 0 000 4h14a2 2 0 000-4h-3"/><path d="M8 15a4 4 0 018 0"/></svg></div>
         <span class="ni-lbl">Asset Structure</span>
       </div>
-      <div class="nav-sect" style="margin-top:10px">TOOLS</div>
       <div class="ni" id="ni-warranty" onclick="goTab('warranty')">
         <div class="ni-ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
         <span class="ni-lbl">Warranty Tracker</span>
@@ -410,14 +404,11 @@ button,input,select{font-family:var(--font)}
         <span class="ni-lbl">Service Agreement</span>
       </div>
     </nav>
-  </aside>
+  </div>
 
   <!-- ════ MAIN ════ -->
   <div class="main">
     <div class="topbar">
-      <button onclick="toggleSb()" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;color:var(--ink2);padding-right:12px;transition:.2s" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--ink2)'">
-        <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
       <div class="tb-title" id="tbTitle">Dashboard</div>
 
       <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
@@ -603,7 +594,7 @@ button,input,select{font-family:var(--font)}
 // STATE
 // ════════════════════════════
 let RAW=[],srchQ='';
-let treeMap={},roots=[],exp={},sbOpen=true,curTab='dashboard';
+let treeMap={},roots=[],exp={},curTab='dashboard';
 let selProjs=new Set(),selTypes=new Set(),selAssets=new Set(),selDealers=new Set();
 let selType=null;
 let openDD=null;
@@ -833,7 +824,6 @@ function goTab(t){
   document.getElementById('tbTitle').textContent=titles[t]||t;
   render();
 }
-function toggleSb(){sbOpen=!sbOpen;document.getElementById('sb').classList.toggle('col',!sbOpen);}
 
 // ════════════════════════════
 // DASHBOARD
