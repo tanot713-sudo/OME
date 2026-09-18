@@ -166,6 +166,7 @@ function route(action, payload) {
     case 'generateReport':    return actionGenerateReport(payload, payload._user);
     // Image proxy (สำหรับ Word export — แก้ปัญหา CORS)
     case 'fetchImageAsBase64': return actionFetchImageAsBase64(payload);
+    case 'fetchImagesAsBase64Batch': return actionFetchImagesAsBase64Batch(payload);
     default:
       return { ok: false, error: 'UNKNOWN_ACTION', message: `ไม่รู้จัก action: ${action}` };
   }
@@ -524,6 +525,37 @@ function actionFetchImageAsBase64({ url, _user }) {
     return { ok: true, base64: Utilities.base64Encode(blob.getBytes()), mimeType: blob.getContentType() || 'image/jpeg' };
   } catch (e) {
     return { ok: false };
+  }
+}
+
+// ดึงรูปหลายรูปพร้อมกันใน 1 call — ใช้ UrlFetchApp.fetchAll() ซึ่ง GAS รันแบบ parallel
+// ลดจาก N round-trip เหลือ ceil(N/CHUNK) round-trip และแต่ละ batch ดึงพร้อมกันหมด
+// ขาดฟังก์ชันนี้ไปจาก router เดิม ทำให้ prefetchImages() ฝั่ง frontend ล้มเหลวทุกครั้ง
+// (ได้ UNKNOWN_ACTION) แล้ว cache รูปเป็น null ทั้งหมด — รายงาน Word เลยไม่มีรูปติดไปเลย
+function actionFetchImagesAsBase64Batch({ urls, _user }) {
+  if (!Array.isArray(urls) || !urls.length) return { ok: false, results: [] };
+  const requests = urls
+    .filter(url => url && /^https:\/\/drive\.google\.com\//.test(url))
+    .map(url => ({ url: url, muteHttpExceptions: true }));
+  if (!requests.length) return { ok: true, results: urls.map(url => ({ ok: false, url })) };
+  try {
+    const responses = UrlFetchApp.fetchAll(requests);
+    const results = responses.map((resp, i) => {
+      const url = requests[i].url;
+      if (resp.getResponseCode() !== 200) return { ok: false, url };
+      const blob = resp.getBlob();
+      const bytes = blob.getBytes();
+      if (!bytes || bytes.length < 100) return { ok: false, url };
+      return {
+        ok: true,
+        url: url,
+        base64: Utilities.base64Encode(bytes),
+        mimeType: blob.getContentType() || 'image/jpeg'
+      };
+    });
+    return { ok: true, results };
+  } catch (e) {
+    return { ok: false, results: [], message: e.message };
   }
 }
 
