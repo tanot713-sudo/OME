@@ -21,7 +21,10 @@ function doGet(e) {
   var bootstrap = JSON.stringify({
     token: (e && e.parameter && e.parameter.portalToken) || '',
     email: g.access.email, name: g.access.name, role: g.access.role,
-    isAdmin: isAdminish(g.access), canWrite: canWrite(g.access)
+    isAdmin: isAdminish(g.access), canWrite: canWrite(g.access),
+    // null = เห็นทุกแถบ (ยังไม่ถูกจำกัด), array = เห็นเฉพาะ id ที่อยู่ในนี้ — เทียบกับ
+    // id ของ .ni ในแถบข้าง (dashboard/tree/warranty/gantt/service)
+    allowedSections: g.access.allowedSections
   });
 
   return HtmlService.createHtmlOutputFromFile('Index')
@@ -62,6 +65,7 @@ function updateRow(portalToken, id, fields) {
   const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) return 'FORBIDDEN: ' + access.message;
   if (!canWrite(access)) return 'FORBIDDEN: สิทธิ์ไม่พอ';
+  if (!requireSection(access, 'tree')) return 'FORBIDDEN: ไม่มีสิทธิ์เข้าแถบ Asset Structure';
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const ws = ss.getSheetByName('Funclocation');
@@ -90,6 +94,7 @@ function addRow(portalToken, rowObj) {
   const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) return 'FORBIDDEN: ' + access.message;
   if (!isAdminish(access)) return 'FORBIDDEN: เฉพาะ admin/manager เท่านั้น';
+  if (!requireSection(access, 'tree')) return 'FORBIDDEN: ไม่มีสิทธิ์เข้าแถบ Asset Structure';
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const ws = ss.getSheetByName('Funclocation');
@@ -104,6 +109,7 @@ function deleteRow(portalToken, id) {
   const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) return 'FORBIDDEN: ' + access.message;
   if (!isAdminish(access)) return 'FORBIDDEN: เฉพาะ admin/manager เท่านั้น';
+  if (!requireSection(access, 'tree')) return 'FORBIDDEN: ไม่มีสิทธิ์เข้าแถบ Asset Structure';
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const ws = ss.getSheetByName('Funclocation');

@@ -82,6 +82,17 @@ input[type=text],input[type=email],input[type=password],select.cell{padding:8px 
 .checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;margin-top:6px}
 .checks label{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;cursor:pointer}
 .checks label.locked{opacity:.5;cursor:not-allowed}
+.checks label.sec-sub{margin-left:18px;background:var(--bg)}
+.sections-panel{border-top:1px dashed var(--line);padding-top:14px}
+.sec-role{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.sec-role summary{padding:10px 14px;cursor:pointer;font-weight:600;list-style:none;background:var(--bg)}
+.sec-role summary::-webkit-details-marker{display:none}
+.sec-role summary::before{content:'▸';display:inline-block;margin-right:8px;transition:transform .15s}
+.sec-role[open] summary::before{transform:rotate(90deg)}
+.sec-role-body{padding:12px 14px}
+.sec-app{margin-bottom:12px}
+.sec-app:last-child{margin-bottom:0}
+.sec-app-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
 
 /* ── MODAL ─────────────────────────────────────────── */
 .overlay{position:fixed;inset:0;background:rgba(14,22,38,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
@@ -590,24 +601,63 @@ function renderRolesTab() {
     '<div class="hint">ติ๊กว่าตำแหน่งไหนเห็นหน้าไหนได้บ้าง และเห็นได้ทุกโครงการหรือเฉพาะโครงการที่ถูกผูกไว้ · ' +
     'หน้า “ตั้งค่าสิทธิ์” ถูกล็อกไว้ให้ Admin เท่านั้นเสมอ และ Admin จะถูกล็อกให้เห็นทุกอย่าง</div>' +
     '<div class="table-scroll"><table><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+    renderSectionsPanel(s) +
     '<div class="bar" style="margin-top:14px"><div class="spacer"></div><button class="btn" id="saveRoles">บันทึกสิทธิ์</button></div></div>';
 
   $('#saveRoles').addEventListener('click', async () => {
     const roles = $$('#tabBody tbody tr').map(tr => {
       const role = tr.dataset.role;
       const src  = state.settings.roles.find(r => r.role === role);
+      const sectionAccess = {};
+      $$('[data-sec-app][data-role="' + role + '"]').forEach(group => {
+        const appId = group.dataset.secApp;
+        sectionAccess[appId] = $$('input[type=checkbox]', group).filter(c => c.checked).map(c => c.dataset.section);
+      });
       return {
         role: role,
         label: src.label,
         menuIds: $$('[data-menu]', tr).filter(c => c.checked).map(c => c.dataset.menu),
         projectScope: $('[data-scope]', tr).value,
-        active: $('[data-active]', tr).checked
+        active: $('[data-active]', tr).checked,
+        sectionAccess: sectionAccess
       };
     });
     const r = await api('saveRoles', { roles: roles });
     if (!r.success) return toast(r.message, true);
     toast('บันทึกสิทธิ์ตามตำแหน่งแล้ว'); openSettings();
   });
+}
+
+/* ── แถบย่อยภายในแอป (role × แท็บในแอป) — ตัวเลือกเสริม แสดงเฉพาะแอปที่มีแถบย่อย
+   ให้คุมจริง (ดู MASTER_SECTIONS ใน Auth.gs) และเฉพาะตำแหน่งที่เปิดให้เข้าแอปนั้น
+   อยู่แล้วในตารางด้านบน — ไม่ยุ่งอะไรเลย = ทุกคนเห็นทุกแถบเหมือนเดิม (ปลอดภัยไว้ก่อน) */
+function renderSectionsPanel(s) {
+  const secMenus = s.menus.filter(m => s.sections && s.sections[m.id] && s.sections[m.id].length);
+  if (!secMenus.length) return '';
+
+  const rows = s.roles.filter(r => r.role !== 'admin' && r.active !== false).map(r => {
+    const enabledMenus = secMenus.filter(m => (r.menuIds || []).indexOf(m.id) !== -1);
+    if (!enabledMenus.length) return '';
+    const apps = enabledMenus.map(m => {
+      const picked = (r.sectionAccess && r.sectionAccess[m.id]) || null; // null = ทุกแถบ
+      const items = s.sections[m.id].map(sec => {
+        const checked = !picked || picked.indexOf(sec.id) !== -1;
+        return '<label class="' + (sec.parent ? 'sec-sub' : '') + '">' +
+          '<input type="checkbox" data-role="' + esc(r.role) + '" data-section="' + esc(sec.id) + '"' +
+          (checked ? ' checked' : '') + '> ' + esc(sec.label) + '</label>';
+      }).join('');
+      return '<div class="sec-app" data-sec-app="' + esc(m.id) + '" data-role="' + esc(r.role) + '">' +
+        '<div class="sec-app-title">' + esc(m.label) + '</div><div class="checks">' + items + '</div></div>';
+    }).join('');
+    return '<details class="sec-role"><summary>' + esc(r.label) + '</summary><div class="sec-role-body">' + apps + '</div></details>';
+  }).join('');
+
+  if (!rows) return '<div class="hint" style="margin-top:14px">ยังไม่มีตำแหน่งไหนเปิดใช้แอปที่มีแถบย่อยให้คุม (Project Assets / Work Progress / Vehicles)</div>';
+
+  return '<div class="sections-panel" style="margin-top:16px">' +
+    '<h3 style="font-size:15px;margin:0 0 4px">จำกัดแถบย่อยภายในแอป <span class="tag">ตัวเลือกเสริม</span></h3>' +
+    '<div class="hint">คลิกชื่อตำแหน่งเพื่อดู/ปรับว่าเห็นแถบไหนบ้างในแต่ละแอป — ไม่ติ๊กอะไรเพิ่มเลย = เห็นทุกแถบเหมือนเดิมทุกประการ</div>' +
+    rows + '</div>';
 }
 
 /* ── โครงการ ──────────────────────────────────── */

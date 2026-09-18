@@ -212,12 +212,14 @@ function addUser(portalToken, user) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:users')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Users');
   return addRowToSheet('Users', user);
 }
 function updateUser(portalToken, data) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:users')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Users');
   // getInitialData() เลิกส่งรหัสผ่านให้ browser แล้ว (ดูด้านบน) ฟอร์มแก้ไขผู้ใช้ใน
   // ReactApp.html จึงเห็นฟิลด์นี้ว่างเสมอตอนแก้ไข ("(ไม่เปลี่ยน)" ตามข้อความ placeholder
   // เดิมของฟอร์มเอง) — ต้องตัดฟิลด์ password ที่ว่างออกก่อนเขียนทับ ไม่งั้นจะไปเขียน ""
@@ -229,6 +231,7 @@ function deleteUser(portalToken, id) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:users')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Users');
   return deleteRowInSheet('Users', id);
 }
 
@@ -237,18 +240,21 @@ function addVehicle(portalToken, vehicle) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:vehicles')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Vehicles');
   return addRowToSheet('Vehicles', vehicle);
 }
 function updateVehicle(portalToken, data) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:vehicles')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Vehicles');
   return updateRowInSheet('Vehicles', data.id, data);
 }
 function deleteVehicle(portalToken, id) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:vehicles')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Vehicles');
   return deleteRowInSheet('Vehicles', id);
 }
 
@@ -257,18 +263,21 @@ function addProject(portalToken, project) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:projects')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Projects');
   return addRowToSheet('Projects', project);
 }
 function updateProject(portalToken, data) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:projects')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Projects');
   return updateRowInSheet('Projects', data.id, data);
 }
 function deleteProject(portalToken, id) {
   var access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!isAdminish(access)) throw new Error('เฉพาะ admin/manager เท่านั้น');
+  if (!requireSection(access, 'settings:projects')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Settings › Projects');
   return deleteRowInSheet('Projects', id);
 }
 

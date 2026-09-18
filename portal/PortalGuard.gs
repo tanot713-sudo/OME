@@ -85,7 +85,9 @@ function portalAccessFromToken(token, menuId) {
       ? { ok: true, email: json.email, name: json.name, role: json.role,
           projectScope: json.projectScope, projects: json.projects || [],
           menuIds: json.menuIds || [], isAdmin: !!json.isAdmin,
-          menuAllowed: json.menuAllowed }
+          menuAllowed: json.menuAllowed,
+          // null = ไม่ถูกจำกัดแถบย่อยเลย (ทุกแถบ) — ต่างจาก [] ที่แปลว่า "ไม่เห็นแถบไหนเลย"
+          allowedSections: (menuId && json.allowedSections !== undefined) ? json.allowedSections : null }
       : { ok: false, message: json.message || 'ไม่มีสิทธิ์เข้าใช้งาน', code: json.code };
   } catch (err) {
     result = { ok: false, message: 'ตรวจสอบสิทธิ์ไม่สำเร็จ: ' + err.message };
@@ -161,7 +163,7 @@ function _legacyAccess(access) {
   return {
     ok: true, email: (access && access.email) || '', name: (access && access.name) || '',
     role: 'legacy', isAdmin: true, projectScope: 'all', projects: [], menuIds: [],
-    menuAllowed: true
+    menuAllowed: true, allowedSections: null
   };
 }
 
@@ -176,6 +178,18 @@ function requireMenu(access, menuId) {
 /* คงชื่อเดิมไว้เผื่อโค้ดส่วนอื่นเรียกอยู่ — พฤติกรรมเหมือน requireMenu */
 function canSeeMenu(access, menuId) {
   return requireMenu(access, menuId);
+}
+
+/* true ถ้าผู้ใช้คนนี้เห็น "แถบย่อย" นี้ได้ภายในแอป — ใช้ทั้งซ่อนปุ่มฝั่ง client และ
+   กันการเรียก endpoint เขียนข้อมูลของแถบนั้นตรง ๆ ฝั่งเซิร์ฟเวอร์ (เหมือน requireMenu
+   แต่อยู่ลึกลงไปอีกชั้นในแอปเดียว) access.allowedSections ต้องมาจากการยิง verify ที่
+   ใส่ menuId ของแอปนี้ไปด้วย (ผ่าน portalAccess(e, menuId) หรือ
+   portalAccessForCall(token, menuId)) ไม่งั้นจะเป็น undefined เสมอ (ตีความว่าไม่ถูกจำกัด) */
+function requireSection(access, sectionId) {
+  if (!access || !access.ok) return false;
+  var allowed = access.allowedSections;
+  if (allowed === null || allowed === undefined) return true; // ไม่ถูกจำกัด = เห็นทุกแถบ
+  return allowed.indexOf(sectionId) !== -1;
 }
 
 /* true ถ้าผู้ใช้คนนี้ดูโครงการนี้ได้ (admin/manager/legacy = ทุกโครงการ) */

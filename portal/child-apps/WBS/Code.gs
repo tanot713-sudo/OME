@@ -20,7 +20,9 @@ function doGet(e) {
     email: g.access.email, name: g.access.name, role: g.access.role,
     isAdmin: isAdminish(g.access), canWrite: canWrite(g.access),
     projectScope: g.access.projectScope,
-    assigned: g.access.projectScope === 'all' ? ['ALL'] : g.access.projects
+    assigned: g.access.projectScope === 'all' ? ['ALL'] : g.access.projects,
+    // null = เห็นทุกแท็บ (ไม่ถูกจำกัด), array = เห็นเฉพาะ id ('dashboard'/'update')
+    allowedSections: g.access.allowedSections
   });
 
   return HtmlService
@@ -229,6 +231,7 @@ function saveProgress(portalToken, jsonStr) {
     const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
     if (!access.ok) return JSON.stringify({ ok:false, error: access.message });
     if (!canWrite(access)) return JSON.stringify({ ok:false, error: 'สิทธิ์ไม่พอ' });
+    if (!requireSection(access, 'update')) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์เข้าแถบ Update %Actual' });
 
     const d = JSON.parse(jsonStr);
     if (!canSeeProject(access, d.RefProject)) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์บันทึกโครงการนี้' });
@@ -260,6 +263,7 @@ function saveTask(portalToken, jsonStr) {
     const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
     if (!access.ok) return JSON.stringify({ ok:false, error: access.message });
     if (!canWrite(access)) return JSON.stringify({ ok:false, error: 'สิทธิ์ไม่พอ' });
+    if (!requireSection(access, 'update')) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์เข้าแถบ Update %Actual' });
 
     const ss    = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('WBS_Tasks');
@@ -344,6 +348,7 @@ function saveSCOverrides(portalToken, jsonStr) {
     const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
     if (!access.ok) return JSON.stringify({ ok:false, error: access.message });
     if (!canWrite(access)) return JSON.stringify({ ok:false, error: 'สิทธิ์ไม่พอ' });
+    if (!requireSection(access, 'update')) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์เข้าแถบ Update %Actual' });
 
     const d = JSON.parse(jsonStr); // { projID, entries:[...], revisions:[{YearMonth,Field,OldValue,NewValue}] }
     if (!canSeeProject(access, d.projID)) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์บันทึกโครงการนี้' });
@@ -483,6 +488,7 @@ function deleteTask(portalToken, taskID) {
     const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
     if (!access.ok) return JSON.stringify({ ok:false, error: access.message });
     if (!canWrite(access)) return JSON.stringify({ ok:false, error: 'สิทธิ์ไม่พอ' });
+    if (!requireSection(access, 'update')) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์เข้าแถบ Update %Actual' });
     if (!taskID) return JSON.stringify({ ok: false, error: 'ไม่ระบุ TaskID' });
 
     const taskRef = _taskRefProject_(taskID);
@@ -524,6 +530,7 @@ function bulkSaveImport(portalToken, jsonStr) {
     const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
     if (!access.ok) return JSON.stringify({ ok:false, error: access.message });
     if (!canWrite(access)) return JSON.stringify({ ok:false, error: 'สิทธิ์ไม่พอ' });
+    if (!requireSection(access, 'update')) return JSON.stringify({ ok:false, error: 'ไม่มีสิทธิ์เข้าแถบ Update %Actual' });
 
     const d  = JSON.parse(jsonStr);   // { tasks:[...], progress:[...], updates:[{taskID,fields,revisions}] }
     // เช็คสิทธิ์โครงการของทุกแถวก่อนเขียนจริงสักแถวเดียว — ปฏิเสธทั้ง batch ถ้ามี
@@ -763,6 +770,7 @@ function bulkUpdateProgress(portalToken, projectId, dataArray) {
   const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
   if (!access.ok) throw new Error(access.message);
   if (!canWrite(access)) throw new Error('สิทธิ์ไม่พอ');
+  if (!requireSection(access, 'update')) throw new Error('ไม่มีสิทธิ์เข้าแถบ Update %Actual');
   if (!canSeeProject(access, projectId)) throw new Error('ไม่มีสิทธิ์แก้ไขโครงการนี้');
 
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('WBS_Progress');
@@ -801,6 +809,7 @@ function updateTaskFields(portalToken, taskID, fieldsJson, metaJson) {
     const access = portalAccessForCall(portalToken, PORTAL_MENU_ID);
     if (!access.ok) return { success: false, message: access.message };
     if (!canWrite(access)) return { success: false, message: 'สิทธิ์ไม่พอ' };
+    if (!requireSection(access, 'update')) return { success: false, message: 'ไม่มีสิทธิ์เข้าแถบ Update %Actual' };
 
     const taskRef = _taskRefProject_(taskID);
     if (taskRef !== null && !canSeeProject(access, taskRef)) {

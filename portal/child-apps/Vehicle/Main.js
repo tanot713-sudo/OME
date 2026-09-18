@@ -160,7 +160,11 @@ function doGet(e) {
     name: g.access.name,
     role: g.access.role,
     isAdmin: isAdminish(g.access),
-    canWrite: canWrite(g.access)
+    canWrite: canWrite(g.access),
+    // null = เห็นทุกแถบ (ไม่ถูกจำกัด), array = เห็นเฉพาะ id ที่อยู่ในนี้ — รวม
+    // แถบหลัก (dashboard/fleet/bookings/return/maintenance/reports/settings) และ
+    // แท็บย่อยในหน้า Settings (settings:vehicles/settings:users/settings:projects)
+    allowedSections: g.access.allowedSections
   });
   return t.evaluate()
       .setTitle('AMR Vehicle Management')

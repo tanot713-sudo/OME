@@ -4564,8 +4564,27 @@ function confirmPaste(){
   _pasteRows=[];
 }
 
+// ซ่อนแท็บที่ role นี้ไม่มีสิทธิ์เห็น (ตั้งค่าจากหน้า "ตั้งค่าสิทธิ์" ของ Portal Hub)
+// allowedSections เป็น null/undefined = ไม่ถูกจำกัดเลย แสดงทุกแท็บเหมือนเดิม
+function applySectionAccess(){
+  const allowed = window.PORTAL && window.PORTAL.allowedSections;
+  if(!allowed) return;
+  let firstVisible=null;
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
+    const id=btn.dataset.tab;
+    const ok=allowed.indexOf(id)!==-1;
+    btn.style.display=ok?'':'none';
+    if(ok&&!firstVisible)firstVisible=id;
+  });
+  if(firstVisible && allowed.indexOf(S.activeTab)===-1){
+    const btn=document.querySelector('.tab-btn[data-tab="'+firstVisible+'"]');
+    if(btn) switchTab(firstVisible, btn);
+  }
+}
+
 // login เกิดที่ Portal (Hub) แล้วก่อนหน้านี้เสมอ — โหลดข้อมูลจริงทันทีที่หน้าเปิด
 // ไม่ต้องรอผู้ใช้กรอกฟอร์ม login ของแอปนี้อีกต่อไป
+applySectionAccess();
 loadData();
 </script>
 </body>

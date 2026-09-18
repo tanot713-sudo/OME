@@ -639,7 +639,20 @@ const LVN={1:'Plant',2:'Zone/Bldg',3:'Floor',4:'Area/Dept',5:'System',6:'Equipme
 // ════════════════════════════
 // INIT
 // ════════════════════════════
+function applySectionAccess(){
+  const allowed=window.PORTAL&&window.PORTAL.allowedSections;
+  if(!allowed)return; // null/undefined = ไม่ถูกจำกัดแถบย่อยเลย แสดงทุกแถบเหมือนเดิม
+  let firstVisible=null;
+  document.querySelectorAll('.sb-nav .ni').forEach(ni=>{
+    const id=ni.id.replace('ni-','');
+    const ok=allowed.indexOf(id)!==-1;
+    ni.style.display=ok?'':'none';
+    if(ok&&!firstVisible)firstVisible=id;
+  });
+  if(firstVisible&&allowed.indexOf(curTab)===-1)goTab(firstVisible);
+}
 window.onload=()=>{
+  applySectionAccess();
   loadData();
   document.addEventListener('click',e=>{
     if(!openDD)return;

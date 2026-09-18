@@ -33,7 +33,7 @@ const SHEETS = {
 };
 
 const USER_HEADERS    = ['email','password','allowedMenus','firstLogin','role','projects','name','active'];
-const ROLE_HEADERS    = ['role','label','menus','projectScope','active'];
+const ROLE_HEADERS    = ['role','label','menus','projectScope','active','sections'];
 const PROJECT_HEADERS = ['code','name','active'];
 const SESSION_HEADERS = ['token','email','role','projects','exp'];
 const LOG_HEADERS     = ['time','email','action','detail'];
@@ -75,15 +75,49 @@ const MASTER_MENUS = [
   { id: 'sec-settings',      label: 'ตั้งค่าสิทธิ์',           icon: 'bi-shield-lock',             isIframe: false, scoped: false, adminOnly: true }
 ];
 
+/* เมนูย่อย (แถบ/แท็บ) ภายในแต่ละแอปลูก — เฉพาะแอปที่มีแถบย่อยจริงและคุ้มที่จะคุมละเอียด
+   ขนาดนี้ (ดูผลสำรวจ: Solar/LabRoom ไม่มีแถบย่อยให้คุม, ที่เหลือทำเพิ่มได้ทีหลังโดย
+   เติม key ใหม่ที่นี่ตัวเดียว ไม่ต้องแก้ที่อื่นในไฟล์นี้)
+   ไม่มี key ของเมนูไหนอยู่ในนี้ = แอปนั้นไม่ถูกจำกัดแถบย่อยเลย (ทุกคนเห็นทุกแถบ) */
+const MASTER_SECTIONS = {
+  'sec-assets-dash': [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'tree',      label: 'Asset Structure' },
+    { id: 'warranty',  label: 'Warranty Tracker' },
+    { id: 'gantt',     label: 'Warranty Gantt' },
+    { id: 'service',   label: 'Service Agreement' }
+  ],
+  'sec-wbs-dash': [
+    { id: 'dashboard', label: 'Overview (Current Status)' },
+    { id: 'update',    label: 'Update %Actual' }
+  ],
+  'sec-vehicles-dash': [
+    { id: 'dashboard',         label: 'Dashboard' },
+    { id: 'fleet',             label: 'Fleet' },
+    { id: 'bookings',          label: 'Bookings' },
+    { id: 'return',            label: 'Return' },
+    { id: 'maintenance',       label: 'Maintenance' },
+    { id: 'reports',           label: 'Reports' },
+    { id: 'settings',          label: 'Settings' },
+    { id: 'settings:vehicles', label: 'Settings › Vehicles',        parent: 'settings' },
+    { id: 'settings:users',    label: 'Settings › Users',           parent: 'settings' },
+    { id: 'settings:projects', label: 'Settings › Projects',        parent: 'settings' },
+    { id: 'settings:settings', label: 'Settings › System Settings', parent: 'settings' }
+  ]
+};
+
 /* ค่าเริ่มต้นของแต่ละ role — แก้ได้ภายหลังจากหน้า "ตั้งค่าสิทธิ์"
    menus: 'All' = ทุกหน้า | 'AllExceptSettings' = ทุกหน้ายกเว้นหน้าตั้งค่า | รายการ id คั่นด้วย ,
-   projectScope: 'all' = ทุกโครงการ | 'own' = เฉพาะโครงการที่ผูกไว้กับผู้ใช้ */
+   projectScope: 'all' = ทุกโครงการ | 'own' = เฉพาะโครงการที่ผูกไว้กับผู้ใช้
+   sections: JSON string {menuId: [sectionId,...]} — ไม่ใส่ key ของเมนูไหน = เมนูนั้น
+   ไม่ถูกจำกัดแถบย่อย (ค่าเริ่มต้นตอนเพิ่งเปิดใช้ฟีเจอร์นี้: ไม่มีใครถูกจำกัดจนกว่า
+   admin จะตั้งค่าเอง — กันไม่ให้ใครถูกล็อกออกจากแถบที่เคยเห็นอยู่แล้วโดยไม่ตั้งใจ) */
 const DEFAULT_ROLES = [
-  { role: 'admin',    label: 'Admin (ผู้ดูแลระบบ)',       menus: 'All',               projectScope: 'all', active: 'true' },
-  { role: 'manager',  label: 'Manager (ผู้บริหาร)',        menus: 'AllExceptSettings', projectScope: 'all', active: 'true' },
-  { role: 'head',     label: 'หัวหน้าโครงการ',              menus: 'sec-projects-dash,sec-finance-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash,sec-kpi-dash', projectScope: 'own', active: 'true' },
-  { role: 'engineer', label: 'Engineer / Tech',           menus: 'sec-projects-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash',                                projectScope: 'own', active: 'true' },
-  { role: 'viewer',   label: 'Viewer (ดูอย่างเดียว)',       menus: 'sec-projects-dash,sec-wbs-dash',                                                              projectScope: 'own', active: 'true' }
+  { role: 'admin',    label: 'Admin (ผู้ดูแลระบบ)',       menus: 'All',               projectScope: 'all', active: 'true', sections: '' },
+  { role: 'manager',  label: 'Manager (ผู้บริหาร)',        menus: 'AllExceptSettings', projectScope: 'all', active: 'true', sections: '' },
+  { role: 'head',     label: 'หัวหน้าโครงการ',              menus: 'sec-projects-dash,sec-finance-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash,sec-kpi-dash', projectScope: 'own', active: 'true', sections: '' },
+  { role: 'engineer', label: 'Engineer / Tech',           menus: 'sec-projects-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash',                                projectScope: 'own', active: 'true', sections: '' },
+  { role: 'viewer',   label: 'Viewer (ดูอย่างเดียว)',       menus: 'sec-projects-dash,sec-wbs-dash',                                                              projectScope: 'own', active: 'true', sections: '' }
 ];
 
 /* ================================================================
@@ -236,13 +270,20 @@ function apiVerify(data) {
       isAdmin:      access.role === 'admin',
       menus:        access.menus,
       menuIds:      access.menus.map(m => m.id),
-      projectList:  listVisibleProjects(access)
+      projectList:  listVisibleProjects(access),
+      sections:     access.sections
     };
     try { cache.put(cacheKey, JSON.stringify(result), VERIFY_CACHE_TTL); } catch (e) { /* cache ล้มเหลวไม่ควรทำให้ verify ล่ม */ }
   }
 
   if (data.menuId) {
-    result = Object.assign({}, result, { menuAllowed: result.menuIds.indexOf(data.menuId) !== -1 });
+    // ไม่มี key ของเมนูนี้ใน sections = ไม่ถูกจำกัดแถบย่อยเลย → ส่ง null (แอปลูกอ่านว่า "ทุกแถบ")
+    const restricted = result.sections && Object.prototype.hasOwnProperty.call(result.sections, data.menuId)
+      ? result.sections[data.menuId] : null;
+    result = Object.assign({}, result, {
+      menuAllowed: result.menuIds.indexOf(data.menuId) !== -1,
+      allowedSections: restricted
+    });
   }
   return result;
 }
@@ -296,13 +337,44 @@ function resolveAccess(user) {
   const projectScope = roleCfg.projectScope === 'all' ? 'all' : 'own';
   const projects     = splitList(user.projects);
 
+  // 3) สิทธิ์ระดับแถบย่อยในแต่ละแอป (ไม่มี key ของเมนูไหน = เมนูนั้นไม่ถูกจำกัด)
+  const sections = role === 'admin' ? {} : parseSectionsSpec(roleCfg.sections);
+
   return {
     role: role,
     roleLabel: roleCfg.label || role,
     menus: menus,
     projectScope: projectScope,
-    projects: projectScope === 'all' ? [] : projects
+    projects: projectScope === 'all' ? [] : projects,
+    sections: sections
   };
+}
+
+/* แปลง JSON string ('{"sec-assets-dash":["dashboard","warranty"]}') เป็น object
+   คืน {} เสมอถ้าพัง/ว่าง — ไม่ใช่ error เพราะ "ไม่มี key" แปลว่า "ไม่ถูกจำกัด" อยู่แล้ว */
+function parseSectionsSpec(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return {};
+  try {
+    const obj = JSON.parse(s);
+    return (obj && typeof obj === 'object') ? obj : {};
+  } catch (e) { return {}; }
+}
+
+/* ตรวจข้อมูลที่หน้าตั้งค่าส่งมาก่อนเก็บลงชีต: ตัด id ที่ไม่รู้จักทิ้ง, และถ้า role
+   เลือกครบทุกแถบของเมนูนั้น (=ไม่ได้ตัดอะไรออกเลย) ให้ไม่เก็บ key นั้น (เท่ากับ
+   "ไม่ถูกจำกัด" — สถานะเดียวกับตอนยังไม่เคยตั้งค่าเลย) คืนเป็น JSON string เก็บลงชีต */
+function sanitizeSectionAccess(input) {
+  const src = (input && typeof input === 'object') ? input : {};
+  const out = {};
+  Object.keys(MASTER_SECTIONS).forEach(menuId => {
+    if (!Object.prototype.hasOwnProperty.call(src, menuId)) return; // ไม่ส่งมา = ไม่ถูกจำกัด
+    const validIds = MASTER_SECTIONS[menuId].map(s => s.id);
+    const chosen = (Array.isArray(src[menuId]) ? src[menuId] : []).filter(id => validIds.indexOf(id) !== -1);
+    if (chosen.length === validIds.length) return; // เลือกครบทุกแถบ = ไม่ถูกจำกัด ไม่ต้องเก็บ
+    out[menuId] = chosen;
+  });
+  return Object.keys(out).length ? JSON.stringify(out) : '';
 }
 
 function expandMenuSpec(spec) {
@@ -322,12 +394,13 @@ function getRoleConfig(role) {
       role: role,
       label: rec.label || role,
       menus: rec.menus || '',
-      projectScope: String(rec.projectScope || 'own').toLowerCase()
+      projectScope: String(rec.projectScope || 'own').toLowerCase(),
+      sections: rec.sections || ''
     };
   }
   const def = DEFAULT_ROLES.find(r => r.role === role);
-  return def ? { role: role, label: def.label, menus: def.menus, projectScope: def.projectScope }
-             : { role: role, label: role, menus: '', projectScope: 'own' };
+  return def ? { role: role, label: def.label, menus: def.menus, projectScope: def.projectScope, sections: def.sections || '' }
+             : { role: role, label: role, menus: '', projectScope: 'own', sections: '' };
 }
 
 /* รายชื่อโครงการที่ผู้ใช้คนนี้เห็นได้ — admin/manager เห็นทุกโครงการ, ที่เหลือเห็นเฉพาะของตัวเอง */
@@ -431,7 +504,8 @@ function apiGetSettings() {
     menus:        String(r.menus || ''),
     menuIds:      expandMenuSpec(r.menus).map(m => m.id),
     projectScope: String(r.projectScope || 'own').toLowerCase(),
-    active:       String(r.active).toLowerCase() !== 'false'
+    active:       String(r.active).toLowerCase() !== 'false',
+    sectionAccess: parseSectionsSpec(r.sections)
   }));
 
   const projects = readObjects(SHEETS.PROJECTS, PROJECT_HEADERS)
@@ -443,7 +517,8 @@ function apiGetSettings() {
     users: users,
     roles: roles,
     projects: projects,
-    menus: MASTER_MENUS.map(m => ({ id: m.id, label: m.label, icon: m.icon, adminOnly: !!m.adminOnly, scoped: !!m.scoped }))
+    menus: MASTER_MENUS.map(m => ({ id: m.id, label: m.label, icon: m.icon, adminOnly: !!m.adminOnly, scoped: !!m.scoped })),
+    sections: MASTER_SECTIONS
   };
 }
 
@@ -521,13 +596,14 @@ function apiSaveRoles(data, session) {
 
   const values = roles.map(r => {
     const role  = String(r.role).toLowerCase().trim();
-    // admin ถูกล็อกไว้ที่ All + ทุกโครงการเสมอ กันแอดมินเผลอตัดสิทธิ์ตัวเองจนเข้าหน้าตั้งค่าไม่ได้
-    if (role === 'admin') return ['admin', r.label || 'Admin (ผู้ดูแลระบบ)', 'All', 'all', 'true'];
+    // admin ถูกล็อกไว้ที่ All + ทุกโครงการ + ทุกแถบย่อยเสมอ กันแอดมินเผลอตัดสิทธิ์ตัวเองจนเข้าหน้าตั้งค่าไม่ได้
+    if (role === 'admin') return ['admin', r.label || 'Admin (ผู้ดูแลระบบ)', 'All', 'all', 'true', ''];
     let menus = Array.isArray(r.menuIds) ? r.menuIds.filter(id => {
       const m = MASTER_MENUS.find(x => x.id === id);
       return m && !m.adminOnly;              // role อื่นใส่หน้าตั้งค่าไม่ได้
     }).join(',') : String(r.menus || '');
-    return [role, r.label || role, menus, String(r.projectScope || 'own').toLowerCase() === 'all' ? 'all' : 'own', r.active === false ? 'false' : 'true'];
+    const sections = sanitizeSectionAccess(r.sectionAccess);
+    return [role, r.label || role, menus, String(r.projectScope || 'own').toLowerCase() === 'all' ? 'all' : 'own', r.active === false ? 'false' : 'true', sections];
   });
   sh.getRange(2, 1, values.length, ROLE_HEADERS.length).setValues(values);
 
@@ -566,7 +642,7 @@ function ensureSetup(force) {
 
   const rolesSh = sheet(SHEETS.ROLES, ROLE_HEADERS);
   if (rolesSh.getLastRow() <= 1) {
-    const values = DEFAULT_ROLES.map(r => [r.role, r.label, r.menus, r.projectScope, r.active]);
+    const values = DEFAULT_ROLES.map(r => [r.role, r.label, r.menus, r.projectScope, r.active, r.sections || '']);
     rolesSh.getRange(2, 1, values.length, ROLE_HEADERS.length).setValues(values);
   }
 
