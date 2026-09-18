@@ -74,7 +74,7 @@ function confirmDlg(message, okLabel, onOk){
 /* ══════════════════════════════════════════════════════════
    CORE APP
 ══════════════════════════════════════════════════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbzjzlcLO0brmnOaD5UNuqi9MuKs0x__p7G9DdQZ2dVZ7MEm6_t8nP4FquwUFhCMStUeNQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwkD6fTNpkEHfIF3aOKvEfUOhfyGrxxSP2q31e753e_xHarnTQDiIZ7R75b_EIZXj1E/exec';
 const PDPA_VERSION = '1.0';
 const ACT = {
   login:'login', verifyToken:'verifyToken', pdpaStatus:'getPdpaStatus', pdpaAccept:'acceptPdpa',
