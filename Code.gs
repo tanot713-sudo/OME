@@ -16,8 +16,8 @@
    CONFIG — แก้ค่าเหล่านี้ก่อน Deploy
    ================================================================ */
 const CONFIG = {
-  SHEET_ID:     '1pQFjICQRG3GcLLy7PxQl2U_wa6oZsALNIysZJytnGMc',
-  DRIVE_ROOT_ID:'19HJJzcMl92Vk3q1y_00Coy-R34SF-DlR',
+  SHEET_ID:     '1qnTe3simRhRTcaNdLcBIbslJkzA8yiQR75u7Sk8iuAg',
+  DRIVE_ROOT_ID:'1ASSXHrqTR64fL1fqxN9CAuRGx_6tZ5CP',
 
   SHEETS: {
     USERS:   'Users',
