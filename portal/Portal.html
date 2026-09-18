@@ -92,7 +92,12 @@ input[type=text],input[type=email],input[type=password],select.cell{padding:8px 
 .sec-role-body{padding:12px 14px}
 .sec-app{margin-bottom:12px}
 .sec-app:last-child{margin-bottom:0}
-.sec-app-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.sec-app-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.sec-app-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.sec-bulk{display:flex;gap:8px;flex-shrink:0}
+.sec-bulklink{font-size:12px;color:var(--brand);cursor:pointer;text-decoration:underline}
+.sec-copy-row{font-size:13px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-mini{padding:5px 12px;font-size:12px;font-weight:600}
 
 /* ── MODAL ─────────────────────────────────────────── */
 .overlay{position:fixed;inset:0;background:rgba(14,22,38,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:40}
@@ -604,6 +609,28 @@ function renderRolesTab() {
     renderSectionsPanel(s) +
     '<div class="bar" style="margin-top:14px"><div class="spacer"></div><button class="btn" id="saveRoles">บันทึกสิทธิ์</button></div></div>';
 
+  $$('.sec-bulklink').forEach(link => link.addEventListener('click', () => {
+    const group = link.closest('.sec-app');
+    const val = link.dataset.act === 'all';
+    $$('input[type=checkbox]', group).forEach(c => c.checked = val);
+  }));
+  $$('.sec-copy-btn').forEach(btn => btn.addEventListener('click', () => {
+    const toRole = btn.dataset.role;
+    const fromRole = $('.sec-copy-src[data-role="' + toRole + '"]').value;
+    if (!fromRole) return toast('เลือกตำแหน่งที่จะคัดลอกมาก่อน', true);
+    let copied = 0;
+    $$('.sec-app[data-role="' + toRole + '"]').forEach(toGroup => {
+      const fromGroup = $('.sec-app[data-sec-app="' + toGroup.dataset.secApp + '"][data-role="' + fromRole + '"]');
+      if (!fromGroup) return; // ตำแหน่งต้นทางไม่ได้เปิดใช้แอปนี้ — ข้ามแอปนี้ไป ไม่แตะของเดิม
+      const fromChecks = $$('input[type=checkbox]', fromGroup);
+      $$('input[type=checkbox]', toGroup).forEach((c, i) => { if (fromChecks[i]) c.checked = fromChecks[i].checked; });
+      copied++;
+    });
+    const fromLabel = (state.settings.roles.find(r => r.role === fromRole) || {}).label || fromRole;
+    copied ? toast('คัดลอกจาก ' + fromLabel + ' แล้ว (ยังไม่บันทึก กด "บันทึกสิทธิ์" เพื่อยืนยัน)')
+           : toast(fromLabel + ' ไม่ได้เปิดใช้แอปที่มีแถบย่อยร่วมกับตำแหน่งนี้เลย', true);
+  }));
+
   $('#saveRoles').addEventListener('click', async () => {
     const roles = $$('#tabBody tbody tr').map(tr => {
       const role = tr.dataset.role;
@@ -630,14 +657,21 @@ function renderRolesTab() {
 
 /* ── แถบย่อยภายในแอป (role × แท็บในแอป) — ตัวเลือกเสริม แสดงเฉพาะแอปที่มีแถบย่อย
    ให้คุมจริง (ดู MASTER_SECTIONS ใน Auth.gs) และเฉพาะตำแหน่งที่เปิดให้เข้าแอปนั้น
-   อยู่แล้วในตารางด้านบน — ไม่ยุ่งอะไรเลย = ทุกคนเห็นทุกแถบเหมือนเดิม (ปลอดภัยไว้ก่อน) */
+   อยู่แล้วในตารางด้านบน — ไม่ยุ่งอะไรเลย = ทุกคนเห็นทุกแถบเหมือนเดิม (ปลอดภัยไว้ก่อน)
+   3 ตัวช่วยลดจำนวนคลิก: (1) ปุ่ม "ทั้งหมด/ไม่เลือกเลย" ต่อแอป (2) ปุ่มคัดลอกจาก
+   ตำแหน่งอื่นมาเป็นจุดเริ่มต้นแล้วค่อยปรับ (3) พับเก็บตำแหน่งที่ยังไม่เคยถูกจำกัด
+   ไว้เป็นค่าเริ่มต้น กางให้เห็นเฉพาะตำแหน่งที่มีการจำกัดอยู่แล้ว */
 function renderSectionsPanel(s) {
   const secMenus = s.menus.filter(m => s.sections && s.sections[m.id] && s.sections[m.id].length);
   if (!secMenus.length) return '';
 
-  const rows = s.roles.filter(r => r.role !== 'admin' && r.active !== false).map(r => {
+  const roles = s.roles.filter(r => r.role !== 'admin' && r.active !== false);
+  const roleOptions = roles.map(r => '<option value="' + esc(r.role) + '">' + esc(r.label) + '</option>').join('');
+
+  const rows = roles.map(r => {
     const enabledMenus = secMenus.filter(m => (r.menuIds || []).indexOf(m.id) !== -1);
     if (!enabledMenus.length) return '';
+    const hasCustom = enabledMenus.some(m => r.sectionAccess && r.sectionAccess[m.id]);
     const apps = enabledMenus.map(m => {
       const picked = (r.sectionAccess && r.sectionAccess[m.id]) || null; // null = ทุกแถบ
       const items = s.sections[m.id].map(sec => {
@@ -647,16 +681,29 @@ function renderSectionsPanel(s) {
           (checked ? ' checked' : '') + '> ' + esc(sec.label) + '</label>';
       }).join('');
       return '<div class="sec-app" data-sec-app="' + esc(m.id) + '" data-role="' + esc(r.role) + '">' +
-        '<div class="sec-app-title">' + esc(m.label) + '</div><div class="checks">' + items + '</div></div>';
+        '<div class="sec-app-head"><div class="sec-app-title">' + esc(m.label) + '</div>' +
+        '<div class="sec-bulk"><span class="sec-bulklink" data-act="all">ทั้งหมด</span>' +
+        '<span class="sec-bulklink" data-act="none">ไม่เลือกเลย</span></div></div>' +
+        '<div class="checks">' + items + '</div></div>';
     }).join('');
-    return '<details class="sec-role"><summary>' + esc(r.label) + '</summary><div class="sec-role-body">' + apps + '</div></details>';
+    const otherRoleOptions = roles.filter(x => x.role !== r.role).map(x =>
+      '<option value="' + esc(x.role) + '">' + esc(x.label) + '</option>').join('');
+    return '<details class="sec-role"' + (hasCustom ? ' open' : '') + '>' +
+      '<summary>' + esc(r.label) + (hasCustom ? '' : ' <span class="tag">เห็นทุกแถบ</span>') + '</summary>' +
+      '<div class="sec-role-body">' +
+      '<div class="sec-copy-row">คัดลอกสิทธิ์แถบย่อยจากตำแหน่งอื่นมาเป็นจุดเริ่มต้น: ' +
+      '<select class="cell sec-copy-src" data-role="' + esc(r.role) + '" style="width:auto;display:inline-block">' +
+      '<option value="">— เลือกตำแหน่ง —</option>' + otherRoleOptions + '</select> ' +
+      '<button type="button" class="btn ghost btn-mini sec-copy-btn" data-role="' + esc(r.role) + '">คัดลอก</button></div>' +
+      apps + '</div></details>';
   }).join('');
 
-  if (!rows) return '<div class="hint" style="margin-top:14px">ยังไม่มีตำแหน่งไหนเปิดใช้แอปที่มีแถบย่อยให้คุม (Project Assets / Work Progress / Vehicles)</div>';
+  if (!rows) return '<div class="hint" style="margin-top:14px">ยังไม่มีตำแหน่งไหนเปิดใช้แอปที่มีแถบย่อยให้คุม</div>';
 
   return '<div class="sections-panel" style="margin-top:16px">' +
     '<h3 style="font-size:15px;margin:0 0 4px">จำกัดแถบย่อยภายในแอป <span class="tag">ตัวเลือกเสริม</span></h3>' +
-    '<div class="hint">คลิกชื่อตำแหน่งเพื่อดู/ปรับว่าเห็นแถบไหนบ้างในแต่ละแอป — ไม่ติ๊กอะไรเพิ่มเลย = เห็นทุกแถบเหมือนเดิมทุกประการ</div>' +
+    '<div class="hint">คลิกชื่อตำแหน่งเพื่อดู/ปรับว่าเห็นแถบไหนบ้างในแต่ละแอป — ไม่ติ๊กอะไรเพิ่มเลย = เห็นทุกแถบเหมือนเดิมทุกประการ ' +
+    '(ตำแหน่งที่ยังไม่เคยถูกจำกัดจะถูกพับเก็บไว้ก่อน)</div>' +
     rows + '</div>';
 }
 

@@ -1155,7 +1155,16 @@ td.doc-cell .doc-btn{width:28px!important;height:28px!important;max-width:28px;p
 </div>
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <script>
-var DATA=null, TODAY=new Date(), TAB='overview';
+var DATA=null, TODAY=new Date();
+// ซ่อนแท็บที่ role นี้ไม่มีสิทธิ์เห็น (ตั้งค่าจากหน้า "ตั้งค่าสิทธิ์" ของ Portal Hub)
+// allowedSections เป็น null/undefined = ไม่ถูกจำกัดเลย แสดงทุกแท็บเหมือนเดิม
+var TAB=(function(){
+  var as=window.PORTAL&&window.PORTAL.allowedSections;
+  if(!as)return'overview';
+  var order=['overview','frontlog','action','closure','trends'];
+  for(var i=0;i<order.length;i++)if(as.indexOf(order[i])!==-1)return order[i];
+  return'overview';
+})();
 // Clean white "finance-app" tooltips for every chart — rendered as HTML so they can
 // float above the page with a real shadow (canvas tooltips cannot cast shadows).
 function omaTooltip(context){
@@ -1442,6 +1451,8 @@ function renderTabs(){
     ['closure','Closure Tracking','mt-closure','file'],
     ['trends','History','mt-trends','trend']
   ];
+  var as=window.PORTAL&&window.PORTAL.allowedSections;
+  if(as) tabs=tabs.filter(function(t){return as.indexOf(t[0])!==-1});
   document.getElementById('tabs').innerHTML=tabs.map(function(t){ return '<div class="tab '+t[2]+(TAB===t[0]?' on':'')+'" onclick="switchTab(\''+t[0]+'\')"><span class="tab-ic">'+ICON[t[3]]+'</span>'+t[1]+'</div>'; }).join('');
   var fs=document.getElementById('filter-slot');
   if(fs){

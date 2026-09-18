@@ -108,7 +108,9 @@ function doGet(e) {
   t.portalBootstrap = JSON.stringify({
     token: (e && e.parameter && e.parameter.portalToken) || '',
     email: g.access.email, name: g.access.name, role: g.access.role,
-    isAdmin: isAdminish(g.access)
+    isAdmin: isAdminish(g.access),
+    // null = เห็นทุกแท็บ (ไม่ถูกจำกัด), array = เห็นเฉพาะ id ที่อยู่ในนี้
+    allowedSections: g.access.allowedSections
   });
   return t.evaluate()
     .setTitle('OMA · Project Dashboard')

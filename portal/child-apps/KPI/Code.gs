@@ -86,6 +86,8 @@ function doGet(e) {
      Hub, live, every time (see whoAmI/canEdit/canView) */
   var t = HtmlService.createTemplateFromFile('Index');
   t.portalUser = (e && e.parameter && e.parameter.portalToken) || '';
+  // null = เห็นทุกแท็บ (ไม่ถูกจำกัด), array = เห็นเฉพาะ id ที่อยู่ในนี้
+  t.portalAllowedSections = JSON.stringify(g.access.allowedSections);
   return t.evaluate()
     .setTitle(APP_TITLE)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -1113,7 +1115,8 @@ function whoAmI(portalToken) {
 }
 
 function canEdit(portalToken) {
-  return canWrite(portalAccessFromToken(portalToken));
+  var access = portalAccessFromToken(portalToken, PORTAL_MENU_ID);
+  return canWrite(access) && requireSection(access, 'entry');
 }
 
 function canView(portalToken) {

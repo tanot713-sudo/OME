@@ -28,7 +28,9 @@ function doGet(e) {
   var bootstrap = JSON.stringify({
     token: (e && e.parameter && e.parameter.portalToken) || '',
     email: g.access.email, name: g.access.name, role: g.access.role,
-    isAdmin: isAdminish(g.access)
+    isAdmin: isAdminish(g.access),
+    // null = เห็นทุกแท็บ (ไม่ถูกจำกัด), array = เห็นเฉพาะ id ที่อยู่ในนี้
+    allowedSections: g.access.allowedSections
   });
 
   for (var i = 0; i < HTML_FILES.length; i++) {

@@ -103,6 +103,32 @@ const MASTER_SECTIONS = {
     { id: 'settings:users',    label: 'Settings › Users',           parent: 'settings' },
     { id: 'settings:projects', label: 'Settings › Projects',        parent: 'settings' },
     { id: 'settings:settings', label: 'Settings › System Settings', parent: 'settings' }
+  ],
+  'sec-finance-dash': [
+    { id: 'billing', label: 'Billing & Collection' },
+    { id: 'bond',    label: 'Bond & Retention' },
+    { id: 'action',  label: 'Action Center' },
+    { id: 'closed',  label: 'History' }
+  ],
+  'sec-projects-dash': [
+    { id: 'overview', label: 'Overview' },
+    { id: 'frontlog', label: 'Frontlog' },
+    { id: 'action',   label: 'Action Center' },
+    { id: 'closure',  label: 'Closure Tracking' },
+    { id: 'trends',   label: 'History' }
+  ],
+  'sec-employee-dash': [
+    { id: 'ov',  label: 'Overview' },
+    { id: 'org', label: 'Team Structure' },
+    { id: 'dir', label: 'Employee Directory' },
+    { id: 'ins', label: 'Workforce Analysis' },
+    { id: 'tb',  label: 'All Employees' }
+  ],
+  'sec-kpi-dash': [
+    { id: 'ov',    label: 'Overview' },
+    { id: 'dept',  label: 'KPI Detail' },
+    { id: 'proj',  label: 'Projects' },
+    { id: 'entry', label: 'Data Entry' }
   ]
 };
 

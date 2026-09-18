@@ -483,14 +483,23 @@ table.ktb tbody tr:hover td{background:#FAFBFE}
 
 /* the portal signs people in and hands the address over in the url */
 var PORTAL_USER = '<?= portalUser ?>';
+// ซ่อนแท็บที่ role นี้ไม่มีสิทธิ์เห็น (ตั้งค่าจากหน้า "ตั้งค่าสิทธิ์" ของ Portal Hub)
+// null/undefined = ไม่ถูกจำกัดเลย แสดงทุกแท็บเหมือนเดิม
+var PORTAL_ALLOWED_SECTIONS = <?!= portalAllowedSections ?>;
 
-var D = null, FACTS = [], TAB = 'ov';
+var D = null, FACTS = [];
 var F = {}, FLAB = {};
 
 var TABS = [['ov','Overview','grid',C.red],
             ['dept','KPI Detail','pulse',C.blue],
             ['proj','Projects','box',C.teal],
             ['entry','Data Entry','list',C.amber]];
+
+var TAB=(function(){
+  if(!PORTAL_ALLOWED_SECTIONS)return'ov';
+  for(var i=0;i<TABS.length;i++)if(PORTAL_ALLOWED_SECTIONS.indexOf(TABS[i][0])!==-1)return TABS[i][0];
+  return'ov';
+})();
 
 /* grades stay inside the Design Kit palette */
 var GC   = { 5:shade(C.green), 4:C.green, 3:C.amber, 2:C.orange, 1:C.red };
@@ -653,7 +662,9 @@ function bandText(kid, g, unit){
 /* the entry tab only exists for people who may save */
 function visibleTabs(){
   return TABS.filter(function(t){
-    return t[0]!=='entry' || !D || D.canEdit !== false;
+    if (t[0]==='entry' && D && D.canEdit===false) return false;
+    if (PORTAL_ALLOWED_SECTIONS && PORTAL_ALLOWED_SECTIONS.indexOf(t[0])===-1) return false;
+    return true;
   });
 }
 

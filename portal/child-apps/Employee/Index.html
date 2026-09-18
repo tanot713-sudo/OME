@@ -552,7 +552,15 @@ function leavingSoon(){return DATA.filter(function(r){return r.lastDay;}).length
 function unplaced(){return DATA.filter(function(r){return !r.orgUnit;});}
 
 /* =============== state =============== */
-var DATA=[],VIEW=[],TAB='ov',SORT={k:'no',d:1},SHOWPII=false;
+// ซ่อนแท็บที่ role นี้ไม่มีสิทธิ์เห็น (ตั้งค่าจากหน้า "ตั้งค่าสิทธิ์" ของ Portal Hub)
+// allowedSections เป็น null/undefined = ไม่ถูกจำกัดเลย แสดงทุกแท็บเหมือนเดิม
+var DATA=[],VIEW=[],TAB=(function(){
+  var as=window.PORTAL&&window.PORTAL.allowedSections;
+  if(!as)return'ov';
+  var order=['ov','org','dir','ins','tb'];
+  for(var i=0;i<order.length;i++)if(as.indexOf(order[i])!==-1)return order[i];
+  return'ov';
+})(),SORT={k:'no',d:1},SHOWPII=false;
 var F={q:'',team:'',sys:'',band:'',site:'',svc:'',age:'',year:''};
 var FREG=[];
 var FLAB={team:'Team',sys:'System',band:'Level',site:'Location',svc:'Tenure',age:'Age',year:'Joined'};
@@ -729,8 +737,12 @@ function kpiCard(c,icon,label,value,unit,sub,tip){
     '<div class="vl">'+value+(unit?'<i>'+unit+'</i>':'')+'</div>'+
     '<div class="sb"><span class="dot"></span>'+sub+'</div></div>';}
 
+var VISIBLE_TABS=(function(){
+  var as=window.PORTAL&&window.PORTAL.allowedSections;
+  return as?TABS.filter(function(t){return as.indexOf(t[0])!==-1}):TABS;
+})();
 function boot(){
-  document.getElementById('tabs').innerHTML=TABS.map(function(t){
+  document.getElementById('tabs').innerHTML=VISIBLE_TABS.map(function(t){
     return '<button class="tb'+(t[0]===TAB?' on':'')+'" style="--c:'+t[3]+';--tint:'+tint(t[3],.11)+'" onclick="setTab(\''+t[0]+'\')">'+
       '<span style="display:flex">'+ico(t[2])+'</span>'+t[1]+'</button>';}).join('');
   document.getElementById('q').addEventListener('input',function(e){F.q=e.target.value.trim().toLowerCase();apply();});
@@ -761,7 +773,7 @@ function stickInit(){
   measure();onScroll();setTimeout(window._stick,300);}
 
 function setTab(t){TAB=t;
-  [].forEach.call(document.querySelectorAll('.tb'),function(b,i){b.classList.toggle('on',TABS[i][0]===t);});
+  [].forEach.call(document.querySelectorAll('.tb'),function(b,i){b.classList.toggle('on',VISIBLE_TABS[i][0]===t);});
   render();window.scrollTo({top:0,behavior:'smooth'});}
 
 function resetF(){F={q:'',team:'',sys:'',band:'',site:'',svc:'',age:'',year:''};
