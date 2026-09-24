@@ -17,6 +17,41 @@ const SH = {
  
 const SEASONAL_KWH = {1:1.0,2:1.0,3:0.8,4:0.8,5:1.0,6:1.2,7:1.2,8:1.2,9:1.0,10:0.8,11:1.0,12:1.0};
 const CO2_FACTOR      = 0.4999; // kg CO2/kWh (EGAT 2024)
+
+// เดิมทุกฟังก์ชันเรียก SpreadsheetApp.openById(SPREADSHEET_ID) ของตัวเอง (รวม 14 จุด) —
+// หน้า dashboard เดียวมักเรียกหลายฟังก์ชันต่อกันในคำขอเดียว แต่ละจุดเลย openById ซ้ำ
+// สเปรดชีตเดิมซ้ำๆ ซึ่งมีค่าใช้จ่าย (คล้าย network round-trip) ทุกครั้ง — memo ไว้ในตัวแปร
+// ระดับโมดูล เปิดครั้งเดียวต่อการทำงานหนึ่งรอบ (ยังคงเป็นสเปรดชีตตัวเดิม, ID เดิมเป๊ะ ไม่มี
+// การเปลี่ยนพฤติกรรมใดๆ)
+var _ssCache_ = null;
+function _ss_() {
+  if (!_ssCache_) _ssCache_ = SpreadsheetApp.openById(SPREADSHEET_ID);
+  return _ssCache_;
+}
+
+// getHomepageData/getPortfolioProduction อ่านทั้งชีต (Breakeven_Calc, Sheet_Production —
+// อาจมีหลายพันแถวสะสมตามเวลา) แล้วคำนวณ IRR/รวมยอดใหม่หมดทุกครั้งที่มีใครเปิดหน้า
+// ภาพรวม โดยไม่เคย cache เลย — เป็นข้อมูลระดับพอร์ตที่ทุกคนเห็นเหมือนกัน (ไม่ผูกกับ
+// สิทธิ์ต่อโครงการ เพราะ requirePortfolioAccess บังคับว่าต้องเห็นได้ทุกโครงการอยู่แล้ว)
+// จึงแคชร่วมกันได้ทั้งระบบด้วย CacheService แบบ TTL สั้นๆ (2 นาที) — ข้อมูลการเงิน/
+// การผลิตระดับพอร์ตไม่จำเป็นต้อง real-time ขนาดนั้น แลกกับความเร็วที่เร็วขึ้นมากสำหรับ
+// ผู้ใช้เกือบทั้งหมดที่ไม่ใช่คนแรกที่เปิดในรอบ 2 นาทีนั้น
+function _cachedPortfolio_(key, ttlSeconds, computeFn) {
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get(key);
+  if (hit) {
+    try { return JSON.parse(hit); } catch (e) { /* cache เสีย ไปคำนวณสดแทน */ }
+  }
+  var result = computeFn();
+  try {
+    var json = JSON.stringify(result);
+    if (json.length < 95000) cache.put(key, json, ttlSeconds); // เผื่อ margin จากลิมิต 100KB/key ของ CacheService
+  } catch (e) { /* ข้อมูลใหญ่เกินไปหรือ serialize ไม่ได้ ก็แค่ไม่ cache รอบนี้ ไม่ต้อง fail คำขอ */ }
+  return result;
+}
+function _invalidatePortfolioCache_() {
+  CacheService.getScriptCache().removeAll(['solarHomepageData', 'solarPortfolioProduction']);
+}
  
 // Projects header
 const HEADER_ROW = { 
@@ -66,7 +101,7 @@ function getSysConfig() {
   };
  
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = _ss_();
     const sh = ss.getSheetByName(SH.CONFIG);
     if (sh) {
       const data = sh.getRange(1, 1, sh.getLastRow(), 2).getValues();
@@ -105,7 +140,7 @@ function safe(v) {
 }
  
 function _getSheet(name) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const sh = ss.getSheetByName(name);
   if (!sh) Logger.log('Sheet not found: ' + name);
   return sh || null;
@@ -1170,7 +1205,7 @@ function onEditAutoUpdate(e) {
 // ════════════════════════════════════════════════════════════
 function addProject(data) {
   try {
-    const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = _ss_();
     const projSh = ss.getSheetByName(SH.PROJECTS);
     if (!projSh) return { ok:false, error:'Sheet Projects not found' };
  
@@ -1565,7 +1600,7 @@ function getHomepageData() {
 // Run in GAS Editor and view in Logs
 // ════════════════════════════════════════════════════════════
 function debugBreakeven() {
-  const ss   = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const bkSh = ss.getSheetByName(SH.BREAKEVEN);
   if (!bkSh) { Logger.log('Breakeven sheet not found'); return; }
  
@@ -1629,7 +1664,7 @@ function debugBreakeven() {
  
 // View monthly cumActual during actual→projected transition
 function debugCumDetail() {
-  const ss   = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const bkSh = ss.getSheetByName(SH.BREAKEVEN);
   const prSh = ss.getSheetByName(SH.PROJ);
  
@@ -1808,7 +1843,7 @@ function getGroupMeters(params) {
 }
 // ── getProduction: Fetch annual Production data (ปรับปรุงให้ดึงข้อมูลทั้งหมดได้) ───────────────
 function getProduction(refCode, year) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const prodSh = ss.getSheetByName('Sheet_Production');
   const projRows = _sheetToObjects(SH.PROJECTS);
   if (!prodSh) return { rows: [], error: 'Sheet_Production not found' };
@@ -1949,7 +1984,7 @@ function getProduction(refCode, year) {
  
 // ── getPortfolioProduction: Summary of all sites by month ────────────
 function getPortfolioProduction() {
-  const ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const prodSh = ss.getSheetByName('Sheet_Production');
   if (!prodSh) return { months: [], error: 'Sheet_Production not found' };
  
@@ -2000,7 +2035,7 @@ function getPortfolioProduction() {
  
 // ── getProductionRows: ดึง kWh รายเดือนสำหรับ Input Panel ──
 function getProductionRows(refCode, year) {
-  const ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const prodSh = ss.getSheetByName('Sheet_Production');
   const projRows = _sheetToObjects(SH.PROJECTS);
   if (!prodSh) return { rows: [] };
@@ -2072,7 +2107,7 @@ function getProductionRows(refCode, year) {
 function saveProduction(access, allowedAssets, updates) {
   if (!canWrite(access)) return { ok: false, error: 'สิทธิ์ไม่พอ' };
   try {
-    const ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const ss = _ss_();
     const prodSh = ss.getSheetByName('Sheet_Production');
     if (!prodSh) return { ok: false, error: 'Sheet_Production not found' };
 
@@ -2177,20 +2212,20 @@ function dispatch(action, params) {
                               result = getPanel3(params.refCode);                         break;
       case 'getActualRows' : requireAssetOrPortfolio(access, allowedAssets, params.refCode);
                               result = getActualRows(params.refCode);                     break;
-      case 'saveActual'    : result = saveActual(access, allowedAssets, params.updates);  break;
-      case 'addProject'    : requireAdmin(access); result = addProject(params);           break;
-      case 'dispatch_recalc'  : requireAdmin(access); result = recalcOnly();              break;
-      case 'getHomepageData'  : requirePortfolioAccess(access); result = getHomepageData(); break;
+      case 'saveActual'    : result = saveActual(access, allowedAssets, params.updates); _invalidatePortfolioCache_(); break;
+      case 'addProject'    : requireAdmin(access); result = addProject(params); _invalidatePortfolioCache_(); break;
+      case 'dispatch_recalc'  : requireAdmin(access); result = recalcOnly(); _invalidatePortfolioCache_(); break;
+      case 'getHomepageData'  : requirePortfolioAccess(access); result = _cachedPortfolio_('solarHomepageData', 120, getHomepageData); break;
       case 'getGroupSummary'  : requirePortfolioAccess(access); result = getGroupSummary(params); break;
       case 'getGroupBudget'   : requirePortfolioAccess(access); result = getGroupBudget(params); break;
       case 'getGroupMeters'   : requirePortfolioAccess(access); result = getGroupMeters(params); break;
       case 'getProduction'    : requireAssetOrPortfolio(access, allowedAssets, params.refCode);
                                  result = getProduction(params.refCode, params.year);      break;
-      case 'getPortfolioProduction': requirePortfolioAccess(access); result = getPortfolioProduction(); break;
-      case 'initProductionPlan'    : requireAdmin(access); initProductionPlan(); result = {ok:true}; break;
+      case 'getPortfolioProduction': requirePortfolioAccess(access); result = _cachedPortfolio_('solarPortfolioProduction', 120, getPortfolioProduction); break;
+      case 'initProductionPlan'    : requireAdmin(access); initProductionPlan(); result = {ok:true}; _invalidatePortfolioCache_(); break;
       case 'getProductionRows': requireAssetOrPortfolio(access, allowedAssets, params.refCode);
                                  result = getProductionRows(params.refCode, params.year);  break;
-      case 'saveProduction'   : result = saveProduction(access, allowedAssets, params.updates); break;
+      case 'saveProduction'   : result = saveProduction(access, allowedAssets, params.updates); _invalidatePortfolioCache_(); break;
       case 'getInstallmentData': requireAssetOrPortfolio(access, allowedAssets, params.refCode);
                                   result = getInstallmentData(params.refCode);             break;
       case 'getBillingChartData': requireAssetOrPortfolio(access, allowedAssets, params.refCode);
@@ -2211,7 +2246,7 @@ function dispatch(action, params) {
 // DEBUG
 // ════════════════════════════════════════════════════════════
 function debugAllBE() {
-  const ss   = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const bkSh = ss.getSheetByName('Breakeven_Calc');
   const prSh = ss.getSheetByName('Projects');
  
@@ -2274,7 +2309,7 @@ function debugAllBE() {
 }
  
 function debugProduction() {
-  const ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const prodSh = ss.getSheetByName('Sheet_Production');
   
   // Show header
@@ -2290,7 +2325,7 @@ function debugProduction() {
 }
  
 function debugKwhPlan() {
-  const ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const prodSh = ss.getSheetByName('Sheet_Production');
   const projRows = _sheetToObjects(SH.PROJECTS);
  
@@ -2334,7 +2369,7 @@ function debugKwhPlan() {
 // UTILITY: คำนวณชีต FeasPlan ใหม่ทั้งหมด (รันครั้งเดียว)
 // ============================================================
 function rebuildFeasPlanAll() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = _ss_();
   const fpSh = ss.getSheetByName(SH.FEAS_PLAN);
   if (!fpSh) { Logger.log('Sheet FeasPlan not found'); return; }
   
@@ -2418,7 +2453,7 @@ function cleanYM(val) {
 function debugProjectData() {
   var targetRef = 'NB230001'; // ⚠️ เปลี่ยนเป็น RefCode ตัวที่มีปัญหา
   
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var ss = _ss_();
   var prodSh = ss.getSheetByName('Sheet_Production');
   var projSh = ss.getSheetByName('Sheet_Projects'); // หรือชื่อชีตโครงการของคุณ
   
