@@ -508,7 +508,13 @@ function guardSession(data, fn) {
 
 function apiGetSettings() {
   ensureSetup();
-  const users = readObjects(SHEETS.USERS, USER_HEADERS).map(u => ({
+  // เดิมอ่านสด (readObjects) ทั้ง 3 ชีตทุกครั้ง — หน้าตั้งค่าสิทธิ์เรียก getSettings
+  // ใหม่ทุกครั้งหลัง save แต่ละครั้งด้วย (ดู renderSettingsModule ฝั่ง js/settings.js)
+  // เลยรู้สึกหน่วงทุกครั้งที่แก้ไข เปลี่ยนมาใช้ cachedReadObjects แบบเดียวกับ
+  // resolveAppPages ด้านล่าง — cache ผูกกับ permVersion() อยู่แล้ว ดังนั้น apiSaveUser/
+  // apiSaveRoles/apiSaveProjects (ทุกตัวเรียก bumpPermVersion()) จะทำให้ cache เดิม
+  // เข้าถึงไม่ได้ทันที ไม่มีทางเห็นข้อมูลเก่าค้างหลัง save
+  const users = cachedReadObjects('settings|users', SHEETS.USERS, USER_HEADERS).map(u => ({
     email:        u.email,
     name:         u.name || '',
     role:         String(u.role || 'viewer').toLowerCase(),
@@ -518,7 +524,7 @@ function apiGetSettings() {
     active:       String(u.active).toLowerCase() !== 'false'
   }));
 
-  const roles = readObjects(SHEETS.ROLES, ROLE_HEADERS).map(r => ({
+  const roles = cachedReadObjects('settings|roles', SHEETS.ROLES, ROLE_HEADERS).map(r => ({
     role:         String(r.role).toLowerCase(),
     label:        r.label || r.role,
     menus:        String(r.menus || ''),
@@ -527,7 +533,7 @@ function apiGetSettings() {
     active:       String(r.active).toLowerCase() !== 'false'
   }));
 
-  const projects = readObjects(SHEETS.PROJECTS, PROJECT_HEADERS)
+  const projects = cachedReadObjects('settings|projects', SHEETS.PROJECTS, PROJECT_HEADERS)
     .filter(p => p.code)
     .map(p => ({ code: String(p.code).trim(), name: p.name || p.code, active: String(p.active).toLowerCase() !== 'false' }));
 
