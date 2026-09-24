@@ -146,7 +146,19 @@ function _getSheet(name) {
   return sh || null;
 }
  
+// _sheetToObjects ถูกเรียกจากคนละฟังก์ชันกระจายอยู่ทั่วไฟล์ (ตอนนี้ประมาณ 20 จุด) —
+// ชีต Projects อย่างเดียวก็ถูกอ่านสดซ้ำจากอย่างน้อย 9 ฟังก์ชันต่างกัน ถ้าคำขอเดียว (เช่น
+// getPanel1) เรียกหลายฟังก์ชันที่ต่างก็อ่านชีตเดียวกันซ้ำ จะเสียเวลาอ่านซ้ำโดยไม่จำเป็น
+// เลย memo ผลไว้ต่อการทำงานหนึ่งครั้ง (เหมือน _ss_() ด้านบน) — อ่านสดเหมือนเดิมทุก
+// ครั้งที่เป็นคำขอใหม่ แค่ไม่อ่านซ้ำภายในคำขอเดียวกัน
+var _sheetObjCache_ = {};
 function _sheetToObjects(sheetName) {
+  if (Object.prototype.hasOwnProperty.call(_sheetObjCache_, sheetName)) return _sheetObjCache_[sheetName];
+  const result = _sheetToObjectsUncached_(sheetName);
+  _sheetObjCache_[sheetName] = result;
+  return result;
+}
+function _sheetToObjectsUncached_(sheetName) {
   const sh = _getSheet(sheetName);
   if (!sh) return [];
   const lastRow = sh.getLastRow();
