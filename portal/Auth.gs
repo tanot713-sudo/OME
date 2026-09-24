@@ -24,6 +24,13 @@
 
 const PORTAL_HUB_ID = "1IZ0p4nQmN3J34BoacZnR7cZRqtsp2h2xjDJk77AZVNA";
 
+// สเปรดชีตข้อมูลพนักงาน (คนละไฟล์กับ Hub) — ใช้แค่ดึงรูปมาโชว์ใน Authorization ตาม
+// อีเมล ไม่เกี่ยวกับสิทธิ์เข้าใช้งานใดๆ ทั้งสิ้น (เห็นได้ก็แค่รูปสวยขึ้น ไม่เห็นก็ไม่กระทบ
+// การทำงาน) — ดู getEmployeePhotoMap() ด้านล่าง
+const EMPLOYEE_SHEET_ID = "1dTfbCT1mYRCBoKmv1ehbK-0f0cBuZ_J5VH2qa0wYHMA";
+const EMPLOYEE_SHEET_NAMES = ['Data Staff', 'Staff OMA', 'DB_OMA_Employee']; // ลองตามลำดับ เหมือนที่แอป Employee ใช้เอง
+const EMPLOYEE_PHOTO_CACHE_TTL = 1800; // 30 นาที — รูปพนักงานเปลี่ยนไม่บ่อย cache นานกว่าข้อมูลสิทธิ์ได้
+
 const SHEETS = {
   USERS:     'Sheet_Users',
   ROLES:     'Sheet_Roles',
@@ -552,8 +559,77 @@ function apiGetSettings() {
     roles: roles,
     projects: projects,
     menus: MASTER_MENUS.map(m => ({ id: m.id, label: m.label, icon: m.icon, adminOnly: !!m.adminOnly, scoped: !!m.scoped })),
-    appPages: appPages
+    appPages: appPages,
+    employeePhotos: getEmployeePhotoMap()
   };
+}
+
+/* Drive share link -> displayable thumbnail URL (เหมือนกับ _photoUrl_() ของแอป Employee) */
+function _employeePhotoUrl_(url) {
+  const s = String(url || '').trim();
+  if (!s) return '';
+  if (s.indexOf('thumbnail?id=') > -1) return s; // แปลงแล้ว
+  const m = s.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || s.match(/[?&]id=([a-zA-Z0-9_-]{20,})/);
+  return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w200' : s;
+}
+
+// อ่านสเปรดชีต Employee (คนละไฟล์กับ Hub) แล้วสร้าง map อีเมล -> ลิงก์รูป — cache ไว้
+// 30 นาทีแยกจาก cache ของสิทธิ์ (ไม่ผูกกับ permVersion เพราะไม่เกี่ยวกับสิทธิ์เลย)
+// กันพัง: ถ้าเปิดสเปรดชีตไม่ได้/หาคอลัมน์ไม่เจอ ก็แค่คืน map ว่าง ไม่ทำให้
+// apiGetSettings ทั้งหมดพังไปด้วย (avatar แค่ fallback เป็นตัวอักษรสีแทน)
+function getEmployeePhotoMap() {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'employeePhotos';
+  try {
+    const hit = cache.get(cacheKey);
+    if (hit) return JSON.parse(hit);
+  } catch (e) { /* cache เสีย ไปอ่านสดแทน */ }
+
+  const map = {};
+  try {
+    const ss = SpreadsheetApp.openById(EMPLOYEE_SHEET_ID);
+    let sh = null;
+    for (let i = 0; i < EMPLOYEE_SHEET_NAMES.length; i++) {
+      sh = ss.getSheetByName(EMPLOYEE_SHEET_NAMES[i]);
+      if (sh) break;
+    }
+    if (!sh) sh = ss.getSheets()[0];
+
+    const values = sh.getDataRange().getValues();
+    if (values.length) {
+      // หาแถวหัวตาราง — แถวแรกใน 10 แถวบนสุดที่มี "employee id" หรือ "name"
+      // (เหมือนที่แอป Employee ใช้เอง เผื่อมีแถวหัวเรื่อง/ว่างอยู่ด้านบนสุด)
+      let hr = 0;
+      const limit = Math.min(10, values.length);
+      for (let r = 0; r < limit; r++) {
+        const row = values[r].map(c => String(c || '').trim().toLowerCase());
+        if (row.indexOf('employee id') !== -1 || row.indexOf('name') !== -1) { hr = r; break; }
+      }
+      const head = values[hr].map(c => String(c || '').trim().toLowerCase());
+      const col = function () {
+        for (let i = 0; i < arguments.length; i++) {
+          const idx = head.indexOf(String(arguments[i]).toLowerCase());
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+      const mailCol = col('email', 'e-mail', 'อีเมล');
+      const picCol = col('picture', 'photo', 'image', 'รูป', 'รูปภาพ');
+      if (mailCol !== -1 && picCol !== -1) {
+        for (let i = hr + 1; i < values.length; i++) {
+          const row = values[i];
+          const email = String(row[mailCol] || '').trim().toLowerCase();
+          const pic = row[picCol];
+          if (email && pic) map[email] = _employeePhotoUrl_(pic);
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log('getEmployeePhotoMap error: ' + e.toString());
+  }
+
+  try { cache.put(cacheKey, JSON.stringify(map), EMPLOYEE_PHOTO_CACHE_TTL); } catch (e) { /* ไม่เป็นไรถ้า cache ไม่สำเร็จ */ }
+  return map;
 }
 
 function apiSaveUser(data, session) {
