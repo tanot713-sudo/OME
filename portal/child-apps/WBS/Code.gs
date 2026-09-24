@@ -25,9 +25,13 @@ function doGet(e) {
     allowedSections: g.access.allowedSections
   });
 
-  return HtmlService
-    .createHtmlOutputFromFile('Index')
-    .append('<script>window.PORTAL = ' + bootstrap + ';</script>')
+  // createTemplateFromFile + scriptlet (ไม่ใช่ createHtmlOutputFromFile().append(...))
+  // เพราะ .append() ต่อสคริปต์ไว้ท้ายสุดของเอกสารเสมอ — สคริปต์หลักใน Index.html
+  // อ่าน window.PORTAL แบบ synchronous ตอนเริ่มรัน (ไม่ได้รอ event ใดๆ) ถ้า bootstrap
+  // มาทีหลังสคริปต์หลัก CURRENT_USER จะกลายเป็น null ทันที (บั๊กที่เจอจริงตอน deploy)
+  var t = HtmlService.createTemplateFromFile('Index');
+  t.portalBootstrap = bootstrap;
+  return t.evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .setTitle('OMA WBS — AMR ASIA');
 }

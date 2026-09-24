@@ -1203,6 +1203,10 @@ input,select,textarea{font-family:inherit;outline:none}
 <div id="loading" class="hidden"><div class="spin-lg"></div><div class="loading-txt">Loading OMA WBS data...</div></div>
 <div id="toast-box"></div>
 
+<!-- ต้องอยู่ก่อนสคริปต์หลักด้านล่างเสมอ เพราะ CURRENT_USER อ่านค่า window.PORTAL
+     แบบ synchronous ตอนสคริปต์หลักเริ่มรัน (ไม่ใช่รอ event ใดๆ) ถ้าสลับที่กันจะได้
+     CURRENT_USER เป็น null เพราะ window.PORTAL ยังไม่ถูกตั้งค่าตอนนั้น -->
+<script>window.PORTAL = <?!= portalBootstrap ?>;</script>
 <script>
 
 /* ============================================================
