@@ -133,7 +133,7 @@ const MASTER_MENUS = [
   { id: 'sec-kpi-dash',      label: 'Performance (KPI)',   icon: 'bi-trophy',                  isIframe: true, scoped: true,  src: 'https://script.google.com/macros/s/AKfycbzqcuWDrhXJ9B-dp08i3BvLpIHW2AGosDSBV-18ZN-ChHUxhbr6CVVjQ9nvscrJ7sE3tQ/exec' },
   { id: 'sec-employee-dash', label: 'Employee Management', icon: 'bi-person-bounding-box',     isIframe: true, scoped: false, src: 'https://script.google.com/macros/s/AKfycbz-CgJ1JgYrOBhNblYfwk-Qs3i78daucbaqFD_-Q4uXKAS2_gjms8QiuZPF74yIjOB9/exec' },
   { id: 'sec-labroom-dash',  label: 'Lab Room',            icon: 'bi-pc-display-horizontal',   isIframe: true, scoped: false, src: 'https://script.google.com/macros/s/AKfycbwWbB9VBqXqWuacYQA36_f2y9BY_XKsvpG_xoRomYkLgFnfhcN2DDGf1z-1fZOERdwwlg/exec' },
-  { id: 'sec-settings',      label: 'ตั้งค่าสิทธิ์',           icon: 'bi-shield-lock',             isIframe: false, scoped: false, adminOnly: true }
+  { id: 'sec-settings',      label: 'Authorization',       icon: 'bi-shield-lock',             isIframe: false, scoped: false, adminOnly: true }
 ];
 
 /* ค่าเริ่มต้นของแต่ละ role — แก้ได้ภายหลังจากหน้า "ตั้งค่าสิทธิ์"
