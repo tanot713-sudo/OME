@@ -77,19 +77,9 @@ function _allPagesDefault_(pages) {
   return d;
 }
 const APP_PAGE_DEFS = {
-  'sec-assets-dash': {
-    allPages: ['dashboard', 'tree', 'warranty', 'gantt', 'service'],
-    defaultPages: _allPagesDefault_(['dashboard', 'tree', 'warranty', 'gantt', 'service'])
-  },
   'sec-wbs-dash': {
     allPages: ['dashboard', 'update'],
     defaultPages: _allPagesDefault_(['dashboard', 'update'])
-  },
-  'sec-vehicles-dash': {
-    allPages: ['dashboard', 'fleet', 'bookings', 'return', 'maintenance', 'reports', 'settings',
-               'settings:vehicles', 'settings:users', 'settings:projects', 'settings:settings'],
-    defaultPages: _allPagesDefault_(['dashboard', 'fleet', 'bookings', 'return', 'maintenance', 'reports', 'settings',
-               'settings:vehicles', 'settings:users', 'settings:projects', 'settings:settings'])
   },
   'sec-finance-dash': {
     allPages: ['billing', 'bond', 'action', 'closed'],
@@ -108,6 +98,7 @@ const APP_PAGE_DEFS = {
     defaultPages: _allPagesDefault_(['ov', 'dept', 'proj', 'entry'])
   }
   // Solar และ Lab Room ไม่มีแถบ/หน้าย่อยที่คุมแยกได้จริง จึงไม่ต้องมี entry ที่นี่
+  // Assets และ Vehicle ถูกถอดออกจาก Portal ทั้งแอปแล้ว (ดู MASTER_MENUS ด้านบน)
 };
 
 const TOKEN_TTL   = 8 * 60 * 60 * 1000;   // อายุ session 8 ชั่วโมง
@@ -139,9 +130,7 @@ const MASTER_MENUS = [
   { id: 'sec-finance-dash',  label: 'Finance',             icon: 'bi-currency-dollar',         isIframe: true, scoped: true,  src: 'https://script.google.com/macros/s/AKfycbzcU6hYwKvc80nAcbPykUMdXM0bU_IWtdyEb85GqkofzPuFBVIb5dSpP8ZEC3GNoG4e/exec' },
   { id: 'sec-solar-dash',    label: 'Solar Monitoring',    icon: 'bi-sun',                     isIframe: true, scoped: true,  src: 'https://script.google.com/macros/s/AKfycbypTmkWTTOotfv60aTQDQoX5Q7F6g6a6HEK51TSLrS3e-hw4mWOxkT3YPK5OHq3iw/exec' },
   { id: 'sec-wbs-dash',      label: 'Work Progress',       icon: 'bi-bar-chart-steps',         isIframe: true, scoped: true,  src: 'https://script.google.com/macros/s/AKfycbw5dPl4v-ShgAKjJq5q3Bj49W19ExY6csKqQYNd_iEqQXJGHW-JIA7ne-hVvVlJt24cSQ/exec' },
-  { id: 'sec-assets-dash',   label: 'Project Assets',      icon: 'bi-cpu',                     isIframe: true, scoped: true,  src: 'https://script.google.com/macros/s/AKfycbz5JO937Ehs-fhMrkHWKWd017OZPzaIsHORaqZT_tFlyWK5w59CdsEMXgQkjJrhp9SV6A/exec' },
   { id: 'sec-kpi-dash',      label: 'Performance (KPI)',   icon: 'bi-trophy',                  isIframe: true, scoped: true,  src: 'https://script.google.com/macros/s/AKfycbzqcuWDrhXJ9B-dp08i3BvLpIHW2AGosDSBV-18ZN-ChHUxhbr6CVVjQ9nvscrJ7sE3tQ/exec' },
-  { id: 'sec-vehicles-dash', label: 'Vehicles',            icon: 'bi-truck',                   isIframe: true, scoped: false, src: 'https://script.google.com/macros/s/AKfycbwqMKTP_4udIABQAql0YIsVD4laV0XyhaLPLnoDSv3YPqBdfKxlyz7j143AzfQsmfw-/exec' },
   { id: 'sec-employee-dash', label: 'Employee Management', icon: 'bi-person-bounding-box',     isIframe: true, scoped: false, src: 'https://script.google.com/macros/s/AKfycbz-CgJ1JgYrOBhNblYfwk-Qs3i78daucbaqFD_-Q4uXKAS2_gjms8QiuZPF74yIjOB9/exec' },
   { id: 'sec-labroom-dash',  label: 'Lab Room',            icon: 'bi-pc-display-horizontal',   isIframe: true, scoped: false, src: 'https://script.google.com/macros/s/AKfycbwWbB9VBqXqWuacYQA36_f2y9BY_XKsvpG_xoRomYkLgFnfhcN2DDGf1z-1fZOERdwwlg/exec' },
   { id: 'sec-settings',      label: 'ตั้งค่าสิทธิ์',           icon: 'bi-shield-lock',             isIframe: false, scoped: false, adminOnly: true }
@@ -153,8 +142,8 @@ const MASTER_MENUS = [
 const DEFAULT_ROLES = [
   { role: 'admin',    label: 'Admin (ผู้ดูแลระบบ)',       menus: 'All',               projectScope: 'all', active: 'true' },
   { role: 'manager',  label: 'Manager (ผู้บริหาร)',        menus: 'AllExceptSettings', projectScope: 'all', active: 'true' },
-  { role: 'head',     label: 'หัวหน้าโครงการ',              menus: 'sec-projects-dash,sec-finance-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash,sec-kpi-dash', projectScope: 'own', active: 'true' },
-  { role: 'engineer', label: 'Engineer / Tech',           menus: 'sec-projects-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash',                                projectScope: 'own', active: 'true' },
+  { role: 'head',     label: 'หัวหน้าโครงการ',              menus: 'sec-projects-dash,sec-finance-dash,sec-solar-dash,sec-wbs-dash,sec-kpi-dash', projectScope: 'own', active: 'true' },
+  { role: 'engineer', label: 'Engineer / Tech',           menus: 'sec-projects-dash,sec-solar-dash,sec-wbs-dash',                                projectScope: 'own', active: 'true' },
   { role: 'viewer',   label: 'Viewer (ดูอย่างเดียว)',       menus: 'sec-projects-dash,sec-wbs-dash',                                                              projectScope: 'own', active: 'true' }
 ];
 
