@@ -10,23 +10,7 @@
 
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone@7.20.12/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <script>
-    tailwind.config = {
-      theme: { 
-        extend: { 
-          fontFamily: {
-            sans: ['Kanit', 'sans-serif'], // เปลี่ยนจากเดิมที่มี Inter ให้เหลือแค่ Kanit
-            mono: ['JetBrains Mono', 'monospace'],
-            space: ['Space Grotesk', 'sans-serif'],
-            thai: ['Sarabun', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
+  <?!= include('TailwindCSS') ?>
 
   <style>
     body { background-color:#f8fafc; font-family:'Kanit',sans-serif; }
@@ -57,214 +41,438 @@
   </div>
 </div>
 
-<script type="text/babel">
-const { useState, useEffect, useMemo, useCallback } = React;
+<script>
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback
+} = React;
 
 // ════════════════════════════════════════
 // SPRITE COMPONENTS
 // ════════════════════════════════════════
-const DroidSprite = () => (
-  <svg width="28" height="28" viewBox="0 0 14 14" className="image-rendering-pixelated drop-shadow-md">
-    <rect x="3" y="3" width="8" height="7" fill="#334155"/>
-    <rect x="4" y="4" width="6" height="5" fill="#475569"/>
-    <rect x="4" y="5" width="6" height="2" fill="#059669" className="animate-pulse"/>
-    <rect x="6" y="5" width="2" height="1" fill="#a7f3d0"/>
-    <rect x="6" y="1" width="2" height="2" fill="#dc2626"/>
-    <rect x="6.5" y="0" width="1" height="1" fill="#f59e0b" className="animate-pulse"/>
-    <rect x="2" y="5" width="1" height="3" fill="#cbd5e1"/>
-    <rect x="11" y="5" width="1" height="3" fill="#cbd5e1"/>
-    <rect x="5" y="10" width="1" height="2" fill="#f97316"/>
-    <rect x="8" y="10" width="1" height="2" fill="#f97316"/>
-    <rect x="6" y="10" width="2" height="3" fill="#ef4444" className="animate-pulse"/>
-  </svg>
-);
-
-const EngineerSprite = () => (
-  <svg width="28" height="32" viewBox="0 0 14 16" className="image-rendering-pixelated drop-shadow-sm">
-    <rect x="4" y="1" width="6" height="3" fill="#78350f"/>
-    <rect x="5" y="0" width="4" height="1" fill="#451a03"/>
-    <rect x="4" y="4" width="6" height="3" fill="#fef08a"/>
-    <rect x="4" y="4" width="5" height="1.5" fill="#06b6d4" className="animate-pulse"/>
-    <rect x="3" y="7" width="8" height="6" fill="#f8fafc"/>
-    <rect x="5" y="7" width="4" height="6" fill="#e2e8f0"/>
-    <rect x="6" y="8" width="2" height="1.5" fill="#e11d48"/>
-    <rect x="2" y="8" width="1" height="4" fill="#cbd5e1"/>
-    <rect x="11" y="8" width="1" height="4" fill="#cbd5e1"/>
-    <rect x="4" y="13" width="6" height="2" fill="#1e3a8a"/>
-    <rect x="3" y="15" width="3.5" height="1" fill="#0f172a"/>
-    <rect x="7.5" y="15" width="3.5" height="1" fill="#0f172a"/>
-  </svg>
-);
+const DroidSprite = () => /*#__PURE__*/React.createElement("svg", {
+  width: "28",
+  height: "28",
+  viewBox: "0 0 14 14",
+  className: "image-rendering-pixelated drop-shadow-md"
+}, /*#__PURE__*/React.createElement("rect", {
+  x: "3",
+  y: "3",
+  width: "8",
+  height: "7",
+  fill: "#334155"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "4",
+  width: "6",
+  height: "5",
+  fill: "#475569"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "5",
+  width: "6",
+  height: "2",
+  fill: "#059669",
+  className: "animate-pulse"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "6",
+  y: "5",
+  width: "2",
+  height: "1",
+  fill: "#a7f3d0"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "6",
+  y: "1",
+  width: "2",
+  height: "2",
+  fill: "#dc2626"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "6.5",
+  y: "0",
+  width: "1",
+  height: "1",
+  fill: "#f59e0b",
+  className: "animate-pulse"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "2",
+  y: "5",
+  width: "1",
+  height: "3",
+  fill: "#cbd5e1"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "11",
+  y: "5",
+  width: "1",
+  height: "3",
+  fill: "#cbd5e1"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "5",
+  y: "10",
+  width: "1",
+  height: "2",
+  fill: "#f97316"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "8",
+  y: "10",
+  width: "1",
+  height: "2",
+  fill: "#f97316"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "6",
+  y: "10",
+  width: "2",
+  height: "3",
+  fill: "#ef4444",
+  className: "animate-pulse"
+}));
+const EngineerSprite = () => /*#__PURE__*/React.createElement("svg", {
+  width: "28",
+  height: "32",
+  viewBox: "0 0 14 16",
+  className: "image-rendering-pixelated drop-shadow-sm"
+}, /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "1",
+  width: "6",
+  height: "3",
+  fill: "#78350f"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "5",
+  y: "0",
+  width: "4",
+  height: "1",
+  fill: "#451a03"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "4",
+  width: "6",
+  height: "3",
+  fill: "#fef08a"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "4",
+  width: "5",
+  height: "1.5",
+  fill: "#06b6d4",
+  className: "animate-pulse"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "3",
+  y: "7",
+  width: "8",
+  height: "6",
+  fill: "#f8fafc"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "5",
+  y: "7",
+  width: "4",
+  height: "6",
+  fill: "#e2e8f0"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "6",
+  y: "8",
+  width: "2",
+  height: "1.5",
+  fill: "#e11d48"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "2",
+  y: "8",
+  width: "1",
+  height: "4",
+  fill: "#cbd5e1"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "11",
+  y: "8",
+  width: "1",
+  height: "4",
+  fill: "#cbd5e1"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "13",
+  width: "6",
+  height: "2",
+  fill: "#1e3a8a"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "3",
+  y: "15",
+  width: "3.5",
+  height: "1",
+  fill: "#0f172a"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "7.5",
+  y: "15",
+  width: "3.5",
+  height: "1",
+  fill: "#0f172a"
+}));
 
 // ════════════════════════════════════════
 // ICON COMPONENTS
 // ════════════════════════════════════════
-const I = (d) => ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{__html:d}}/>;
-
-const CalendarIcon      = I('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>');
-const RefreshCwIcon     = I('<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>');
-const SearchIcon        = I('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>');
-const ShieldIcon        = I('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>');
+const I = d => ({
+  className
+}) => /*#__PURE__*/React.createElement("svg", {
+  className: className,
+  xmlns: "http://www.w3.org/2000/svg",
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "2",
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  dangerouslySetInnerHTML: {
+    __html: d
+  }
+});
+const CalendarIcon = I('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>');
+const RefreshCwIcon = I('<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>');
+const SearchIcon = I('<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>');
+const ShieldIcon = I('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>');
 const AlertTriangleIcon = I('<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>');
-const SparklesIcon      = I('<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707-.707M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>');
-const CompassIcon       = I('<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>');
-const PencilIcon        = I('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>');
-const PlusIcon          = I('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>');
-const XIcon             = I('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>');
-const Trash2Icon        = I('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>');
+const SparklesIcon = I('<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707-.707M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/>');
+const CompassIcon = I('<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>');
+const PencilIcon = I('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>');
+const PlusIcon = I('<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>');
+const XIcon = I('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>');
+const Trash2Icon = I('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>');
 
 // ════════════════════════════════════════
 // CONFIGURATION
 // ════════════════════════════════════════
-const DESKS = [
-  { id:'L1', name:'L1', side:'left'  },
-  { id:'L2', name:'L2', side:'left'  },
-  { id:'L3', name:'L3', side:'left'  },
-  { id:'R1', name:'R1', side:'right' },
-  { id:'R2', name:'R2', side:'right' },
-  { id:'R3', name:'R3', side:'right' },
-  { id:'R4', name:'R4', side:'right' },
-];
-
+const DESKS = [{
+  id: 'L1',
+  name: 'L1',
+  side: 'left'
+}, {
+  id: 'L2',
+  name: 'L2',
+  side: 'left'
+}, {
+  id: 'L3',
+  name: 'L3',
+  side: 'left'
+}, {
+  id: 'R1',
+  name: 'R1',
+  side: 'right'
+}, {
+  id: 'R2',
+  name: 'R2',
+  side: 'right'
+}, {
+  id: 'R3',
+  name: 'R3',
+  side: 'right'
+}, {
+  id: 'R4',
+  name: 'R4',
+  side: 'right'
+}];
 const ALL_BOOKABLE_IDS = [...DESKS.map(d => d.id), 'Rack'];
 const ROOM_LAYOUT = {
-
-  Rack : { left:'2%', top:'5%', width:'9%', height:'15%' },
-
-  R1 : { left:'13%', top:'5%', width:'18%', height:'25%' },
-  R2 : { left:'32%', top:'5%', width:'18%', height:'25%' },
-  R3 : { left:'51%', top:'5%', width:'18%', height:'25%' },
-  R4 : { left:'70%', top:'5%', width:'18%', height:'25%' },
-
-  CAB3 : { left:'90%', top:'5%', width:'9%', height:'25%' },
-
-  CAB2 : { left:'90%', top:'35%', width:'9%', height:'25%' },
-
-  L1 : { left:'2%', top:'65%', width:'18%', height:'25%' },
-  L2 : { left:'21%', top:'65%', width:'18%', height:'25%' },
-  L3 : { left:'40%', top:'65%', width:'18%', height:'25%' },
-
-  E : { left:'70%', top:'75%', width:'15%', height:'15%' },
-
-  CAB1 : { left:'90%', top:'65%', width:'9%', height:'25%' }
+  Rack: {
+    left: '2%',
+    top: '5%',
+    width: '9%',
+    height: '15%'
+  },
+  R1: {
+    left: '13%',
+    top: '5%',
+    width: '18%',
+    height: '25%'
+  },
+  R2: {
+    left: '32%',
+    top: '5%',
+    width: '18%',
+    height: '25%'
+  },
+  R3: {
+    left: '51%',
+    top: '5%',
+    width: '18%',
+    height: '25%'
+  },
+  R4: {
+    left: '70%',
+    top: '5%',
+    width: '18%',
+    height: '25%'
+  },
+  CAB3: {
+    left: '90%',
+    top: '5%',
+    width: '9%',
+    height: '25%'
+  },
+  CAB2: {
+    left: '90%',
+    top: '35%',
+    width: '9%',
+    height: '25%'
+  },
+  L1: {
+    left: '2%',
+    top: '65%',
+    width: '18%',
+    height: '25%'
+  },
+  L2: {
+    left: '21%',
+    top: '65%',
+    width: '18%',
+    height: '25%'
+  },
+  L3: {
+    left: '40%',
+    top: '65%',
+    width: '18%',
+    height: '25%'
+  },
+  E: {
+    left: '70%',
+    top: '75%',
+    width: '15%',
+    height: '15%'
+  },
+  CAB1: {
+    left: '90%',
+    top: '65%',
+    width: '9%',
+    height: '25%'
+  }
 };
 
 // ════════════════════════════════════════
 // DATE / TIME FORMAT HELPERS  [REQ-1]
 // ════════════════════════════════════════
 /** yyyy-MM-dd  →  dd/mm/yyyy */
-const formatDateDisplay = (s) => {
+const formatDateDisplay = s => {
   if (!s) return '';
   const p = String(s).split('-');
   return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(s);
 };
 
 /** ISO / Date string  →  dd/mm/yyyy hh:mm */
-const formatDateTimeDisplay = (s) => {
+const formatDateTimeDisplay = s => {
   if (!s) return '';
   try {
     const d = new Date(s);
     if (isNaN(d.getTime())) return String(s);
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} `
-         + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  } catch(e) { return String(s); }
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ` + `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  } catch (e) {
+    return String(s);
+  }
 };
 
 // ════════════════════════════════════════
 // APP COMPONENT
 // ════════════════════════════════════════
 function App() {
-
   // ── Core data ──
-  const [bookings,     setBookings]     = useState([]);
-  const [users,        setUsers]        = useState([]);
-  const [staticAreas,  setStaticAreas]  = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [staticAreas, setStaticAreas] = useState([]);
 
   // ── Auth ──
-  const [currentUser,    setCurrentUser]    = useState(null);
-  const [isLoggedIn,     setIsLoggedIn]     = useState(false);
-  const [loginEmail,     setLoginEmail]     = useState('');
-  const [loginPassword,  setLoginPassword]  = useState('');
-  const [loginError,     setLoginError]     = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
 
   // ── Date / time selection ──
   const todayStr = () => {
     const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [selectedHour, setSelectedHour] = useState(() => {
-  const now = new Date();
-  return now.getHours() + now.getMinutes() / 60;
-});
+    const now = new Date();
+    return now.getHours() + now.getMinutes() / 60;
+  });
 
   // ── UI ──
-  const [loading,       setLoading]       = useState(true);
-  const [errorMessage,  setErrorMessage]  = useState(null);
-  const [toastMessage,  setToastMessage]  = useState(null);
-  const [searchQuery,   setSearchQuery]   = useState('');
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // ── Booking modal ──
-  const [isModalOpen,   setIsModalOpen]   = useState(false);
-  const [targetDeskId,  setTargetDeskId]  = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [targetDeskId, setTargetDeskId] = useState(null);
   const [targetBooking, setTargetBooking] = useState(null);
 
   // ── Booking form fields ──
-  const addHoursToTime = (time, hours = 1) => {const [h, m] = time.split(':').map(Number);
-  const date = new Date();date.setHours(h, m, 0, 0);date.setHours(date.getHours() + hours);
-   return date.toTimeString().slice(0, 5);};
-  const getCurrentTime = () => {return new Date().toTimeString().slice(0, 5);};
-
-  const [bookingProject,   setBookingProject]   = useState('');
+  const addHoursToTime = (time, hours = 1) => {
+    const [h, m] = time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(h, m, 0, 0);
+    date.setHours(date.getHours() + hours);
+    return date.toTimeString().slice(0, 5);
+  };
+  const getCurrentTime = () => {
+    return new Date().toTimeString().slice(0, 5);
+  };
+  const [bookingProject, setBookingProject] = useState('');
   const [customProject, setCustomProject] = useState('');
-  const [bookingStartTime, setBookingStartTime] = useState(() => {return getCurrentTime();});
-  const [bookingEndTime, setBookingEndTime] = useState(() => {return addHoursToTime(getCurrentTime(), 1);});
-  const [bookingEndDate,   setBookingEndDate]   = useState('');
-        useEffect(() => {
-          setBookingEndTime(addHoursToTime(bookingStartTime, 1));
-        }, [bookingStartTime]);
-  const [bookingDevices, setBookingDevices] = useState([{ equipment: '', matCode: '' }]);
+  const [bookingStartTime, setBookingStartTime] = useState(() => {
+    return getCurrentTime();
+  });
+  const [bookingEndTime, setBookingEndTime] = useState(() => {
+    return addHoursToTime(getCurrentTime(), 1);
+  });
+  const [bookingEndDate, setBookingEndDate] = useState('');
+  useEffect(() => {
+    setBookingEndTime(addHoursToTime(bookingStartTime, 1));
+  }, [bookingStartTime]);
+  const [bookingDevices, setBookingDevices] = useState([{
+    equipment: '',
+    matCode: ''
+  }]);
   const [bookingObjective, setBookingObjective] = useState(''); // 👈 เพิ่มเพิ่มบรรทัดนี้เข้าไป
-  const [bookingNotes,     setBookingNotes]     = useState('');
-  const [modalError,       setModalError]       = useState(null);
-  const [submitting,       setSubmitting]       = useState(false);
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [modalError, setModalError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // ── Static area (Rack/CAB) ──
   const [selectedStaticAreaId, setSelectedStaticAreaId] = useState(null);
-  const handleStaticAreaClick = (id) => {setSelectedStaticAreaId(prev =>prev === id ? null : id);};
+  const handleStaticAreaClick = id => {
+    setSelectedStaticAreaId(prev => prev === id ? null : id);
+  };
 
   // ── Admin edit modal [REQ-4] ──
   const [isEditingArea, setIsEditingArea] = useState(false);
-  const [editAreaForm,  setEditAreaForm]  = useState(null);
-  const [newItemInput,  setNewItemInput]  = useState('');
-  const [savingArea,    setSavingArea]    = useState(false);
+  const [editAreaForm, setEditAreaForm] = useState(null);
+  const [newItemInput, setNewItemInput] = useState('');
+  const [savingArea, setSavingArea] = useState(false);
 
   // ── Derived: selected area object (live from state so admin edits auto-refresh) ──
-  const selectedStaticArea = useMemo(
-    () => staticAreas.find(a => a.id === selectedStaticAreaId) || null,
-    [staticAreas, selectedStaticAreaId]
-  );
+  const selectedStaticArea = useMemo(() => staticAreas.find(a => a.id === selectedStaticAreaId) || null, [staticAreas, selectedStaticAreaId]);
 
   // ── Time helpers ──
-  const timeToDec = (t) => {
+  const timeToDec = t => {
     if (!t) return 0;
-    const [h,m] = String(t).split(':').map(Number);
-    return h + (m||0)/60;
+    const [h, m] = String(t).split(':').map(Number);
+    return h + (m || 0) / 60;
   };
-  const decToTimeStr = (d) => {
-    const h = Math.floor(d), m = Math.round((d-h)*60);
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  const decToTimeStr = d => {
+    const h = Math.floor(d),
+      m = Math.round((d - h) * 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
   const currentTimeStr = useMemo(() => decToTimeStr(selectedHour), [selectedHour]);
 
   // ── [REQ-3] Check if booking is active at current selectedDate + selectedHour ──
-  const isBookingActiveNow = useCallback((b) => {
+  const isBookingActiveNow = useCallback(b => {
     const endDate = b.endDate || b.date;
     if (endDate !== b.date) {
       // Multi-day booking
       if (selectedDate > b.date && selectedDate < endDate) return true; // intermediate day = all day
-      if (selectedDate === b.date)    return selectedHour >= timeToDec(b.startTime);
-      if (selectedDate === endDate)   return selectedHour <  timeToDec(b.endTime);
+      if (selectedDate === b.date) return selectedHour >= timeToDec(b.startTime);
+      if (selectedDate === endDate) return selectedHour < timeToDec(b.endTime);
       return false;
     }
     return selectedHour >= timeToDec(b.startTime) && selectedHour < timeToDec(b.endTime);
@@ -274,44 +482,61 @@ function App() {
   const activeBookingsForTimeline = useMemo(() => bookings.filter(b => {
     // ✅ เพิ่มการกรอง: ถ้าถูกยกเลิก หรือใช้งานเสร็จแล้ว ไม่ต้องนำมาคำนวณบนผัง
     if (b.Status === 'CANCELLED' || b.Status === 'FINISHED') return false;
-
     const end = b.endDate || b.date;
     return selectedDate >= b.date && selectedDate <= end;
   }), [bookings, selectedDate]);
 
   // ── Desk Display State (รองรับ 3 สถานะ) ──
-  const getDeskDisplayState = (deskId) => {
+  const getDeskDisplayState = deskId => {
     const bookingsForDesk = activeBookingsForTimeline.filter(b => b.deskId === deskId);
-    if (bookingsForDesk.length === 0) return { state: 'free', booking: null };
-
+    if (bookingsForDesk.length === 0) return {
+      state: 'free',
+      booking: null
+    };
     const activeBooking = bookingsForDesk.find(b => isBookingActiveNow(b));
-    if (activeBooking) return { state: 'active', booking: activeBooking }; // สีแดง (กำลังใช้)
+    if (activeBooking) return {
+      state: 'active',
+      booking: activeBooking
+    }; // สีแดง (กำลังใช้)
 
     // ถ้าไม่ active ตอนนี้ แสดงว่ามีคิวจองไว้ช่วงเวลาอื่นของวันนี้
-    return { state: 'reserved', booking: bookingsForDesk[0] }; // สีส้ม (จองแล้ว)
+    return {
+      state: 'reserved',
+      booking: bookingsForDesk[0]
+    }; // สีส้ม (จองแล้ว)
   };
 
   // ── [REQ-2] Active DUTs — show ONLY currently-in-use equipment ──
-  const activeDUTs = useMemo(
-    () => activeBookingsForTimeline.filter(b => b.equipment && isBookingActiveNow(b)),
-    [activeBookingsForTimeline, isBookingActiveNow]
-  );
+  const activeDUTs = useMemo(() => activeBookingsForTimeline.filter(b => b.equipment && isBookingActiveNow(b)), [activeBookingsForTimeline, isBookingActiveNow]);
 
   // ── Stats ──
   const stats = useMemo(() => {
-    const occupiedIds = [], activeUnits = [];
+    const occupiedIds = [],
+      activeUnits = [];
     const teamsSet = new Set();
     activeBookingsForTimeline.forEach(b => {
       if (isBookingActiveNow(b)) {
         occupiedIds.push(b.deskId);
-        activeUnits.push({ deskId:b.deskId, systemName:b.systemName, equipment:b.equipment||'N/A', teamName:b.teamName });
+        activeUnits.push({
+          deskId: b.deskId,
+          systemName: b.systemName,
+          equipment: b.equipment || 'N/A',
+          teamName: b.teamName
+        });
       }
       if (b.teamName) teamsSet.add(b.teamName.split(' (')[0]);
     });
     // รวม Rack ใน free/utilization (ALL_BOOKABLE_IDS = desks + Rack)
-    const freeDesks    = ALL_BOOKABLE_IDS.filter(id => !occupiedIds.includes(id));
-    const utilization  = Math.round((occupiedIds.length / ALL_BOOKABLE_IDS.length) * 100);
-    return { freeDesks, activeUnits, teamsCount:teamsSet.size, teamsList:[...teamsSet], utilization, todayTotal:activeBookingsForTimeline.length };
+    const freeDesks = ALL_BOOKABLE_IDS.filter(id => !occupiedIds.includes(id));
+    const utilization = Math.round(occupiedIds.length / ALL_BOOKABLE_IDS.length * 100);
+    return {
+      freeDesks,
+      activeUnits,
+      teamsCount: teamsSet.size,
+      teamsList: [...teamsSet],
+      utilization,
+      todayTotal: activeBookingsForTimeline.length
+    };
   }, [activeBookingsForTimeline, isBookingActiveNow]);
 
   // ── Initial load — ล็อกอินทำที่ OMA Portal แล้ว หน้านี้แค่โหลดข้อมูลด้วย
@@ -319,104 +544,109 @@ function App() {
   useEffect(() => {
     loadData();
   }, []);
-
   const loadData = () => {
-    setLoading(true); setErrorMessage(null);
+    setLoading(true);
+    setErrorMessage(null);
     if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res?.status === 'success') {
-            setBookings(res.bookings || []);
-            setUsers(res.users || []);
-            if (res.staticAreas?.length > 0) setStaticAreas(res.staticAreas);
-            // ประกอบ currentUser จากตัวตนที่ Hub ยืนยันแล้ว (window.PORTAL) +
-            // ข้อมูลทีม/ตำแหน่ง/allowedProjects จากทำเนียบ Users (ไม่มี password
-            // ติดมาอีกต่อไป — ดู getDatabaseData ฝั่ง Code.gs)
-            const me = (res.users || []).find(u =>
-              u.email && window.PORTAL && u.email.toLowerCase() === (window.PORTAL.email || '').toLowerCase());
-            setCurrentUser({
-              email: (window.PORTAL && window.PORTAL.email) || '',
-              name: (me && me.name) || (window.PORTAL && window.PORTAL.name) || '',
-              team: me ? me.team : '',
-              position: me ? me.position : '',
-              allowedProjects: me ? me.allowedProjects : [],
-              role: (window.PORTAL && window.PORTAL.isAdmin) ? 'super_admin' : (me ? me.role : 'user')
-            });
-            setIsLoggedIn(true);
-          } else { setErrorMessage("โหลดข้อมูลไม่สำเร็จ: " + (res?.message||'')); }
-          setLoading(false);
-        })
-        .withFailureHandler(err => { setErrorMessage("เชื่อมต่อไม่ได้: " + err); setLoading(false); })
-        .getDatabaseData(window.PORTAL && window.PORTAL.token);
+      google.script.run.withSuccessHandler(res => {
+        if (res?.status === 'success') {
+          setBookings(res.bookings || []);
+          setUsers(res.users || []);
+          if (res.staticAreas?.length > 0) setStaticAreas(res.staticAreas);
+          // ประกอบ currentUser จากตัวตนที่ Hub ยืนยันแล้ว (window.PORTAL) +
+          // ข้อมูลทีม/ตำแหน่ง/allowedProjects จากทำเนียบ Users (ไม่มี password
+          // ติดมาอีกต่อไป — ดู getDatabaseData ฝั่ง Code.gs)
+          const me = (res.users || []).find(u => u.email && window.PORTAL && u.email.toLowerCase() === (window.PORTAL.email || '').toLowerCase());
+          setCurrentUser({
+            email: window.PORTAL && window.PORTAL.email || '',
+            name: me && me.name || window.PORTAL && window.PORTAL.name || '',
+            team: me ? me.team : '',
+            position: me ? me.position : '',
+            allowedProjects: me ? me.allowedProjects : [],
+            role: window.PORTAL && window.PORTAL.isAdmin ? 'super_admin' : me ? me.role : 'user'
+          });
+          setIsLoggedIn(true);
+        } else {
+          setErrorMessage("โหลดข้อมูลไม่สำเร็จ: " + (res?.message || ''));
+        }
+        setLoading(false);
+      }).withFailureHandler(err => {
+        setErrorMessage("เชื่อมต่อไม่ได้: " + err);
+        setLoading(false);
+      }).getDatabaseData(window.PORTAL && window.PORTAL.token);
     } else {
       setErrorMessage("กรุณาเปิดใช้งานผ่าน Google Apps Script Environment");
       setLoading(false);
     }
   };
-
-  const triggerToast = (msg) => {
+  const triggerToast = msg => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
   // ── Open booking modal ──
-  const handleDeskClick = (deskId) => {
-    const { booking: bk } = getDeskDisplayState(deskId);
-    setTargetDeskId(deskId); setTargetBooking(bk); setModalError(null);
+  const handleDeskClick = deskId => {
+    const {
+      booking: bk
+    } = getDeskDisplayState(deskId);
+    setTargetDeskId(deskId);
+    setTargetBooking(bk);
+    setModalError(null);
     if (!bk) {
       setBookingStartTime(getCurrentTime());
       setBookingEndDate(selectedDate);
       setBookingObjective('');
-      setBookingDevices([{ equipment: '', matCode: '' }]); 
+      setBookingDevices([{
+        equipment: '',
+        matCode: ''
+      }]);
       setBookingObjective('');
       setBookingNotes('');
-
       if (currentUser?.allowedProjects?.length > 0) setBookingProject(currentUser.allowedProjects[0]);
     }
     setIsModalOpen(true);
   };
 
-//ปุ่ม "เพิ่ม/ลบ" อุปกรณ์
+  //ปุ่ม "เพิ่ม/ลบ" อุปกรณ์
   const addDeviceRow = () => {
-  setBookingDevices([...bookingDevices, { equipment: '', matCode: '' }]);
-};
-
-const removeDeviceRow = (index) => {
-  setBookingDevices(bookingDevices.filter((_, i) => i !== index));
-};
-
-const updateDeviceField = (index, field, value) => {
-  const updated = [...bookingDevices];
-  updated[index][field] = value;
-  setBookingDevices(updated);
-};
+    setBookingDevices([...bookingDevices, {
+      equipment: '',
+      matCode: ''
+    }]);
+  };
+  const removeDeviceRow = index => {
+    setBookingDevices(bookingDevices.filter((_, i) => i !== index));
+  };
+  const updateDeviceField = (index, field, value) => {
+    const updated = [...bookingDevices];
+    updated[index][field] = value;
+    setBookingDevices(updated);
+  };
 
   // ── [REQ-2] [REQ-3] Submit new booking ──
-  const handleSaveBooking = (e) => {
-    e.preventDefault(); setModalError(null);
-    if (!currentUser)                  return setModalError("กรุณาเข้าสู่ระบบก่อนจองคิว");
+  const handleSaveBooking = e => {
+    e.preventDefault();
+    setModalError(null);
+    if (!currentUser) return setModalError("กรุณาเข้าสู่ระบบก่อนจองคิว");
     if (!bookingProject) return setModalError("กรุณาเลือกโครงการที่ต้องการทดสอบ");
     if (bookingProject === 'OTHER' && !customProject.trim()) return setModalError("กรุณาระบุชื่อโครงการที่ต้องการ");
     if (!bookingObjective.trim()) return setModalError("กรุณาระบุวัตถุประสงค์การใช้งาน");
 
-  // ดึงค่าโปรเจกต์ที่จะใช้จริง
-  const finalProjectName = bookingProject === 'OTHER' ? customProject.trim() : bookingProject;
-
-  const validDevices = bookingDevices.filter(d => d.equipment.trim() !== '');
+    // ดึงค่าโปรเจกต์ที่จะใช้จริง
+    const finalProjectName = bookingProject === 'OTHER' ? customProject.trim() : bookingProject;
+    const validDevices = bookingDevices.filter(d => d.equipment.trim() !== '');
     if (validDevices.length === 0) return setModalError("กรุณาระบุชื่ออุปกรณ์อย่างน้อย 1 รายการ");
     if (validDevices.some(d => !d.matCode.trim())) return setModalError("กรุณาระบุ Mat.Code ให้ครบทุกอุปกรณ์");
-
     const endDateVal = bookingEndDate || selectedDate;
-    if (endDateVal < selectedDate)     return setModalError("วันสิ้นสุดต้องไม่น้อยกว่าวันเริ่มต้น");
-    if (endDateVal === selectedDate && timeToDec(bookingStartTime) >= timeToDec(bookingEndTime))
-                                       return setModalError("เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น (กรณีจองวันเดียวกัน)");
-
+    if (endDateVal < selectedDate) return setModalError("วันสิ้นสุดต้องไม่น้อยกว่าวันเริ่มต้น");
+    if (endDateVal === selectedDate && timeToDec(bookingStartTime) >= timeToDec(bookingEndTime)) return setModalError("เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น (กรณีจองวันเดียวกัน)");
     const payload = {
       id: `bk-${Date.now()}`,
       deskId: targetDeskId,
       systemName: finalProjectName,
       teamName: currentUser.name,
-      team: currentUser.team, // ✅ เพิ่ม: ใช้หาอีเมลหัวหน้างาน (ห้ามใช้ teamName เพราะเป็นชื่อผู้จอง)
+      team: currentUser.team,
+      // ✅ เพิ่ม: ใช้หาอีเมลหัวหน้างาน (ห้ามใช้ teamName เพราะเป็นชื่อผู้จอง)
       userEmail: currentUser.email,
       date: selectedDate,
       startTime: bookingStartTime,
@@ -424,20 +654,22 @@ const updateDeviceField = (index, field, value) => {
       objective: bookingObjective,
       endDate: endDateVal,
       notes: bookingNotes,
-      equipment: validDevices.map(d => d.equipment.trim()).join(', '), 
-      matCode: validDevices.map(d => d.matCode.trim()).join(', '),
+      equipment: validDevices.map(d => d.equipment.trim()).join(', '),
+      matCode: validDevices.map(d => d.matCode.trim()).join(', ')
     };
-
     setSubmitting(true);
     if (typeof google !== 'undefined' && google.script?.run) {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res?.status === 'success') { triggerToast(res.message); setIsModalOpen(false); loadData(); }
-          else setModalError(res?.message || "ไม่สามารถจองได้ เนื่องจากเวลาซ้อนทับกับคิวอื่น");
-          setSubmitting(false);
-        })
-        .withFailureHandler(err => { setModalError("เกิดข้อผิดพลาด: " + err); setSubmitting(false); })
-        .saveNewBooking(window.PORTAL && window.PORTAL.token, payload);
+      google.script.run.withSuccessHandler(res => {
+        if (res?.status === 'success') {
+          triggerToast(res.message);
+          setIsModalOpen(false);
+          loadData();
+        } else setModalError(res?.message || "ไม่สามารถจองได้ เนื่องจากเวลาซ้อนทับกับคิวอื่น");
+        setSubmitting(false);
+      }).withFailureHandler(err => {
+        setModalError("เกิดข้อผิดพลาด: " + err);
+        setSubmitting(false);
+      }).saveNewBooking(window.PORTAL && window.PORTAL.token, payload);
     }
   };
 
@@ -449,14 +681,17 @@ const updateDeviceField = (index, field, value) => {
     if (!confirm(isSA ? "[Admin] ยืนยันยกเลิกคิวนี้?" : "ยืนยันยกเลิกคิวนี้?")) return;
     setSubmitting(true);
     if (typeof google !== 'undefined' && google.script?.run) {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res?.status === 'success') { triggerToast(res.message); setIsModalOpen(false); loadData(); }
-          else alert("ไม่สามารถทำรายการ: " + res?.message);
-          setSubmitting(false);
-        })
-        .withFailureHandler(err => { alert("เกิดข้อผิดพลาด: " + err); setSubmitting(false); })
-        .deleteBookingById(window.PORTAL && window.PORTAL.token, id);
+      google.script.run.withSuccessHandler(res => {
+        if (res?.status === 'success') {
+          triggerToast(res.message);
+          setIsModalOpen(false);
+          loadData();
+        } else alert("ไม่สามารถทำรายการ: " + res?.message);
+        setSubmitting(false);
+      }).withFailureHandler(err => {
+        alert("เกิดข้อผิดพลาด: " + err);
+        setSubmitting(false);
+      }).deleteBookingById(window.PORTAL && window.PORTAL.token, id);
     }
   };
 
@@ -468,8 +703,7 @@ const updateDeviceField = (index, field, value) => {
   const [extendReason, setExtendReason] = useState('');
   const [extendError, setExtendError] = useState(null);
   const [extendSubmitting, setExtendSubmitting] = useState(false);
-
-  const openExtendModal = (bk) => {
+  const openExtendModal = bk => {
     setExtendTargetBooking(bk);
     // ตั้งค่าเริ่มต้นให้เป็นวัน-เวลาสิ้นสุดเดิมของคิวนั้น
     setExtendEndDate(bk.endDate || bk.date);
@@ -478,8 +712,7 @@ const updateDeviceField = (index, field, value) => {
     setExtendError(null);
     setIsExtendModalOpen(true);
   };
-
-  const handleExtendSubmit = (e) => {
+  const handleExtendSubmit = e => {
     e.preventDefault();
     if (!extendEndDate || !extendEndTime || !extendReason.trim()) {
       setExtendError("กรุณาระบุวันที่และเวลาที่ต้องการต่ออายุ");
@@ -487,25 +720,21 @@ const updateDeviceField = (index, field, value) => {
     }
     setExtendSubmitting(true);
     setExtendError(null);
-
     if (typeof google !== 'undefined' && google.script?.run) {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res?.status === 'success') {
-            triggerToast(res.message);
-            setIsExtendModalOpen(false);
-            loadData(); // โหลดข้อมูลใหม่เพื่อรีเฟรชหน้าเว็บ
-          } else {
-            setExtendError(res?.message);
-          }
-          setExtendSubmitting(false);
-        })
-        .withFailureHandler(err => {
-          setExtendError("เกิดข้อผิดพลาด: " + err);
-          setExtendSubmitting(false);
-        })
-        .extendBookingCustom(window.PORTAL && window.PORTAL.token, extendTargetBooking.id, extendEndDate, extendEndTime, extendReason);
-    }else {
+      google.script.run.withSuccessHandler(res => {
+        if (res?.status === 'success') {
+          triggerToast(res.message);
+          setIsExtendModalOpen(false);
+          loadData(); // โหลดข้อมูลใหม่เพื่อรีเฟรชหน้าเว็บ
+        } else {
+          setExtendError(res?.message);
+        }
+        setExtendSubmitting(false);
+      }).withFailureHandler(err => {
+        setExtendError("เกิดข้อผิดพลาด: " + err);
+        setExtendSubmitting(false);
+      }).extendBookingCustom(window.PORTAL && window.PORTAL.token, extendTargetBooking.id, extendEndDate, extendEndTime, extendReason);
+    } else {
       // สำหรับทดสอบใน Dev mode
       setTimeout(() => {
         triggerToast("จำลองการต่อเวลาสำเร็จ (Dev Mode)");
@@ -516,36 +745,49 @@ const updateDeviceField = (index, field, value) => {
   };
 
   // ── [REQ-4] Admin edit area ──
-  const openEditArea = (area) => {
-    setEditAreaForm({ ...area, items: [...(area.items||[])] });
-    setNewItemInput(''); setIsEditingArea(true);
+  const openEditArea = area => {
+    setEditAreaForm({
+      ...area,
+      items: [...(area.items || [])]
+    });
+    setNewItemInput('');
+    setIsEditingArea(true);
   };
   const addAreaItem = () => {
     if (!newItemInput.trim()) return;
-    setEditAreaForm(p => ({ ...p, items: [...p.items, newItemInput.trim()] }));
+    setEditAreaForm(p => ({
+      ...p,
+      items: [...p.items, newItemInput.trim()]
+    }));
     setNewItemInput('');
   };
-  const removeAreaItem = (idx) =>
-    setEditAreaForm(p => ({ ...p, items: p.items.filter((_,i) => i !== idx) }));
-
+  const removeAreaItem = idx => setEditAreaForm(p => ({
+    ...p,
+    items: p.items.filter((_, i) => i !== idx)
+  }));
   const saveAreaEdit = () => {
     setSavingArea(true);
     if (typeof google !== 'undefined' && google.script?.run) {
-      google.script.run
-        .withSuccessHandler(res => {
-          if (res?.status === 'success') {
-            setStaticAreas(prev => prev.map(a => a.id === editAreaForm.id ? { ...editAreaForm } : a));
-            setIsEditingArea(false);
-            triggerToast(res.message);
-          } else alert("บันทึกไม่สำเร็จ: " + res?.message);
-          setSavingArea(false);
-        })
-        .withFailureHandler(err => { alert("เกิดข้อผิดพลาด: " + err); setSavingArea(false); })
-        .saveStaticAreaData(window.PORTAL && window.PORTAL.token, editAreaForm);
+      google.script.run.withSuccessHandler(res => {
+        if (res?.status === 'success') {
+          setStaticAreas(prev => prev.map(a => a.id === editAreaForm.id ? {
+            ...editAreaForm
+          } : a));
+          setIsEditingArea(false);
+          triggerToast(res.message);
+        } else alert("บันทึกไม่สำเร็จ: " + res?.message);
+        setSavingArea(false);
+      }).withFailureHandler(err => {
+        alert("เกิดข้อผิดพลาด: " + err);
+        setSavingArea(false);
+      }).saveStaticAreaData(window.PORTAL && window.PORTAL.token, editAreaForm);
     } else {
       // Dev mode
-      setStaticAreas(prev => prev.map(a => a.id === editAreaForm.id ? { ...editAreaForm } : a));
-      setIsEditingArea(false); setSavingArea(false);
+      setStaticAreas(prev => prev.map(a => a.id === editAreaForm.id ? {
+        ...editAreaForm
+      } : a));
+      setIsEditingArea(false);
+      setSavingArea(false);
       triggerToast("บันทึกเรียบร้อย (Dev Mode)");
     }
   };
@@ -553,22 +795,18 @@ const updateDeviceField = (index, field, value) => {
   // ── Search filter (แสดงประวัติทั้งหมด) ──
   const historyBookings = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    
+
     // ดึงจาก bookings ทั้งหมด และแปลงข้อมูล f ทุกตัวให้เป็น String ก่อนค้นหา
-    const filtered = bookings.filter(b => !q || [
-      b.systemName, b.teamName, b.deskId, b.userEmail, b.equipment, b.matCode, b.Objective
-    ].some(f => String(f || '').toLowerCase().includes(q)));
-    
+    const filtered = bookings.filter(b => !q || [b.systemName, b.teamName, b.deskId, b.userEmail, b.equipment, b.matCode, b.Objective].some(f => String(f || '').toLowerCase().includes(q)));
+
     // เรียงลำดับจากวันที่ล่าสุด (ใหม่สุด) ลงไปเก่าสุด
     return filtered.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
   }, [bookings, searchQuery]);
 
   // ── Multi-day time range label ──
-  const timeRangeLabel = (b) => {
+  const timeRangeLabel = b => {
     const ed = b.endDate || b.date;
-    return ed !== b.date
-      ? `${formatDateDisplay(b.date)} ${b.startTime} → ${formatDateDisplay(ed)} ${b.endTime}`
-      : `${b.startTime} – ${b.endTime}`;
+    return ed !== b.date ? `${formatDateDisplay(b.date)} ${b.startTime} → ${formatDateDisplay(ed)} ${b.endTime}` : `${b.startTime} – ${b.endTime}`;
   };
 
   // ════════════════════════════════════════
@@ -576,1069 +814,1088 @@ const updateDeviceField = (index, field, value) => {
   // token ที่ portal ส่งมาให้เท่านั้น ไม่มีหน้า login ของตัวเองอีกต่อไป
   // ════════════════════════════════════════
   if (!isLoggedIn || !currentUser) {
-    return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-          {errorMessage ? (
-            <div className="bg-rose-950/50 border border-rose-900/50 rounded-xl p-4 text-rose-400 text-xs font-semibold flex items-center gap-1.5 max-w-md">
-              <AlertTriangleIcon className="w-4 h-4 shrink-0"/><span>{errorMessage}</span>
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 animate-pulse">กำลังโหลดข้อมูล...</p>
-          )}
-        </div>
-    );
+    return /*#__PURE__*/React.createElement("div", {
+      className: "min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4"
+    }, errorMessage ? /*#__PURE__*/React.createElement("div", {
+      className: "bg-rose-950/50 border border-rose-900/50 rounded-xl p-4 text-rose-400 text-xs font-semibold flex items-center gap-1.5 max-w-md"
+    }, /*#__PURE__*/React.createElement(AlertTriangleIcon, {
+      className: "w-4 h-4 shrink-0"
+    }), /*#__PURE__*/React.createElement("span", null, errorMessage)) : /*#__PURE__*/React.createElement("p", {
+      className: "text-xs text-slate-400 animate-pulse"
+    }, "กำลังโหลดข้อมูล..."));
   }
 
   // ════════════════════════════════════════
   // MAIN SCREEN
   // ════════════════════════════════════════
-  return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-slate-800 text-emerald-400 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 z-50 text-xs  animate-bounce">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"/>
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="bg-slate-950 text-white relative border-b border-emerald-950/50 shadow-lg">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#022c2225_1px,transparent_1px),linear-gradient(to_bottom,#022c2225_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"/>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-950/80 border border-emerald-500/30 rounded-xl relative">
-              <CompassIcon className="w-6 h-6 text-emerald-400"/>
-              <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full animate-ping"/>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg  font-extrabold tracking-tight text-white uppercase sm:text-xl">OMA | LAB-01</h1>
-                <span className="text-[9px] text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-500/25 px-1.5 py-0.5 rounded">ONLINE V1.0</span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-sans tracking-wide">ระบบจองโต๊ะและอุปกรณ์ทดสอบ เพื่อใช้ในห้องทดสอบระบบ</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-right hidden md:block">
-              <span className="text-[10px] text-slate-500 block uppercase ">บัญชีผู้ใช้งาน</span>
-              <span className="text-xs font-bold text-slate-200">{currentUser?.name}</span>
-              <span className="text-[9.5px] font-medium text-emerald-400 block ">[{currentUser?.position || currentUser?.role}]</span>
-            </div>
-            {/* ออกจากระบบทำที่หน้า OMA Portal หลัก ไม่ใช่ในหน้านี้อีกต่อไป */}
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8 flex-1 space-y-8 w-full">
-
-        {errorMessage && (
-          <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-xs font-semibold text-rose-700 flex items-center gap-2 shadow-sm">
-            <AlertTriangleIcon className="w-5 h-5 shrink-0"/><span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* ── Date / Time Controls ── */}
-        <section className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5 text-slate-700">
-          <div className="flex items-center gap-2.5 w-full md:w-auto">
-            <div className="p-2 bg-emerald-50 text-emerald-800 rounded-lg"><CalendarIcon className="w-4 h-4"/></div>
-            <div className="flex-1 md:flex-none">
-              <label className="text-[9.5px] uppercase text-slate-400 block font-bold">1. เลือกวันที่ใช้งาน</label>
-              <input type="date" value={selectedDate}
-                onChange={e => { setSelectedDate(e.target.value); triggerToast(`เปลี่ยนวันที่เป็น: ${formatDateDisplay(e.target.value)}`); }}
-                className="text-xs font-bold text-slate-800 focus:outline-none cursor-pointer mt-0.5"/>
-              {/* [REQ-1] แสดง format dd/mm/yyyy */}
-              <span className="text-[9px] text-emerald-600 block mt-0.5">{formatDateDisplay(selectedDate)}</span>
-            </div>
-          </div>
-          <div className="flex-1 w-full space-y-1">
-            <div className="flex justify-between items-center text-[10px] text-slate-400">
-              <span className="font-extrabold uppercase">2. เลือกช่วงเวลา</span>
-              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-extrabold text-xs">
-                เวลาที่เลือก: {currentTimeStr} น.
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] text-slate-400 shrink-0">00:00น.</span>
-              <input type="range" min="0" max="23.5" step="0.5" value={selectedHour}
-                onChange={e => setSelectedHour(parseFloat(e.target.value))}
-                className="flex-1 accent-emerald-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"/>
-              <span className="text-[10px] text-slate-400 shrink-0">23:30น.</span>
-            </div>
-          </div>
-          <button onClick={loadData} disabled={loading}
-            className="w-full md:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50">
-            <RefreshCwIcon className={`w-3.5 h-3.5 ${loading?'animate-spin':''}`}/>
-            <span>REFRESH SHEET</span>
-          </button>
-        </section>
-
-        {/* ── Dashboard Cards ── */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-
-          {/* Card 1: Free desks */}
-          <div className="bg-white rounded-2xl border border-emerald-100/80 p-4 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">1. โต๊ะว่างขณะนี้</span>
-                <span className="text-[9px] text-emerald-500 font-bold bg-emerald-50 px-1.5 rounded">AVAILABLE</span>
-              </div>
-              <h4 className="text-xl  font-extrabold text-slate-800">{stats.freeDesks.length} / {ALL_BOOKABLE_IDS.length} โต๊ะ</h4>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {stats.freeDesks.length > 0
-                ? stats.freeDesks.map(id => <span key={id} className="text-[9px]  font-bold bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded border border-emerald-100/50">{id}</span>)
-                : <span className="text-[10px] text-rose-600 italic">เต็มแล้ว</span>}
-            </div>
-          </div>
-
-          {/* Card 2: Active DUTs */}
-          <div className="bg-white rounded-2xl border border-rose-100/80 p-4 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold  text-rose-600 uppercase tracking-wide">2. อุปกรณ์ใช้งานอยู่</span>
-                <span className="text-[9px]  text-rose-500 font-bold bg-rose-50 px-1 rounded animate-pulse">RUNNING</span>
-              </div>
-              <h4 className="text-xl  font-extrabold text-slate-800">{stats.activeUnits.length} เครื่อง</h4>
-            </div>
-            <div className="mt-2 text-[8px]  text-slate-500 space-y-1 max-h-[48px] overflow-y-auto pr-1">
-              {stats.activeUnits.length > 0
-                ? stats.activeUnits.map((u,i) => (
-                    <div key={i} className="flex justify-between border-b border-rose-50 pb-0.5 truncate gap-1">
-                      <span className="font-bold text-rose-700 shrink-0">[{u.deskId}]</span>
-                      <span className="truncate">{u.equipment}</span>
-                    </div>
-                  ))
-                : <span className="text-[9.5px] text-slate-400 italic block py-2 text-center">ไม่มีอุปกรณ์ที่ใช้งานอยู่</span>}
-            </div>
-          </div>
-
-          {/* Card 3: Teams */}
-          <div className="bg-white rounded-2xl border border-indigo-100/80 p-4 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold  text-indigo-600 uppercase tracking-wide">3. ทีมเข้าแล็บวันนี้</span>
-                <span className="text-[9px]  text-indigo-500">{stats.teamsCount} ทีม</span>
-              </div>
-              <h4 className="text-xl  font-extrabold text-slate-800">{stats.teamsCount} ทีม</h4>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-1 max-h-[48px] overflow-y-auto">
-              {stats.teamsList.length > 0
-                ? stats.teamsList.map(t => <span key={t} className="text-[9px] font-sans font-bold bg-indigo-50 text-indigo-800 px-1.5 py-0.5 rounded border border-indigo-100/50 max-w-full truncate block">• {t}</span>)
-                : <span className="text-[10px] text-slate-400 italic block py-2 w-full text-center">ไม่มีคิววันนี้</span>}
-            </div>
-          </div>
-
-          {/* Card 4: Utilization */}
-          <div className="bg-white rounded-2xl border border-sky-100/80 p-4 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-bold  text-sky-600 uppercase tracking-wide">4. อัตราใช้งาน</span>
-                <span className="text-[9px]  text-sky-500 font-bold bg-sky-50 px-1 rounded">LOAD</span>
-              </div>
-              <h4 className="text-xl  font-extrabold text-slate-800">{stats.utilization}%</h4>
-            </div>
-            <div className="mt-3">
-              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full transition-all duration-500 ${stats.utilization<30?'bg-emerald-500':stats.utilization<75?'bg-amber-500':'bg-rose-500'}`} style={{ width:`${stats.utilization}%` }}/>
-              </div>
-              <div className="flex justify-between text-[8px]  mt-1 text-slate-400"><span>0%</span><span>100%</span></div>
-            </div>
-          </div>
-
-          {/* Card 5: Today bookings */}
-          <div className="bg-white rounded-2xl border border-violet-100/80 p-4 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold  text-violet-600 uppercase tracking-wide">5. รายการจอง</span>
-                <span className="text-[9px]  text-violet-500 font-semibold">{formatDateDisplay(selectedDate)}</span>
-              </div>
-              <h4 className="text-xl  font-extrabold text-slate-800">{stats.todayTotal} รายการ</h4>
-            </div>
-            <div className="mt-2 text-[8px]  text-slate-500 space-y-1 max-h-[60px] overflow-y-auto pr-1">
-              {activeBookingsForTimeline.slice(0,5).map(b => (
-                <div key={b.id} className="flex justify-between items-center border-b border-slate-50 pb-0.5 truncate gap-1">
-                  <span className="font-bold text-violet-700 shrink-0">[{b.deskId}]</span>
-                  <span className="truncate text-slate-600">{b.startTime}-{b.endTime}{(b.endDate && b.endDate!==b.date)?' ✚':''}</span>
-                </div>
-              ))}
-              {activeBookingsForTimeline.length === 0 && <span className="text-[9px] text-slate-400 italic block py-2 text-center">ไม่มีคิว</span>}
-            </div>
-          </div>
-
-        </section>
-
-        {/* ── Map + Right Panel ── */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* ──────────── LEFT: Floor Map (7/12) ──────────── */}
-          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm flex flex-col items-center">
-            <div className="w-full pb-3 border-b border-slate-100 mb-6 flex justify-between items-center flex-wrap gap-2 text-xs">
-              <div>
-                <h3 className=" font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                  <CompassIcon className="w-4 h-4 text-emerald-600"/>
-                  <span>ผังห้อง LAB-01</span>
-                </h3>
-                <p className="text-[11px] text-slate-400">{formatDateDisplay(selectedDate)} เวลา {currentTimeStr} น. • คลิกโต๊ะเพื่อจอง</p>
-              </div>
-              <div className="flex items-center gap-3  text-[10px]">
-                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-emerald-300 bg-emerald-50 inline-block"/><span>ว่าง</span></div>
-                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded border border-rose-300 bg-rose-50 inline-block"/><span>กำลังทดสอบ</span></div>
-              </div>
-            </div>
-
-            <div className="relative flex items-center justify-center w-full overflow-auto">
-              <div className="relative border-4 border-slate-700/85 bg-slate-50/80 rounded-2xl shadow-inner select-none overflow-visible"
-                style={{ width:'100%', maxWidth:'1400px', aspectRatio:'16/9',
-                  backgroundImage:'linear-gradient(to right,rgba(220,225,235,1) 1px,transparent 1px),linear-gradient(to bottom,rgba(220,225,235,1) 1px,transparent 1px)',
-                  backgroundSize:'16px 16px' }}>
-
-
-                <div className="absolute left-0 top-[175px] w-[7px] h-[90px] bg-red-600/90 border-b border-x border-red-700 z-20 flex items-center justify-center shadow">
-                  <span className="text-[6.5px] text-white  font-bold leading-none tracking-tighter whitespace-nowrap rotate-[-90deg]">Window</span>
-                </div>
-                <div  className=" absolute flex items-center justify-center border-y border-dashed border-slate-300" style={{left:'0', right:'18%', top:'35%', height:'25%'}}>  <span className="text-slate-400 text-xs  tracking-[0.3em] uppercase"> Main walkway </span></div>
-                  <div className="opacity-20  text-[7px] text-slate-500 tracking-widest font-extrabold whitespace-nowrap [writing-mode:vertical-lr] uppercase">พื้นที่ส่วนกลาง
-                </div>
-
-                {/* Droid */}
-                <div className="absolute left-[5px] top-[152px] right-[5px] w-7 h-7 z-25 pointer-events-none animate-droid-patrol">
-                  <div className="animate-droid-bob flex items-center justify-center">
-                    <DroidSprite/>
-                    <div className="absolute -bottom-4 bg-emerald-900/80 text-emerald-300  text-[6px] px-1 py-0.5 rounded leading-none whitespace-nowrap font-bold border border-emerald-500/20">SCADA_BOT</div>
-                  </div>
-                </div>
-                {/* Engineer */}
-                <div className="absolute left-[5px] top-[142px] right-[5px] w-7 h-8 z-25 pointer-events-none animate-engineer-walk">
-                  <div className="animate-engineer-bob flex flex-col items-center justify-center">
-                    <EngineerSprite/>
-                    <div className="absolute -bottom-4 bg-indigo-900/80 text-indigo-300  text-[6px] px-1 py-0.5 rounded leading-none whitespace-nowrap font-bold border border-indigo-500/20">γ_ENGINEER</div>
-                  </div>
-                </div>
-
-                {/* Left Desks */}
-                {DESKS.filter(d => d.side==='left').map(desk => {
-                  const { state: deskState, booking: bk } = getDeskDisplayState(desk.id);
-                  const sel = targetDeskId === desk.id;
-                  const ed  = bk?.endDate || bk?.date;
-                  const mdLabel = (bk && ed !== bk.date) ? `UNTIL ${formatDateDisplay(ed)}` : (bk ? (deskState === 'active' ? `BUSY to ${bk.endTime}` : `RESV ${bk.startTime}-${bk.endTime}`) : '');
-                  
-                  const sty = ROOM_LAYOUT[desk.id];
-                  
-                  return (
-                    <button key={desk.id} style={sty} onClick={() => handleDeskClick(desk.id)}
-                      className={`absolute rounded-lg transition-all duration-300 text-left p-3 flex flex-col justify-between border-2 shadow-sm cursor-pointer select-none
-                        ${deskState === 'active' ? 'bg-rose-50/95 hover:bg-rose-100/90 border-rose-400 text-rose-900 border-dashed'
-                        : deskState === 'reserved' ? 'bg-amber-50/95 hover:bg-amber-100/90 border-amber-400 text-amber-900 border-dashed'
-                        : sel ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-100/70 text-emerald-950 z-10'
-                        : 'bg-white hover:bg-slate-50 border-emerald-100 text-neutral-800 hover:border-emerald-400'}`}>
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-xs  font-bold"><span className="text-[10px] text-slate-400 font-normal">#</span>{desk.name}</span>
-                        <div className={`w-2.5 h-2.5 rounded-sm ring-2 
-                          ${deskState === 'active' ? 'bg-rose-500 ring-rose-100 animate-pulse' 
-                          : deskState === 'reserved' ? 'bg-amber-400 ring-amber-100' 
-                          : 'bg-emerald-500 ring-emerald-100'}`}/>
-                      </div>
-                      <div className="mt-1 flex-1 flex flex-col justify-end overflow-hidden">
-                        {deskState !== 'free' ? (
-                          <div className="text-[10px] leading-tight font-sans">
-                            <p className={`font-bold truncate ${deskState === 'active' ? 'text-rose-900' : 'text-amber-900'}`}>{bk.systemName}</p>
-                            <p className={`truncate font-semibold text-[9px] ${deskState === 'active' ? 'text-rose-700' : 'text-amber-700'}`}>{bk.teamName.split(' (')[0]}</p>
-                            <span className={`text-[8px] font-bold uppercase py-0.5 px-1 rounded-sm block truncate mt-1 
-                              ${deskState === 'active' ? 'bg-rose-200/60 text-rose-800' : 'bg-amber-200/60 text-amber-800'}`}>
-                              {mdLabel}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="text-[10px]">
-                            <p className="text-emerald-700 font-bold flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping mr-0.5 inline-block"/> ว่าง ON</p>
-                            <p className="text-[9px] text-slate-400  tracking-tighter uppercase font-semibold">RESERVE</p>
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-
-                {/* Right Desks */}
-                  {DESKS.filter(d => d.side==='right').map(desk => {
-                    const { state: deskState, booking: bk } = getDeskDisplayState(desk.id);
-                    const sel = targetDeskId === desk.id;
-                    const ed  = bk?.endDate || bk?.date;
-                    const mdLabel = (bk && ed !== bk.date) ? `UNTIL ${formatDateDisplay(ed)}` : (bk ? (deskState === 'active' ? `BUSY to ${bk.endTime}` : `RESV ${bk.startTime}-${bk.endTime}`) : '');
-                    
-                    const sty = ROOM_LAYOUT[desk.id];
-                    
-                    return (
-                      <button key={desk.id} style={sty} onClick={() => handleDeskClick(desk.id)}
-                        className={`absolute rounded-lg transition-all duration-300 text-left p-2.5 flex flex-col justify-between border-2 shadow-sm cursor-pointer select-none
-                          ${deskState === 'active' ? 'bg-rose-50/95 hover:bg-rose-100/90 border-rose-400 text-rose-900 border-dashed'
-                          : deskState === 'reserved' ? 'bg-amber-50/95 hover:bg-amber-100/90 border-amber-400 text-amber-900 border-dashed'
-                          : sel ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-100/70 text-emerald-950 z-10'
-                          : 'bg-white hover:bg-slate-50 border-emerald-100 text-neutral-800 hover:border-emerald-400'}`}>
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-xs  font-bold"><span className="text-[10px] text-slate-400 font-normal">#</span>{desk.name}</span>
-                          <div className={`w-2.5 h-2.5 rounded-sm ring-2 
-                            ${deskState === 'active' ? 'bg-rose-500 ring-rose-100 animate-pulse' 
-                            : deskState === 'reserved' ? 'bg-amber-400 ring-amber-100' 
-                            : 'bg-emerald-500 ring-emerald-100'}`}/>
-                        </div>
-                        <div className="mt-1 flex-1 flex flex-col justify-end overflow-hidden">
-                          {deskState !== 'free' ? (
-                            <div className="text-[9px] leading-tight font-sans">
-                              <p className={`font-bold truncate leading-tight ${deskState === 'active' ? 'text-rose-900' : 'text-amber-900'}`}>{bk.systemName}</p>
-                              <p className={`truncate font-semibold text-[8px] ${deskState === 'active' ? 'text-rose-700' : 'text-amber-700'}`}>{bk.teamName.split(' (')[0]}</p>
-                              <span className={`text-[8px] font-bold uppercase py-0.5 px-1 rounded-sm block truncate mt-0.5 
-                                ${deskState === 'active' ? 'bg-rose-200/60 text-rose-800' : 'bg-amber-200/60 text-amber-800'}`}>
-                                {mdLabel}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="text-[10px]">
-                              <p className="text-emerald-700 font-bold flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-0.5 animate-pulse inline-block"/> ว่าง ON</p>
-                              <p className="text-[9px] text-slate-400  tracking-tighter uppercase font-semibold">RESERVE</p>
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-
-                {/* Entrance E */}
-                <button
-                style={{  ...ROOM_LAYOUT.E,  position:'absolute'}}
-                  className={`absolute flex flex-col items-center justify-center cursor-pointer select-none border-0 bg-transparent outline-none hover:scale-[1.04] z-20 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer select-none border-0 bg-transparent outline-none hover:scale-[1.04] z-20 transition-all duration-300 ${selectedStaticAreaId==='E'?'drop-shadow-[0_0_10px_rgba(239,68,68,0.7)]':''}`}>
-                  <svg width="55" height="55" viewBox="0 0 60 60">
-                    <polygon points="30,5 55,55 5,55" fill="#dc2626" stroke="#b91c1c" strokeWidth="2.5"/>
-                    <text x="30" y="42" textAnchor="middle" fill="#ffffff" fontSize="21" fontFamily="sans-serif" fontWeight="900">E</text>
-                  </svg>
-                  <div className="text-[7.5px]  font-black text-red-600 uppercase mt-0.5 tracking-widest">ENTRANCE</div>
-                </button>
-
-                {/* Rack — BOOKABLE (จองได้เหมือน desk) */}
-                  {(() => {
-                    const { state: rackState, booking: rackBk } = getDeskDisplayState('Rack');
-                    const rackSel = targetDeskId === 'Rack';
-                    const rackED  = rackBk?.endDate || rackBk?.date;
-                    const rackLbl = rackBk ? (rackED !== rackBk?.date ? `UNTIL ${formatDateDisplay(rackED)}` : (rackState === 'active' ? `BUSY to ${rackBk.endTime}` : `RESV ${rackBk.startTime}-${rackBk.endTime}`)) : '';
-                    
-                    return (
-                      <button
-                        onClick={() => handleDeskClick('Rack')}                       
-                        style={{  ...ROOM_LAYOUT.Rack,  position:'absolute'}}
-                        className={`absolute rounded-xl transition-all duration-300 text-left p-2.5 border flex flex-col justify-between shadow-lg cursor-pointer select-none z-20 backdrop-blur-md
-                          ${rackState === 'active' ? 'bg-[#D62828]/10 border-[#D62828] text-[#D62828]'
-                          : rackState === 'reserved' ? 'bg-amber-500/10 border-amber-500 text-amber-700'
-                          : rackSel ? 'bg-slate-800 border-slate-500 ring-4 ring-slate-400/30 text-white'
-                          : 'bg-white/70 hover:bg-white/90 border-slate-300 text-slate-600 hover:border-slate-400 hover:scale-105'}`}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span className={`text-[10px]  font-bold ${rackState === 'active' ? 'text-[#D62828]' : rackState === 'reserved' ? 'text-amber-700' : 'text-slate-700'}`}>RACK</span>
-                          <div className={`w-2.5 h-2.5 rounded-full shadow-sm
-                            ${rackState === 'active' ? 'bg-[#D62828] animate-pulse shadow-[0_0_6px_#D62828]' 
-                            : rackState === 'reserved' ? 'bg-amber-500' 
-                            : 'bg-emerald-500 shadow-[0_0_5px_#10b981]'}`}/>
-                        </div>
-                        <div className="text-[8px]  leading-tight mt-1">
-                          {rackState !== 'free' ? (
-                            <>
-                              <p className={`font-bold truncate text-[9px] ${rackState === 'active' ? 'text-[#D62828]' : 'text-amber-700'}`}>{rackBk.teamName.split(' (')[0]}</p>
-                              <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded block truncate mt-1 
-                                ${rackState === 'active' ? 'bg-[#D62828]/20 text-[#D62828]' : 'bg-amber-500/20 text-amber-800'}`}>
-                                {rackLbl}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-emerald-600 font-bold text-[9px] flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span> ว่าง
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })()}
-
-                {/* CAB3 */}
-                <button onClick={() => handleStaticAreaClick('CAB3')} onMouseEnter={() => setSelectedStaticAreaId('CAB3')}
-                style={{  ...ROOM_LAYOUT.CAB3,  position:'absolute'}}
-                  className={`absolute w-[80px] h-[55px] rounded-lg transition-all duration-300 text-left p-2 border-2 flex flex-col justify-between shadow-sm cursor-pointer select-none z-20 ${selectedStaticAreaId==='CAB3'?'bg-amber-50 border-amber-500 ring-4 ring-amber-100/50':'bg-slate-200 hover:bg-slate-100 border-slate-300 text-slate-800'}`}>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px]  font-bold text-slate-700">CAB3</span>
-                    <span className="w-1.5 h-1.5 rounded-sm bg-slate-500"/>
-                  </div>
-                  <span className="text-[7.5px] text-slate-500  font-extrabold text-center block uppercase w-full">DOC</span>
-                </button>
-
-                {/* CAB2 */}
-                <button onClick={() => handleStaticAreaClick('CAB2')} onMouseEnter={() => setSelectedStaticAreaId('CAB2')}
-                style={{  ...ROOM_LAYOUT.CAB2,  position:'absolute'}}
-                  className={`absolute w-[80px] h-[55px] rounded-lg transition-all duration-300 text-left p-2 border-2 flex flex-col justify-between shadow-sm cursor-pointer select-none z-20 ${selectedStaticAreaId==='CAB2'?'bg-amber-50 border-amber-500 ring-4 ring-amber-100/50':'bg-slate-200 hover:bg-slate-100 border-slate-300 text-slate-800'}`}>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px]  font-bold text-slate-700">CAB2</span>
-                    <span className="w-1.5 h-1.5 rounded-sm bg-slate-500"/>
-                  </div>
-                  <span className="text-[7.5px] text-slate-500  font-extrabold text-center block uppercase w-full">RAILWAY</span>
-                </button>
-
-                {/* CAB1 */}
-                <button onClick={() => handleStaticAreaClick('CAB1')} onMouseEnter={() => setSelectedStaticAreaId('CAB1')}
-                style={{  ...ROOM_LAYOUT.CAB1,  position:'absolute'}}
-                  className={`absolute w-[80px] h-[55px] rounded-lg transition-all duration-300 text-left p-2 border-2 flex flex-col justify-between shadow-sm cursor-pointer select-none z-20 ${selectedStaticAreaId==='CAB1'?'bg-amber-50 border-amber-500 ring-4 ring-amber-100/50':'bg-slate-200 hover:bg-slate-100 border-slate-300 text-slate-800'}`}>
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-[10px]  font-bold text-slate-700">CAB1</span>
-                    <span className="w-1.5 h-1.5 rounded-sm bg-slate-500"/>
-                  </div>
-                  <span className="text-[7.5px] text-slate-500  font-extrabold text-center block uppercase w-full">PAPER</span>
-                </button>
-
-              </div>
-            </div>
-
-            {/* Static Area HUD */}
-            <div className="mt-4 w-full border-t border-slate-100 pt-4">
-              <div className={`p-4 rounded-xl border transition-all duration-300 ${selectedStaticArea?'bg-amber-500/5 border-amber-200 shadow-xs':'bg-slate-50/50 border-slate-100 text-slate-400'}`}>
-                {selectedStaticArea ? (
-                  <div className="space-y-2 text-left animate-fade-in-up">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`inline-block w-2.5 h-2.5 rounded-sm ${selectedStaticArea.id==='E'?'bg-red-500 animate-pulse':selectedStaticArea.id==='Rack'?'bg-indigo-600 animate-pulse':'bg-amber-500'}`}/>
-                        <span className=" font-black text-xs uppercase tracking-wide text-neutral-800">{selectedStaticArea.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px]  bg-amber-500/10 text-amber-700 border border-amber-500/25 px-1.5 py-0.5 rounded font-extrabold uppercase">ตู้อุปกรณ์</span>
-                        {/* [REQ-4] Admin edit button */}
-                        {currentUser?.role === 'super_admin' && (
-                          <button onClick={() => openEditArea(selectedStaticArea)}
-                            className="flex items-center gap-1 text-[9px]  bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded font-bold transition-all cursor-pointer">
-                            <PencilIcon className="w-3 h-3"/> Admin แก้ไข
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[10.5px] font-sans text-neutral-500 leading-normal">{selectedStaticArea.info}</p>
-                    <div className="pt-2 border-t border-slate-200/50">
-                      <span className="text-[8.5px] font-sans font-bold text-neutral-400 block">🛠️ ผู้รับผิดชอบ:</span>
-                      <span className="text-[11px] font-sans font-bold text-neutral-700 block bg-white px-2 py-0.5 rounded border border-slate-150 mt-0.5 inline-block">{selectedStaticArea.responsibleTeam}</span>
-                    </div>
-                    <div className="pt-2 space-y-1">
-                      <span className="text-[8.5px] font-sans font-bold text-neutral-400 block">📦 อุปกรณ์ ({(selectedStaticArea.items||[]).length} รายการ):</span>
-                      <div className="grid grid-cols-1 gap-1 max-h-[100px] overflow-y-auto custom-scrollbar">
-                        {(selectedStaticArea.items||[]).map((it,idx) => (
-                          <div key={idx} className="flex items-start gap-1 py-0.5 px-2 rounded bg-white/70 border border-slate-150 text-[10px] text-neutral-600">
-                            <span className="text-amber-500 mr-1 font-bold shrink-0">•</span><span>{it}</span>
-                          </div>
-                        ))}
-                        {(selectedStaticArea.items||[]).length === 0 && <p className="text-[10px] text-slate-400 italic text-center py-2">ไม่มีรายการอุปกรณ์</p>}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-4 text-center space-y-1.5 select-none font-sans">
-                    <p className="text-[9px] uppercase  tracking-widest text-slate-500 font-extrabold">ข้อมูลอุปกรณ์</p>
-                    <p className="text-[11px] text-slate-400 w-full leading-relaxed">คลิกที่ 
-                    <strong className="text-amber-500">RACK</strong> เพื่อจองหรือดูรายละเอียดอุปกณ์
-                    คลิกที่ <strong className="text-amber-500">CAB1 CAB2 CAB3</strong> เพื่อดูรายละเอียดอุปกรณ์</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ──────────── RIGHT: Panels (5/12) ──────────── */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
-
-            {/* [REQ-3] Objective Panel — shows ONLY active (in-use) bookings */}
-              <div className="relative bg-slate-950/80 backdrop-blur-xl text-white rounded-2xl border border-slate-800 p-5 shadow-2xl overflow-hidden space-y-3.5">
-                {/* แสงสะท้อนบางๆ ด้านหลังสไตล์ Liquid Glass */}
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#D62828]/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                <div className="relative flex items-center justify-between border-b border-slate-800 pb-2 z-10">
-                  <h3 className=" font-bold text-xs uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
-                    <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[#D62828] shadow-[0_0_8px_#D62828] animate-pulse"/>
-                    <span>วัตถุประสงค์การใช้งาน</span>
-                  </h3>
-                  <span className="text-[9px]  bg-slate-900/80 text-slate-400 border border-slate-700 px-2 py-0.5 rounded uppercase">
-                    {formatDateDisplay(selectedDate)} {currentTimeStr}
-                  </span>
-                </div>
-
-                <div className="relative space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1 z-10">
-                  {activeDUTs.length === 0 ? (
-                    <p className="text-xs text-slate-500 text-center py-6">ไม่มีรายการใช้งานขณะนี้</p>
-                  ) : activeDUTs.map(b => (
-                    <div key={b.id} className="p-3 rounded-xl bg-white/5 hover:bg-white/10 backdrop-blur-md border border-slate-700/50 transition-all flex flex-col gap-2.5 text-xs">
-                      
-                      {/* ส่วนหัว: ผู้จองและโต๊ะ */}
-                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-700/50">
-                        <span className="text-[9.5px] text-slate-300 truncate">
-                          <strong>{b.teamName.split(' (')[0]}</strong> @ Desk <span className="bg-[#D62828]/20 px-1 py-0.5 rounded  font-bold text-[#D62828] text-[9px]">{b.deskId}</span>
-                          <span className="text-slate-400 ml-1.5  text-[9px]">{b.systemName}</span>
-                        </span>
-                        <span className="text-[8px] tracking-wide font-extrabold bg-[#D62828]/20 text-[#D62828] border border-[#D62828]/30 px-1.5 py-0.5 rounded uppercase animate-pulse shrink-0">
-                          IN USE
-                        </span>
-                      </div>
-
-                      {/* ส่วนเนื้อหา: วัตถุประสงค์ */}
-                      <div className="text-[10.5px] text-slate-200 whitespace-pre-wrap leading-relaxed">
-                        {b.Objective || <span className="text-slate-500 italic">ไม่ระบุวัตถุประสงค์...</span>}
-                      </div>
-                      
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-            {/* Search */}
-            <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm space-y-3">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <SearchIcon className="w-4 h-4 text-slate-500"/>
-                <span>ค้นหาประวัติการจอง</span>
-              </h3>
-              <input type="text" placeholder="ชื่อโครงการ, โต๊ะ, ผู้จอง, อุปกรณ์..." value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full text-sm border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"/>
-            </div>
-            
-            {/* [REQ-5] Booking list — แสดงประวัติทั้งหมด */}
-            <div className="bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm space-y-4 flex-1 flex flex-col">
-              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-100 pb-2 shrink-0">
-                <SparklesIcon className="w-4 h-4 text-emerald-600 animate-pulse"/>
-                <span>ประวัติการจองทั้งหมด</span>
-                <span className="ml-auto text-[9px] font-mono text-slate-400 font-normal">{historyBookings.length} รายการ</span>
-              </h3>
-
-              {loading ? (
-                <div className="text-center py-12 space-y-2">
-                  <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"/>
-                  <p className="text-xs text-slate-400 font-mono">กำลังโหลดข้อมูล...</p>
-                </div>
-              ) : historyBookings.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">
-                  <p className="text-xs italic">ไม่มีประวัติการจองในระบบ</p>
-                </div>
-              ) : (
-                <div className="space-y-3 overflow-y-auto custom-scrollbar pr-1 flex-1" style={{ maxHeight:'480px' }}>
-                  {historyBookings.map(bk => {
-                    // --- เริ่มโค้ดส่วนที่แก้ไข ---
-                    const isCancelled = bk.Status === 'CANCELLED';
-                    const isFinished = bk.Status === 'FINISHED';
-                    
-                    const endD = bk.endDate || bk.date || ""; 
-                    const timeStr = bk.endTime ? String(bk.endTime) : "00:00";
-                    
-                    // 1. แยกชั่วโมง-นาที
-                    const timeParts = timeStr.match(/(\d{1,2}):(\d{1,2})/);
-                    const hour = timeParts ? parseInt(timeParts[1], 10) : 0;
-                    const min = timeParts ? parseInt(timeParts[2], 10) : 0;
-                    
-                    // 2. แยกปี-เดือน-วัน (รองรับทั้ง YYYY-MM-DD และ DD/MM/YYYY)
-                    const dateParts = endD.split(/[-/]/);
-                    let year = 0, month = 0, day = 0;
-                    if (dateParts.length === 3) {
-                      if (dateParts[0].length === 4) { 
-                        year = parseInt(dateParts[0], 10);
-                        month = parseInt(dateParts[1], 10) - 1; // JS นับเดือนจาก 0
-                        day = parseInt(dateParts[2], 10);
-                      } else { 
-                        day = parseInt(dateParts[0], 10);
-                        month = parseInt(dateParts[1], 10) - 1;
-                        year = parseInt(dateParts[2], 10);
-                      }
-                    }
-                    
-                    // 3. คำนวณเวลาและสถานะ
-                    const endMs = new Date(year, month, day, hour, min, 0).getTime();
-                    const isExpired = endMs > 0 && endMs < Date.now();
-                    const isInactive = isCancelled || isFinished || isExpired;
-
-                    // ── รูปแบบที่ 1: รายการแบบย่อ (Compact List) สำหรับคิวที่ Inactive ──
-                    if (isInactive) {
-                      return (
-                        <div key={bk.id} className="py-3 px-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center justify-between gap-3 text-[10px]">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                              <span className={`font-mono px-1.5 py-0.5 rounded font-bold shrink-0 ${isCancelled ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}>
-                                {bk.deskId === 'Rack' ? 'RACK' : `${bk.deskId}`}
-                              </span>
-                              <div className="truncate">
-                                <span className="font-bold text-slate-600">{bk.systemName}</span>
-                                <span className="text-slate-400 ml-1 truncate">({bk.teamName})</span>
-                              </div>
-                            </div>
-                            <div className="text-right shrink-0 flex items-center gap-2">
-                              <span className="text-slate-400 font-mono text-[9px]">
-                                {formatDateDisplay(bk.date)}
-                              </span>
-                              <span className={`font-bold uppercase text-[8px] tracking-wide w-12 text-right ${isCancelled ? 'text-rose-400' : 'text-slate-400'}`}>
-                                {isCancelled ? 'ยกเลิก' : isExpired ? 'หมดเวลา' : 'เสร็จสิ้น'}
-                              </span>
-                            </div>
-                          </div>
-                          {/* 📌 เพิ่มวัตถุประสงค์ในรายการ Inactive */}
-                          {(bk.Objective || bk.notes) && (
-                            <div className="mt-1.5 pl-9 text-[9px] text-slate-500 italic truncate">
-                              {bk.Objective || bk.notes}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // ── รูปแบบที่ 2: กล่องเต็ม (Full Card) สำหรับคิว Active สไตล์เดิม ──
-                    return (
-                      <div key={bk.id} className="p-3.5 bg-white border border-emerald-200 shadow-sm rounded-xl flex items-start justify-between gap-3 text-xs transition-all relative overflow-hidden">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
-                        
-                        <div className="space-y-1.5 flex-1 overflow-hidden pl-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800">
-                              {bk.deskId === 'Rack' ? 'RACK' : `DESK ${bk.deskId}`}
-                            </span>
-                            <span className="font-bold text-slate-800 text-[11px] leading-tight">{bk.systemName}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-500 space-y-0.5">
-                            <div className="truncate">จองโดย: <strong className="text-slate-600">{bk.teamName}</strong></div>
-                            <div className="text-[9px] font-mono font-normal text-slate-400 truncate">({bk.userEmail})</div>
-                          </div>
-                          {bk.Objective && (
-                            <p className="text-[10px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100 mt-1 whitespace-pre-wrap">
-                              <span className="font-bold text-emerald-700 mr-1">วัตถุประสงค์:</span>{bk.Objective}
-                            </p>
-                          )}
-                          {bk.notes && (
-                            <p className="text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-100/60 mt-1 whitespace-pre-wrap">
-                              <span className="font-bold text-amber-800 mr-1">หมายเหตุ:</span>{bk.notes}
-                            </p>
-                          )}
-                          {bk.equipment && (
-                            <p className="text-[9px] text-indigo-700 font-mono bg-indigo-50 border border-indigo-100/60 px-1.5 py-0.5 rounded w-fit mt-1">
-                              {bk.equipment}{bk.matCode ? ` [${bk.matCode}]` : ''}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right space-y-1.5 font-mono text-[9px] shrink-0">
-                          <span className="font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 text-[9px] inline-block leading-tight text-right">
-                            {formatDateDisplay(bk.date)} {bk.startTime}
-                          </span>
-                          
-                          <div className="flex flex-col gap-1 mt-2">
-                            <button onClick={() => openExtendModal(bk)}
-                              className="block w-full text-right text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer font-bold uppercase tracking-wide text-[8px]">
-                              [ ต่อเวลา ]
-                            </button>
-                            <button onClick={() => handleDeleteBooking(bk.id, bk.userEmail)}
-                              className="block w-full text-right text-rose-600 hover:text-rose-700 hover:underline cursor-pointer font-bold uppercase tracking-wide text-[8px]">
-                              [ ยกเลิกคิว ]
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-          </div>
-        </section>
-
-      </main>
-
-      {/* ════════════════════ BOOKING MODAL ════════════════════ */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden flex flex-col animate-fade-in-up">
-
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-              <div>
-                <h4 className=" font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 bg-emerald-500 rounded-sm"/>
-                  {/* [REQ-1] format วันที่ */}
-                  <span>โต๊ะ #{targetDeskId} — {formatDateDisplay(selectedDate)}</span>
-                </h4>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  {targetBooking ? 'ดูรายละเอียดการจอง' : 'สร้างการจองใหม่'}
-                </p>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 font-bold p-1 text-lg leading-none cursor-pointer">✕</button>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[85vh]">
-
-              {/* ── View existing booking ── */}
-              {targetBooking ? (
-                <div className="space-y-4 text-xs font-sans">
-                  <div className="bg-rose-50/75 border border-rose-100 rounded-xl p-4 space-y-3">
-                    <div>
-                      <span className="text-[8px]  font-bold uppercase tracking-wider text-rose-600 bg-rose-100/80 px-1.5 py-0.5 rounded border border-rose-200">กำลังใช้งาน</span>
-                      <h5 className=" font-bold text-base text-slate-800 mt-2">{targetBooking.systemName}</h5>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-rose-200/40">
-                      <div><span className="text-[10px] text-slate-400 block font-semibold">ผู้จอง</span><span className="font-bold text-slate-700">{targetBooking.teamName}</span></div>
-                      <div><span className="text-[10px] text-slate-400 block font-semibold">อีเมล</span><span className="font-bold  text-slate-700 text-[10px] break-all">{targetBooking.userEmail}</span></div>
-                    </div>
-                    {/* [REQ-1] [REQ-3] แสดงช่วงเวลา dd/mm/yyyy hh:mm */}
-                    <div className="pt-2 border-t border-rose-200/40">
-                      <span className="text-[10px] text-slate-400 block font-semibold">ช่วงเวลา</span>
-                      <span className="font-bold  text-slate-700 text-[11px]">{timeRangeLabel(targetBooking)}</span>
-                    </div>
-                    {targetBooking.equipment && (
-                      <div className="pt-2 border-t border-rose-200/40">
-                        <span className="text-[10px] text-slate-400 block font-semibold">อุปกรณ์ที่ใช้ทดสอบ</span>
-                        <span className="font-bold text-rose-800 bg-rose-50 px-2 py-1 rounded border border-rose-200/70 block mt-1  text-[10px] w-fit">
-                          🔌 {targetBooking.equipment}{targetBooking.matCode ? ` [${targetBooking.matCode}]` : ''}
-                        </span>
-                      </div>
-                    )}
-                    {targetBooking.notes && (
-                      <div className="pt-2 border-t border-rose-200/40">
-                        <span className="text-[10px] text-slate-400 block font-semibold">หมายเหตุ</span>
-                        <p className="text-[10px] text-slate-600 italic bg-white p-2.5 border border-slate-100 rounded-lg mt-1 whitespace-pre-wrap">{targetBooking.notes}</p>
-                      </div>
-                    )}
-                    {/* [REQ-1] createdAt format */}
-                    {targetBooking.createdAt && (
-                      <div className="pt-2 border-t border-rose-200/40">
-                        <span className="text-[10px] text-slate-400 block font-semibold">สร้างเมื่อ</span>
-                        <span className="text-[10px]  text-slate-500">{formatDateTimeDisplay(targetBooking.createdAt)}</span>
-                      </div>
-                    )}
-                  </div>
-                  <button onClick={() => handleDeleteBooking(targetBooking.id, targetBooking.userEmail)}
-                    className="w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-rose-600 font-bold transition-all cursor-pointer text-xs">
-                    ยกเลิกคิวนี้
-                  </button>
-                </div>
-
-              ) : (
-                /* ── New booking form ── */
-                <form onSubmit={handleSaveBooking} className="space-y-4 text-xs">
-                  {modalError && (
-                    <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 font-semibold flex items-start gap-1.5">
-                      <AlertTriangleIcon className="w-4 h-4 shrink-0 text-rose-500 mt-0.5"/>
-                      <span>{modalError}</span>
-                    </div>
-                  )}
-
-                  {/* User info */}
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-emerald-800 block font-semibold">เข้าสู่ระบบโดย</span>
-                      <span className="font-bold text-slate-800 text-xs">{currentUser?.name}</span>
-                    </div>
-                    <span className="text-[9px]  bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-bold border border-emerald-300 uppercase">
-                      {currentUser?.team?.split(' / ')[0]}
-                    </span>
-                  </div>
-                  
-                  {/* Project */}
-                    <div className="space-y-2">
-                      <label className="font-bold text-slate-700 block mb-1">เลือกโครงการที่ต้องการทดสอบ <span className="text-rose-500">*</span></label>
-                      <select 
-                        required={bookingProject !== 'OTHER'} 
-                        value={bookingProject} 
-                        onChange={e => {
-                          setBookingProject(e.target.value);
-                          if (e.target.value !== 'OTHER') setCustomProject(''); // เคลียร์ค่าที่พิมพ์ค้างไว้ถ้าเปลี่ยนกลับไปเลือกโปรเจกต์ปกติ
-                        }}
-                        className="w-full text-xs border border-slate-200 rounded-xl px-4 py-2.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
-                      >
-                        <option value="">-- เลือกโครงการ --</option>
-                        {(currentUser?.allowedProjects||[]).map(p => <option key={p} value={p}>{p}</option>)}
-                        <option value="OTHER">➕ โครงการอื่นๆ (ระบุเอง)...</option>
-                      </select>
-
-                      {/* กล่องกรอกชื่อโครงการ จะแสดงก็ต่อเมื่อเลือก "OTHER" */}
-                      {bookingProject === 'OTHER' && (
-                        <div className="animate-fade-in-up mt-2">
-                          <input 
-                            type="text" 
-                            required 
-                            placeholder="พิมพ์ชื่อโครงการที่ต้องการ..." 
-                            value={customProject}
-                            onChange={e => setCustomProject(e.target.value)}
-                            className="w-full text-xs border border-emerald-300 bg-emerald-50/50 rounded-xl px-4 py-2.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ── ช่องกรอกวัตถุประสงค์การใช้งาน (เพิ่มใหม่) ── */}
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          วัตถุประสงค์การใช้งาน <span className="text-red-500">*</span>
-                        </label>
-                        <textarea
-                          required
-                          value={bookingObjective}
-                          onChange={(e) => setBookingObjective(e.target.value)}
-                          className="w-full rounded-lg border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                          rows="2"
-                          placeholder="โปรดระบุวัตถุประสงค์การใช้งาน... "
-                        />
-                      </div>
-
-                  {/* [REQ-2] Manual Equipment + MatCode inputs (รองรับหลายรายการ) */}
-                    <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[9px]  font-bold text-indigo-600 uppercase tracking-wide">🔌 อุปกรณ์ที่ใช้ทดสอบ (DUT)</p>
-                        <button type="button" onClick={addDeviceRow} className="text-[9px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold hover:bg-indigo-200 transition-colors">
-                          + เพิ่มอุปกรณ์
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-1">
-                        {bookingDevices.map((dev, idx) => (
-                          <div key={idx} className="flex items-start gap-2 bg-white p-2 rounded-lg border border-indigo-100/50 relative">
-                            <div className="grid grid-cols-2 gap-2 flex-1">
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-500 block mb-0.5">ชื่ออุปกรณ์ {idx + 1} <span className="text-rose-500">*</span></label>
-                                <input type="text" required placeholder="เช่น SCADA PLC..." value={dev.equipment}
-                                  onChange={e => updateDeviceField(idx, 'equipment', e.target.value)}
-                                  className="w-full text-[10px] border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500/30" />
-                              </div>
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-500 block mb-0.5">Mat.Code <span className="text-rose-500">*</span></label>
-                                <input type="text" required placeholder="เช่น MAT-001..." value={dev.matCode}
-                                  onChange={e => updateDeviceField(idx, 'matCode', e.target.value)}
-                                  className="w-full text-[10px]  border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500/30" />
-                              </div>
-                            </div>
-                            {bookingDevices.length > 1 && (
-                              <button type="button" onClick={() => removeDeviceRow(idx)} className="text-rose-400 hover:text-rose-600 p-1 mt-3">✕</button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                  {/* Time range */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="font-bold text-slate-700 block mb-1">เวลาเริ่มต้น <span className="text-rose-500">*</span></label>
-                      <input type="time" required step="900" value={bookingStartTime}
-                        onChange={e => setBookingStartTime(e.target.value)}
-                        className="w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700  focus:outline-none focus:ring-2 focus:ring-emerald-500/15"/>
-                    </div>
-                    <div>
-                      <label className="font-bold text-slate-700 block mb-1">เวลาสิ้นสุด <span className="text-rose-500">*</span></label>
-                      <input type="time" required step="900" value={bookingEndTime}
-                        onChange={e => setBookingEndTime(e.target.value)}
-                        className="w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700  focus:outline-none focus:ring-2 focus:ring-emerald-500/15"/>
-                    </div>
-                  </div>
-
-                  {/* [REQ-3] Multi-day end date */}
-                  <div className="p-3 bg-sky-50/50 border border-sky-100 rounded-xl space-y-2">
-                    <p className="text-[9px]  font-bold text-sky-600 uppercase tracking-wide">📅 จองข้ามวัน (ไม่บังคับ)</p>
-                    <div>
-                      <label className="font-bold text-slate-700 block mb-1">วันสิ้นสุด</label>
-                      <input type="date" min={selectedDate} value={bookingEndDate}
-                        onChange={e => setBookingEndDate(e.target.value)}
-                        className="w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700  focus:outline-none focus:ring-2 focus:ring-sky-500/15"/>
-                      <p className="text-[9px] text-slate-400 mt-1 font-sans">
-                        วันเริ่มต้น: <strong className="text-emerald-600">{formatDateDisplay(selectedDate)}</strong>
-                        {bookingEndDate && bookingEndDate !== selectedDate &&
-                          <> → วันสิ้นสุด: <strong className="text-sky-600">{formatDateDisplay(bookingEndDate)}</strong> <span className="text-amber-500 font-bold">(จองข้ามวัน ✚)</span></>
-                        }
-                        {(!bookingEndDate || bookingEndDate === selectedDate) && <span className="text-slate-400"> (จองวันเดียว)</span>}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">หมายเหตุ (ไม่บังคับ)</label>
-                    <textarea placeholder="พารามิเตอร์ทดสอบ, อุณหภูมิ, การตั้งค่าพิเศษ..." value={bookingNotes} rows={2}
-                      onChange={e => setBookingNotes(e.target.value)}
-                      className="w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"/>
-                  </div>
-
-                  <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
-                    <button type="button" onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 cursor-pointer text-xs">
-                      ยกเลิก
-                    </button>
-                    <button type="submit" disabled={submitting}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-50 cursor-pointer shadow-md shadow-emerald-600/10 text-xs">
-                      {submitting ? 'กำลังบันทึก...' : 'ยืนยันจองคิว'}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ════════════════════ [REQ-4] ADMIN EDIT AREA MODAL ════════════════════ */}
-      {isEditingArea && editAreaForm && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-amber-200/50 max-w-lg w-full overflow-hidden animate-fade-in-up">
-
-            <div className="px-6 py-4 border-b border-amber-100 bg-amber-50 flex items-center justify-between">
-              <div>
-                <h4 className=" font-bold text-amber-900 text-sm flex items-center gap-2">
-                  <PencilIcon className="w-4 h-4 text-amber-600"/>
-                  แก้ไขตู้อุปกรณ์: <span className="text-indigo-700">{editAreaForm.name}</span>
-                </h4>
-                <p className="text-[10px] text-amber-700 mt-0.5">🔐 สิทธิ์ Super Admin เท่านั้น — การเปลี่ยนแปลงจะบันทึกลง Google Sheets</p>
-              </div>
-              <button onClick={() => setIsEditingArea(false)} className="text-amber-500 hover:text-amber-800 cursor-pointer p-1">
-                <XIcon className="w-5 h-5"/>
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto max-h-[80vh] space-y-5 text-xs">
-
-              {/* Responsible Team */}
-              <div>
-                <label className="font-bold text-slate-700 block mb-1.5">🛠️ ผู้รับผิดชอบ <span className="text-rose-500">*</span></label>
-                <input type="text" required value={editAreaForm.responsibleTeam}
-                  onChange={e => setEditAreaForm(p => ({ ...p, responsibleTeam: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-sans text-xs"/>
-              </div>
-
-              {/* Info / Description */}
-              <div>
-                <label className="font-bold text-slate-700 block mb-1.5">📋 คำอธิบาย</label>
-                <textarea value={editAreaForm.info} rows={2}
-                  onChange={e => setEditAreaForm(p => ({ ...p, info: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-xs"/>
-              </div>
-
-              {/* Equipment items list */}
-              <div className="space-y-2">
-                <label className="font-bold text-slate-700 block">📦 รายการอุปกรณ์ ({editAreaForm.items.length} รายการ)</label>
-
-                <div className="space-y-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-1">
-                  {editAreaForm.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg">
-                      <span className="flex-1 text-slate-600 text-[11px]">{item}</span>
-                      <button onClick={() => removeAreaItem(idx)}
-                        className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded p-0.5 cursor-pointer transition-colors shrink-0">
-                        <XIcon className="w-3.5 h-3.5"/>
-                      </button>
-                    </div>
-                  ))}
-                  {editAreaForm.items.length === 0 && (
-                    <p className="text-[10px] text-slate-400 italic text-center py-3">ไม่มีรายการอุปกรณ์ — เพิ่มด้านล่าง</p>
-                  )}
-                </div>
-
-                {/* Add new item */}
-                <div className="flex gap-2 pt-1">
-                  <input type="text" placeholder="ชื่ออุปกรณ์ใหม่..."
-                    value={newItemInput} onChange={e => setNewItemInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addAreaItem())}
-                    className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-sans"/>
-                  <button onClick={addAreaItem}
-                    className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 transition-all shrink-0">
-                    <PlusIcon className="w-3.5 h-3.5"/> เพิ่ม
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-3 border-t border-slate-100">
-                <button onClick={() => setIsEditingArea(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 cursor-pointer text-xs">
-                  ยกเลิก
-                </button>
-                <button onClick={saveAreaEdit} disabled={savingArea}
-                  className="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer shadow-md transition-all">
-                  {savingArea ? 'กำลังบันทึก...' : '💾 บันทึกการเปลี่ยนแปลง'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Extend Booking Modal ── */}
-      {isExtendModalOpen && extendTargetBooking && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-fade-in border border-slate-200">
-            <div className="bg-emerald-600 p-4 text-white">
-              <h2 className=" font-bold text-lg flex items-center gap-2">
-                ⏱️ ต่อเวลาการใช้งาน
-              </h2>
-              <p className="text-[10px] text-emerald-100 mt-1">
-                ระบุวันที่และเวลาสิ้นสุดใหม่ สำหรับโต๊ะ {extendTargetBooking.deskId}
-              </p>
-            </div>
-            
-            <form onSubmit={handleExtendSubmit} className="p-5 space-y-4">
-              {extendError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
-                  {extendError}
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">วันที่สิ้นสุด (ใหม่)</label>
-                  <input type="date" required
-                    value={extendEndDate}
-                    min={extendTargetBooking.date}
-                    onChange={e => setExtendEndDate(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">เวลาสิ้นสุด (ใหม่)</label>
-                  <input type="time" required
-                    value={extendEndTime}
-                    onChange={e => setExtendEndTime(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* 📌 ช่องกรอกเหตุผลที่เพิ่มเข้ามาใหม่ */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  เหตุผล / วัตถุประสงค์ในการต่อเวลา <span className="text-rose-500">*</span>
-                </label>
-                <input type="text" required
-                  value={extendReason}
-                  onChange={e => setExtendReason(e.target.value)}
-                  placeholder="เช่น รันทดสอบยังไม่จบ, เก็บ Log เพิ่ม..."
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-3">
-                <button type="button" onClick={() => setIsExtendModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 text-sm font-bold flex-1 transition-all">
-                  ยกเลิก
-                </button>
-                <button type="submit" disabled={extendSubmitting}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 flex-1 shadow-md shadow-emerald-500/20 transition-all flex justify-center items-center">
-                  {extendSubmitting ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/>
-                  ) : 'บันทึกเวลาใหม่'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-center py-8 text-[11px] text-slate-400 mt-12">
-        <div className=" font-medium text-slate-300">OMA LAB ROOM by Parichat Sumrit</div>
-      </footer>
-
-    </div>
-  );
+  return /*#__PURE__*/React.createElement("div", {
+    className: "min-h-screen bg-[#f8fafc] flex flex-col"
+  }, toastMessage && /*#__PURE__*/React.createElement("div", {
+    className: "fixed top-5 left-1/2 -translate-x-1/2 bg-slate-900/95 border border-slate-800 text-emerald-400 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 z-50 text-xs  animate-bounce"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-emerald-500 animate-ping"
+  }), /*#__PURE__*/React.createElement("span", null, toastMessage)), /*#__PURE__*/React.createElement("header", {
+    className: "bg-slate-950 text-white relative border-b border-emerald-950/50 shadow-lg"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute inset-0 bg-[linear-gradient(to_right,#022c2225_1px,transparent_1px),linear-gradient(to_bottom,#022c2225_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-2.5 bg-emerald-950/80 border border-emerald-500/30 rounded-xl relative"
+  }, /*#__PURE__*/React.createElement(CompassIcon, {
+    className: "w-6 h-6 text-emerald-400"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full animate-ping"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "text-lg  font-extrabold tracking-tight text-white uppercase sm:text-xl"
+  }, "OMA | LAB-01"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-500/25 px-1.5 py-0.5 rounded"
+  }, "ONLINE V1.0")), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-400 font-sans tracking-wide"
+  }, "ระบบจองโต๊ะและอุปกรณ์ทดสอบ เพื่อใช้ในห้องทดสอบระบบ"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 shrink-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-right hidden md:block"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-500 block uppercase "
+  }, "บัญชีผู้ใช้งาน"), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-bold text-slate-200"
+  }, currentUser?.name), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9.5px] font-medium text-emerald-400 block "
+  }, "[", currentUser?.position || currentUser?.role, "]"))))), /*#__PURE__*/React.createElement("main", {
+    className: "max-w-7xl mx-auto px-6 py-8 flex-1 space-y-8 w-full"
+  }, errorMessage && /*#__PURE__*/React.createElement("div", {
+    className: "bg-rose-50 border border-rose-100 rounded-2xl p-4 text-xs font-semibold text-rose-700 flex items-center gap-2 shadow-sm"
+  }, /*#__PURE__*/React.createElement(AlertTriangleIcon, {
+    className: "w-5 h-5 shrink-0"
+  }), /*#__PURE__*/React.createElement("span", null, errorMessage)), /*#__PURE__*/React.createElement("section", {
+    className: "bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5 text-slate-700"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5 w-full md:w-auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-2 bg-emerald-50 text-emerald-800 rounded-lg"
+  }, /*#__PURE__*/React.createElement(CalendarIcon, {
+    className: "w-4 h-4"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 md:flex-none"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-[9.5px] uppercase text-slate-400 block font-bold"
+  }, "1. เลือกวันที่ใช้งาน"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: selectedDate,
+    onChange: e => {
+      setSelectedDate(e.target.value);
+      triggerToast(`เปลี่ยนวันที่เป็น: ${formatDateDisplay(e.target.value)}`);
+    },
+    className: "text-xs font-bold text-slate-800 focus:outline-none cursor-pointer mt-0.5"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] text-emerald-600 block mt-0.5"
+  }, formatDateDisplay(selectedDate)))), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 w-full space-y-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between items-center text-[10px] text-slate-400"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-extrabold uppercase"
+  }, "2. เลือกช่วงเวลา"), /*#__PURE__*/React.createElement("span", {
+    className: "text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-extrabold text-xs"
+  }, "เวลาที่เลือก: ", currentTimeStr, " น.")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-4"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 shrink-0"
+  }, "00:00น."), /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: "0",
+    max: "23.5",
+    step: "0.5",
+    value: selectedHour,
+    onChange: e => setSelectedHour(parseFloat(e.target.value)),
+    className: "flex-1 accent-emerald-600 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 shrink-0"
+  }, "23:30น."))), /*#__PURE__*/React.createElement("button", {
+    onClick: loadData,
+    disabled: loading,
+    className: "w-full md:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+  }, /*#__PURE__*/React.createElement(RefreshCwIcon, {
+    className: `w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`
+  }), /*#__PURE__*/React.createElement("span", null, "REFRESH SHEET"))), /*#__PURE__*/React.createElement("section", {
+    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-emerald-100/80 p-4 shadow-sm flex flex-col justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold text-emerald-600 uppercase tracking-wide"
+  }, "1. โต๊ะว่างขณะนี้"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] text-emerald-500 font-bold bg-emerald-50 px-1.5 rounded"
+  }, "AVAILABLE")), /*#__PURE__*/React.createElement("h4", {
+    className: "text-xl  font-extrabold text-slate-800"
+  }, stats.freeDesks.length, " / ", ALL_BOOKABLE_IDS.length, " โต๊ะ")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex flex-wrap gap-1"
+  }, stats.freeDesks.length > 0 ? stats.freeDesks.map(id => /*#__PURE__*/React.createElement("span", {
+    key: id,
+    className: "text-[9px]  font-bold bg-emerald-50 text-emerald-700 px-1 py-0.5 rounded border border-emerald-100/50"
+  }, id)) : /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-rose-600 italic"
+  }, "เต็มแล้ว"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-rose-100/80 p-4 shadow-sm flex flex-col justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold  text-rose-600 uppercase tracking-wide"
+  }, "2. อุปกรณ์ใช้งานอยู่"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  text-rose-500 font-bold bg-rose-50 px-1 rounded animate-pulse"
+  }, "RUNNING")), /*#__PURE__*/React.createElement("h4", {
+    className: "text-xl  font-extrabold text-slate-800"
+  }, stats.activeUnits.length, " เครื่อง")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 text-[8px]  text-slate-500 space-y-1 max-h-[48px] overflow-y-auto pr-1"
+  }, stats.activeUnits.length > 0 ? stats.activeUnits.map((u, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "flex justify-between border-b border-rose-50 pb-0.5 truncate gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-rose-700 shrink-0"
+  }, "[", u.deskId, "]"), /*#__PURE__*/React.createElement("span", {
+    className: "truncate"
+  }, u.equipment))) : /*#__PURE__*/React.createElement("span", {
+    className: "text-[9.5px] text-slate-400 italic block py-2 text-center"
+  }, "ไม่มีอุปกรณ์ที่ใช้งานอยู่"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-indigo-100/80 p-4 shadow-sm flex flex-col justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold  text-indigo-600 uppercase tracking-wide"
+  }, "3. ทีมเข้าแล็บวันนี้"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  text-indigo-500"
+  }, stats.teamsCount, " ทีม")), /*#__PURE__*/React.createElement("h4", {
+    className: "text-xl  font-extrabold text-slate-800"
+  }, stats.teamsCount, " ทีม")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex flex-wrap gap-1 max-h-[48px] overflow-y-auto"
+  }, stats.teamsList.length > 0 ? stats.teamsList.map(t => /*#__PURE__*/React.createElement("span", {
+    key: t,
+    className: "text-[9px] font-sans font-bold bg-indigo-50 text-indigo-800 px-1.5 py-0.5 rounded border border-indigo-100/50 max-w-full truncate block"
+  }, "• ", t)) : /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 italic block py-2 w-full text-center"
+  }, "ไม่มีคิววันนี้"))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-sky-100/80 p-4 shadow-sm flex flex-col justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold  text-sky-600 uppercase tracking-wide"
+  }, "4. อัตราใช้งาน"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  text-sky-500 font-bold bg-sky-50 px-1 rounded"
+  }, "LOAD")), /*#__PURE__*/React.createElement("h4", {
+    className: "text-xl  font-extrabold text-slate-800"
+  }, stats.utilization, "%")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full bg-slate-100 h-2 rounded-full overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `h-full rounded-full transition-all duration-500 ${stats.utilization < 30 ? 'bg-emerald-500' : stats.utilization < 75 ? 'bg-amber-500' : 'bg-rose-500'}`,
+    style: {
+      width: `${stats.utilization}%`
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex justify-between text-[8px]  mt-1 text-slate-400"
+  }, /*#__PURE__*/React.createElement("span", null, "0%"), /*#__PURE__*/React.createElement("span", null, "100%")))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-violet-100/80 p-4 shadow-sm flex flex-col justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] font-bold  text-violet-600 uppercase tracking-wide"
+  }, "5. รายการจอง"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  text-violet-500 font-semibold"
+  }, formatDateDisplay(selectedDate))), /*#__PURE__*/React.createElement("h4", {
+    className: "text-xl  font-extrabold text-slate-800"
+  }, stats.todayTotal, " รายการ")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 text-[8px]  text-slate-500 space-y-1 max-h-[60px] overflow-y-auto pr-1"
+  }, activeBookingsForTimeline.slice(0, 5).map(b => /*#__PURE__*/React.createElement("div", {
+    key: b.id,
+    className: "flex justify-between items-center border-b border-slate-50 pb-0.5 truncate gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-violet-700 shrink-0"
+  }, "[", b.deskId, "]"), /*#__PURE__*/React.createElement("span", {
+    className: "truncate text-slate-600"
+  }, b.startTime, "-", b.endTime, b.endDate && b.endDate !== b.date ? ' ✚' : ''))), activeBookingsForTimeline.length === 0 && /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px] text-slate-400 italic block py-2 text-center"
+  }, "ไม่มีคิว")))), /*#__PURE__*/React.createElement("section", {
+    className: "grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-7 bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm flex flex-col items-center"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full pb-3 border-b border-slate-100 mb-6 flex justify-between items-center flex-wrap gap-2 text-xs"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    className: " font-bold text-slate-800 text-sm flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement(CompassIcon, {
+    className: "w-4 h-4 text-emerald-600"
+  }), /*#__PURE__*/React.createElement("span", null, "ผังห้อง LAB-01")), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-400"
+  }, formatDateDisplay(selectedDate), " เวลา ", currentTimeStr, " น. • คลิกโต๊ะเพื่อจอง")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3  text-[10px]"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-3 h-3 rounded border border-emerald-300 bg-emerald-50 inline-block"
+  }), /*#__PURE__*/React.createElement("span", null, "ว่าง")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-3 h-3 rounded border border-rose-300 bg-rose-50 inline-block"
+  }), /*#__PURE__*/React.createElement("span", null, "กำลังทดสอบ")))), /*#__PURE__*/React.createElement("div", {
+    className: "relative flex items-center justify-center w-full overflow-auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative border-4 border-slate-700/85 bg-slate-50/80 rounded-2xl shadow-inner select-none overflow-visible",
+    style: {
+      width: '100%',
+      maxWidth: '1400px',
+      aspectRatio: '16/9',
+      backgroundImage: 'linear-gradient(to right,rgba(220,225,235,1) 1px,transparent 1px),linear-gradient(to bottom,rgba(220,225,235,1) 1px,transparent 1px)',
+      backgroundSize: '16px 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute left-0 top-[175px] w-[7px] h-[90px] bg-red-600/90 border-b border-x border-red-700 z-20 flex items-center justify-center shadow"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[6.5px] text-white  font-bold leading-none tracking-tighter whitespace-nowrap rotate-[-90deg]"
+  }, "Window")), /*#__PURE__*/React.createElement("div", {
+    className: " absolute flex items-center justify-center border-y border-dashed border-slate-300",
+    style: {
+      left: '0',
+      right: '18%',
+      top: '35%',
+      height: '25%'
+    }
+  }, "  ", /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 text-xs  tracking-[0.3em] uppercase"
+  }, " Main walkway ")), /*#__PURE__*/React.createElement("div", {
+    className: "opacity-20  text-[7px] text-slate-500 tracking-widest font-extrabold whitespace-nowrap [writing-mode:vertical-lr] uppercase"
+  }, "พื้นที่ส่วนกลาง"), /*#__PURE__*/React.createElement("div", {
+    className: "absolute left-[5px] top-[152px] right-[5px] w-7 h-7 z-25 pointer-events-none animate-droid-patrol"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "animate-droid-bob flex items-center justify-center"
+  }, /*#__PURE__*/React.createElement(DroidSprite, null), /*#__PURE__*/React.createElement("div", {
+    className: "absolute -bottom-4 bg-emerald-900/80 text-emerald-300  text-[6px] px-1 py-0.5 rounded leading-none whitespace-nowrap font-bold border border-emerald-500/20"
+  }, "SCADA_BOT"))), /*#__PURE__*/React.createElement("div", {
+    className: "absolute left-[5px] top-[142px] right-[5px] w-7 h-8 z-25 pointer-events-none animate-engineer-walk"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "animate-engineer-bob flex flex-col items-center justify-center"
+  }, /*#__PURE__*/React.createElement(EngineerSprite, null), /*#__PURE__*/React.createElement("div", {
+    className: "absolute -bottom-4 bg-indigo-900/80 text-indigo-300  text-[6px] px-1 py-0.5 rounded leading-none whitespace-nowrap font-bold border border-indigo-500/20"
+  }, "γ_ENGINEER"))), DESKS.filter(d => d.side === 'left').map(desk => {
+    const {
+      state: deskState,
+      booking: bk
+    } = getDeskDisplayState(desk.id);
+    const sel = targetDeskId === desk.id;
+    const ed = bk?.endDate || bk?.date;
+    const mdLabel = bk && ed !== bk.date ? `UNTIL ${formatDateDisplay(ed)}` : bk ? deskState === 'active' ? `BUSY to ${bk.endTime}` : `RESV ${bk.startTime}-${bk.endTime}` : '';
+    const sty = ROOM_LAYOUT[desk.id];
+    return /*#__PURE__*/React.createElement("button", {
+      key: desk.id,
+      style: sty,
+      onClick: () => handleDeskClick(desk.id),
+      className: `absolute rounded-lg transition-all duration-300 text-left p-3 flex flex-col justify-between border-2 shadow-sm cursor-pointer select-none
+                        ${deskState === 'active' ? 'bg-rose-50/95 hover:bg-rose-100/90 border-rose-400 text-rose-900 border-dashed' : deskState === 'reserved' ? 'bg-amber-50/95 hover:bg-amber-100/90 border-amber-400 text-amber-900 border-dashed' : sel ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-100/70 text-emerald-950 z-10' : 'bg-white hover:bg-slate-50 border-emerald-100 text-neutral-800 hover:border-emerald-400'}`
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between w-full"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs  font-bold"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-400 font-normal"
+    }, "#"), desk.name), /*#__PURE__*/React.createElement("div", {
+      className: `w-2.5 h-2.5 rounded-sm ring-2 
+                          ${deskState === 'active' ? 'bg-rose-500 ring-rose-100 animate-pulse' : deskState === 'reserved' ? 'bg-amber-400 ring-amber-100' : 'bg-emerald-500 ring-emerald-100'}`
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "mt-1 flex-1 flex flex-col justify-end overflow-hidden"
+    }, deskState !== 'free' ? /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] leading-tight font-sans"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: `font-bold truncate ${deskState === 'active' ? 'text-rose-900' : 'text-amber-900'}`
+    }, bk.systemName), /*#__PURE__*/React.createElement("p", {
+      className: `truncate font-semibold text-[9px] ${deskState === 'active' ? 'text-rose-700' : 'text-amber-700'}`
+    }, bk.teamName.split(' (')[0]), /*#__PURE__*/React.createElement("span", {
+      className: `text-[8px] font-bold uppercase py-0.5 px-1 rounded-sm block truncate mt-1 
+                              ${deskState === 'active' ? 'bg-rose-200/60 text-rose-800' : 'bg-amber-200/60 text-amber-800'}`
+    }, mdLabel)) : /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px]"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "text-emerald-700 font-bold flex items-center gap-0.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1 h-1 rounded-full bg-emerald-500 animate-ping mr-0.5 inline-block"
+    }), " ว่าง ON"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[9px] text-slate-400  tracking-tighter uppercase font-semibold"
+    }, "RESERVE"))));
+  }), DESKS.filter(d => d.side === 'right').map(desk => {
+    const {
+      state: deskState,
+      booking: bk
+    } = getDeskDisplayState(desk.id);
+    const sel = targetDeskId === desk.id;
+    const ed = bk?.endDate || bk?.date;
+    const mdLabel = bk && ed !== bk.date ? `UNTIL ${formatDateDisplay(ed)}` : bk ? deskState === 'active' ? `BUSY to ${bk.endTime}` : `RESV ${bk.startTime}-${bk.endTime}` : '';
+    const sty = ROOM_LAYOUT[desk.id];
+    return /*#__PURE__*/React.createElement("button", {
+      key: desk.id,
+      style: sty,
+      onClick: () => handleDeskClick(desk.id),
+      className: `absolute rounded-lg transition-all duration-300 text-left p-2.5 flex flex-col justify-between border-2 shadow-sm cursor-pointer select-none
+                          ${deskState === 'active' ? 'bg-rose-50/95 hover:bg-rose-100/90 border-rose-400 text-rose-900 border-dashed' : deskState === 'reserved' ? 'bg-amber-50/95 hover:bg-amber-100/90 border-amber-400 text-amber-900 border-dashed' : sel ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-100/70 text-emerald-950 z-10' : 'bg-white hover:bg-slate-50 border-emerald-100 text-neutral-800 hover:border-emerald-400'}`
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between w-full"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs  font-bold"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[10px] text-slate-400 font-normal"
+    }, "#"), desk.name), /*#__PURE__*/React.createElement("div", {
+      className: `w-2.5 h-2.5 rounded-sm ring-2 
+                            ${deskState === 'active' ? 'bg-rose-500 ring-rose-100 animate-pulse' : deskState === 'reserved' ? 'bg-amber-400 ring-amber-100' : 'bg-emerald-500 ring-emerald-100'}`
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "mt-1 flex-1 flex flex-col justify-end overflow-hidden"
+    }, deskState !== 'free' ? /*#__PURE__*/React.createElement("div", {
+      className: "text-[9px] leading-tight font-sans"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: `font-bold truncate leading-tight ${deskState === 'active' ? 'text-rose-900' : 'text-amber-900'}`
+    }, bk.systemName), /*#__PURE__*/React.createElement("p", {
+      className: `truncate font-semibold text-[8px] ${deskState === 'active' ? 'text-rose-700' : 'text-amber-700'}`
+    }, bk.teamName.split(' (')[0]), /*#__PURE__*/React.createElement("span", {
+      className: `text-[8px] font-bold uppercase py-0.5 px-1 rounded-sm block truncate mt-0.5 
+                                ${deskState === 'active' ? 'bg-rose-200/60 text-rose-800' : 'bg-amber-200/60 text-amber-800'}`
+    }, mdLabel)) : /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px]"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "text-emerald-700 font-bold flex items-center gap-0.5"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 rounded-full bg-emerald-500 mr-0.5 animate-pulse inline-block"
+    }), " ว่าง ON"), /*#__PURE__*/React.createElement("p", {
+      className: "text-[9px] text-slate-400  tracking-tighter uppercase font-semibold"
+    }, "RESERVE"))));
+  }), /*#__PURE__*/React.createElement("button", {
+    style: {
+      ...ROOM_LAYOUT.E,
+      position: 'absolute'
+    },
+    className: `absolute flex flex-col items-center justify-center cursor-pointer select-none border-0 bg-transparent outline-none hover:scale-[1.04] z-20 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer select-none border-0 bg-transparent outline-none hover:scale-[1.04] z-20 transition-all duration-300 ${selectedStaticAreaId === 'E' ? 'drop-shadow-[0_0_10px_rgba(239,68,68,0.7)]' : ''}`
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "55",
+    height: "55",
+    viewBox: "0 0 60 60"
+  }, /*#__PURE__*/React.createElement("polygon", {
+    points: "30,5 55,55 5,55",
+    fill: "#dc2626",
+    stroke: "#b91c1c",
+    strokeWidth: "2.5"
+  }), /*#__PURE__*/React.createElement("text", {
+    x: "30",
+    y: "42",
+    textAnchor: "middle",
+    fill: "#ffffff",
+    fontSize: "21",
+    fontFamily: "sans-serif",
+    fontWeight: "900"
+  }, "E")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[7.5px]  font-black text-red-600 uppercase mt-0.5 tracking-widest"
+  }, "ENTRANCE")), (() => {
+    const {
+      state: rackState,
+      booking: rackBk
+    } = getDeskDisplayState('Rack');
+    const rackSel = targetDeskId === 'Rack';
+    const rackED = rackBk?.endDate || rackBk?.date;
+    const rackLbl = rackBk ? rackED !== rackBk?.date ? `UNTIL ${formatDateDisplay(rackED)}` : rackState === 'active' ? `BUSY to ${rackBk.endTime}` : `RESV ${rackBk.startTime}-${rackBk.endTime}` : '';
+    return /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleDeskClick('Rack'),
+      style: {
+        ...ROOM_LAYOUT.Rack,
+        position: 'absolute'
+      },
+      className: `absolute rounded-xl transition-all duration-300 text-left p-2.5 border flex flex-col justify-between shadow-lg cursor-pointer select-none z-20 backdrop-blur-md
+                          ${rackState === 'active' ? 'bg-[#D62828]/10 border-[#D62828] text-[#D62828]' : rackState === 'reserved' ? 'bg-amber-500/10 border-amber-500 text-amber-700' : rackSel ? 'bg-slate-800 border-slate-500 ring-4 ring-slate-400/30 text-white' : 'bg-white/70 hover:bg-white/90 border-slate-300 text-slate-600 hover:border-slate-400 hover:scale-105'}`
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between w-full"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: `text-[10px]  font-bold ${rackState === 'active' ? 'text-[#D62828]' : rackState === 'reserved' ? 'text-amber-700' : 'text-slate-700'}`
+    }, "RACK"), /*#__PURE__*/React.createElement("div", {
+      className: `w-2.5 h-2.5 rounded-full shadow-sm
+                            ${rackState === 'active' ? 'bg-[#D62828] animate-pulse shadow-[0_0_6px_#D62828]' : rackState === 'reserved' ? 'bg-amber-500' : 'bg-emerald-500 shadow-[0_0_5px_#10b981]'}`
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "text-[8px]  leading-tight mt-1"
+    }, rackState !== 'free' ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+      className: `font-bold truncate text-[9px] ${rackState === 'active' ? 'text-[#D62828]' : 'text-amber-700'}`
+    }, rackBk.teamName.split(' (')[0]), /*#__PURE__*/React.createElement("span", {
+      className: `text-[7px] font-bold px-1.5 py-0.5 rounded block truncate mt-1 
+                                ${rackState === 'active' ? 'bg-[#D62828]/20 text-[#D62828]' : 'bg-amber-500/20 text-amber-800'}`
+    }, rackLbl)) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+      className: "text-emerald-600 font-bold text-[9px] flex items-center gap-1"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"
+    }), " ว่าง"))));
+  })(), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleStaticAreaClick('CAB3'),
+    onMouseEnter: () => setSelectedStaticAreaId('CAB3'),
+    style: {
+      ...ROOM_LAYOUT.CAB3,
+      position: 'absolute'
+    },
+    className: `absolute w-[80px] h-[55px] rounded-lg transition-all duration-300 text-left p-2 border-2 flex flex-col justify-between shadow-sm cursor-pointer select-none z-20 ${selectedStaticAreaId === 'CAB3' ? 'bg-amber-50 border-amber-500 ring-4 ring-amber-100/50' : 'bg-slate-200 hover:bg-slate-100 border-slate-300 text-slate-800'}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between w-full"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px]  font-bold text-slate-700"
+  }, "CAB3"), /*#__PURE__*/React.createElement("span", {
+    className: "w-1.5 h-1.5 rounded-sm bg-slate-500"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[7.5px] text-slate-500  font-extrabold text-center block uppercase w-full"
+  }, "DOC")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleStaticAreaClick('CAB2'),
+    onMouseEnter: () => setSelectedStaticAreaId('CAB2'),
+    style: {
+      ...ROOM_LAYOUT.CAB2,
+      position: 'absolute'
+    },
+    className: `absolute w-[80px] h-[55px] rounded-lg transition-all duration-300 text-left p-2 border-2 flex flex-col justify-between shadow-sm cursor-pointer select-none z-20 ${selectedStaticAreaId === 'CAB2' ? 'bg-amber-50 border-amber-500 ring-4 ring-amber-100/50' : 'bg-slate-200 hover:bg-slate-100 border-slate-300 text-slate-800'}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between w-full"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px]  font-bold text-slate-700"
+  }, "CAB2"), /*#__PURE__*/React.createElement("span", {
+    className: "w-1.5 h-1.5 rounded-sm bg-slate-500"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[7.5px] text-slate-500  font-extrabold text-center block uppercase w-full"
+  }, "RAILWAY")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleStaticAreaClick('CAB1'),
+    onMouseEnter: () => setSelectedStaticAreaId('CAB1'),
+    style: {
+      ...ROOM_LAYOUT.CAB1,
+      position: 'absolute'
+    },
+    className: `absolute w-[80px] h-[55px] rounded-lg transition-all duration-300 text-left p-2 border-2 flex flex-col justify-between shadow-sm cursor-pointer select-none z-20 ${selectedStaticAreaId === 'CAB1' ? 'bg-amber-50 border-amber-500 ring-4 ring-amber-100/50' : 'bg-slate-200 hover:bg-slate-100 border-slate-300 text-slate-800'}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between w-full"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px]  font-bold text-slate-700"
+  }, "CAB1"), /*#__PURE__*/React.createElement("span", {
+    className: "w-1.5 h-1.5 rounded-sm bg-slate-500"
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "text-[7.5px] text-slate-500  font-extrabold text-center block uppercase w-full"
+  }, "PAPER")))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 w-full border-t border-slate-100 pt-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `p-4 rounded-xl border transition-all duration-300 ${selectedStaticArea ? 'bg-amber-500/5 border-amber-200 shadow-xs' : 'bg-slate-50/50 border-slate-100 text-slate-400'}`
+  }, selectedStaticArea ? /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 text-left animate-fade-in-up"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between flex-wrap gap-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `inline-block w-2.5 h-2.5 rounded-sm ${selectedStaticArea.id === 'E' ? 'bg-red-500 animate-pulse' : selectedStaticArea.id === 'Rack' ? 'bg-indigo-600 animate-pulse' : 'bg-amber-500'}`
+  }), /*#__PURE__*/React.createElement("span", {
+    className: " font-black text-xs uppercase tracking-wide text-neutral-800"
+  }, selectedStaticArea.name)), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  bg-amber-500/10 text-amber-700 border border-amber-500/25 px-1.5 py-0.5 rounded font-extrabold uppercase"
+  }, "ตู้อุปกรณ์"), currentUser?.role === 'super_admin' && /*#__PURE__*/React.createElement("button", {
+    onClick: () => openEditArea(selectedStaticArea),
+    className: "flex items-center gap-1 text-[9px]  bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded font-bold transition-all cursor-pointer"
+  }, /*#__PURE__*/React.createElement(PencilIcon, {
+    className: "w-3 h-3"
+  }), " Admin แก้ไข"))), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10.5px] font-sans text-neutral-500 leading-normal"
+  }, selectedStaticArea.info), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-slate-200/50"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[8.5px] font-sans font-bold text-neutral-400 block"
+  }, "🛠️ ผู้รับผิดชอบ:"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] font-sans font-bold text-neutral-700 block bg-white px-2 py-0.5 rounded border border-slate-150 mt-0.5 inline-block"
+  }, selectedStaticArea.responsibleTeam)), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 space-y-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[8.5px] font-sans font-bold text-neutral-400 block"
+  }, "📦 อุปกรณ์ (", (selectedStaticArea.items || []).length, " รายการ):"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 gap-1 max-h-[100px] overflow-y-auto custom-scrollbar"
+  }, (selectedStaticArea.items || []).map((it, idx) => /*#__PURE__*/React.createElement("div", {
+    key: idx,
+    className: "flex items-start gap-1 py-0.5 px-2 rounded bg-white/70 border border-slate-150 text-[10px] text-neutral-600"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-amber-500 mr-1 font-bold shrink-0"
+  }, "•"), /*#__PURE__*/React.createElement("span", null, it))), (selectedStaticArea.items || []).length === 0 && /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-400 italic text-center py-2"
+  }, "ไม่มีรายการอุปกรณ์")))) : /*#__PURE__*/React.createElement("div", {
+    className: "py-4 text-center space-y-1.5 select-none font-sans"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[9px] uppercase  tracking-widest text-slate-500 font-extrabold"
+  }, "ข้อมูลอุปกรณ์"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] text-slate-400 w-full leading-relaxed"
+  }, "คลิกที่", /*#__PURE__*/React.createElement("strong", {
+    className: "text-amber-500"
+  }, "RACK"), " เพื่อจองหรือดูรายละเอียดอุปกณ์ คลิกที่ ", /*#__PURE__*/React.createElement("strong", {
+    className: "text-amber-500"
+  }, "CAB1 CAB2 CAB3"), " เพื่อดูรายละเอียดอุปกรณ์"))))), /*#__PURE__*/React.createElement("div", {
+    className: "lg:col-span-5 flex flex-col gap-6"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative bg-slate-950/80 backdrop-blur-xl text-white rounded-2xl border border-slate-800 p-5 shadow-2xl overflow-hidden space-y-3.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "absolute -top-12 -right-12 w-32 h-32 bg-[#D62828]/10 rounded-full blur-3xl pointer-events-none"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "relative flex items-center justify-between border-b border-slate-800 pb-2 z-10"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: " font-bold text-xs uppercase tracking-wider text-slate-200 flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-block w-2.5 h-2.5 rounded-sm bg-[#D62828] shadow-[0_0_8px_#D62828] animate-pulse"
+  }), /*#__PURE__*/React.createElement("span", null, "วัตถุประสงค์การใช้งาน")), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  bg-slate-900/80 text-slate-400 border border-slate-700 px-2 py-0.5 rounded uppercase"
+  }, formatDateDisplay(selectedDate), " ", currentTimeStr)), /*#__PURE__*/React.createElement("div", {
+    className: "relative space-y-2 max-h-[180px] overflow-y-auto custom-scrollbar pr-1 z-10"
+  }, activeDUTs.length === 0 ? /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-500 text-center py-6"
+  }, "ไม่มีรายการใช้งานขณะนี้") : activeDUTs.map(b => /*#__PURE__*/React.createElement("div", {
+    key: b.id,
+    className: "p-3 rounded-xl bg-white/5 hover:bg-white/10 backdrop-blur-md border border-slate-700/50 transition-all flex flex-col gap-2.5 text-xs"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between pb-1.5 border-b border-slate-700/50"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[9.5px] text-slate-300 truncate"
+  }, /*#__PURE__*/React.createElement("strong", null, b.teamName.split(' (')[0]), " @ Desk ", /*#__PURE__*/React.createElement("span", {
+    className: "bg-[#D62828]/20 px-1 py-0.5 rounded  font-bold text-[#D62828] text-[9px]"
+  }, b.deskId), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 ml-1.5  text-[9px]"
+  }, b.systemName)), /*#__PURE__*/React.createElement("span", {
+    className: "text-[8px] tracking-wide font-extrabold bg-[#D62828]/20 text-[#D62828] border border-[#D62828]/30 px-1.5 py-0.5 rounded uppercase animate-pulse shrink-0"
+  }, "IN USE")), /*#__PURE__*/React.createElement("div", {
+    className: "text-[10.5px] text-slate-200 whitespace-pre-wrap leading-relaxed"
+  }, b.Objective || /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-500 italic"
+  }, "ไม่ระบุวัตถุประสงค์...")))))), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm space-y-3"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-bold text-slate-800 text-sm flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(SearchIcon, {
+    className: "w-4 h-4 text-slate-500"
+  }), /*#__PURE__*/React.createElement("span", null, "ค้นหาประวัติการจอง")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "ชื่อโครงการ, โต๊ะ, ผู้จอง, อุปกรณ์...",
+    value: searchQuery,
+    onChange: e => setSearchQuery(e.target.value),
+    className: "w-full text-sm border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl border border-slate-200/60 p-5 shadow-sm space-y-4 flex-1 flex flex-col"
+  }, /*#__PURE__*/React.createElement("h3", {
+    className: "font-bold text-slate-800 text-sm flex items-center gap-1.5 border-b border-slate-100 pb-2 shrink-0"
+  }, /*#__PURE__*/React.createElement(SparklesIcon, {
+    className: "w-4 h-4 text-emerald-600 animate-pulse"
+  }), /*#__PURE__*/React.createElement("span", null, "ประวัติการจองทั้งหมด"), /*#__PURE__*/React.createElement("span", {
+    className: "ml-auto text-[9px] font-mono text-slate-400 font-normal"
+  }, historyBookings.length, " รายการ")), loading ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center py-12 space-y-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-400 font-mono"
+  }, "กำลังโหลดข้อมูล...")) : historyBookings.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "text-center py-12 text-slate-400"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs italic"
+  }, "ไม่มีประวัติการจองในระบบ")) : /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3 overflow-y-auto custom-scrollbar pr-1 flex-1",
+    style: {
+      maxHeight: '480px'
+    }
+  }, historyBookings.map(bk => {
+    // --- เริ่มโค้ดส่วนที่แก้ไข ---
+    const isCancelled = bk.Status === 'CANCELLED';
+    const isFinished = bk.Status === 'FINISHED';
+    const endD = bk.endDate || bk.date || "";
+    const timeStr = bk.endTime ? String(bk.endTime) : "00:00";
+
+    // 1. แยกชั่วโมง-นาที
+    const timeParts = timeStr.match(/(\d{1,2}):(\d{1,2})/);
+    const hour = timeParts ? parseInt(timeParts[1], 10) : 0;
+    const min = timeParts ? parseInt(timeParts[2], 10) : 0;
+
+    // 2. แยกปี-เดือน-วัน (รองรับทั้ง YYYY-MM-DD และ DD/MM/YYYY)
+    const dateParts = endD.split(/[-/]/);
+    let year = 0,
+      month = 0,
+      day = 0;
+    if (dateParts.length === 3) {
+      if (dateParts[0].length === 4) {
+        year = parseInt(dateParts[0], 10);
+        month = parseInt(dateParts[1], 10) - 1; // JS นับเดือนจาก 0
+        day = parseInt(dateParts[2], 10);
+      } else {
+        day = parseInt(dateParts[0], 10);
+        month = parseInt(dateParts[1], 10) - 1;
+        year = parseInt(dateParts[2], 10);
+      }
+    }
+
+    // 3. คำนวณเวลาและสถานะ
+    const endMs = new Date(year, month, day, hour, min, 0).getTime();
+    const isExpired = endMs > 0 && endMs < Date.now();
+    const isInactive = isCancelled || isFinished || isExpired;
+
+    // ── รูปแบบที่ 1: รายการแบบย่อ (Compact List) สำหรับคิวที่ Inactive ──
+    if (isInactive) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: bk.id,
+        className: "py-3 px-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-between gap-3 text-[10px]"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2 overflow-hidden"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: `font-mono px-1.5 py-0.5 rounded font-bold shrink-0 ${isCancelled ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`
+      }, bk.deskId === 'Rack' ? 'RACK' : `${bk.deskId}`), /*#__PURE__*/React.createElement("div", {
+        className: "truncate"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "font-bold text-slate-600"
+      }, bk.systemName), /*#__PURE__*/React.createElement("span", {
+        className: "text-slate-400 ml-1 truncate"
+      }, "(", bk.teamName, ")"))), /*#__PURE__*/React.createElement("div", {
+        className: "text-right shrink-0 flex items-center gap-2"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "text-slate-400 font-mono text-[9px]"
+      }, formatDateDisplay(bk.date)), /*#__PURE__*/React.createElement("span", {
+        className: `font-bold uppercase text-[8px] tracking-wide w-12 text-right ${isCancelled ? 'text-rose-400' : 'text-slate-400'}`
+      }, isCancelled ? 'ยกเลิก' : isExpired ? 'หมดเวลา' : 'เสร็จสิ้น'))), (bk.Objective || bk.notes) && /*#__PURE__*/React.createElement("div", {
+        className: "mt-1.5 pl-9 text-[9px] text-slate-500 italic truncate"
+      }, bk.Objective || bk.notes));
+    }
+
+    // ── รูปแบบที่ 2: กล่องเต็ม (Full Card) สำหรับคิว Active สไตล์เดิม ──
+    return /*#__PURE__*/React.createElement("div", {
+      key: bk.id,
+      className: "p-3.5 bg-white border border-emerald-200 shadow-sm rounded-xl flex items-start justify-between gap-3 text-xs transition-all relative overflow-hidden"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-1.5 flex-1 overflow-hidden pl-1"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-1.5 flex-wrap"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-mono text-[9px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 text-emerald-800"
+    }, bk.deskId === 'Rack' ? 'RACK' : `DESK ${bk.deskId}`), /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-slate-800 text-[11px] leading-tight"
+    }, bk.systemName)), /*#__PURE__*/React.createElement("div", {
+      className: "text-[10px] text-slate-500 space-y-0.5"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "truncate"
+    }, "จองโดย: ", /*#__PURE__*/React.createElement("strong", {
+      className: "text-slate-600"
+    }, bk.teamName)), /*#__PURE__*/React.createElement("div", {
+      className: "text-[9px] font-mono font-normal text-slate-400 truncate"
+    }, "(", bk.userEmail, ")")), bk.Objective && /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100 mt-1 whitespace-pre-wrap"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-emerald-700 mr-1"
+    }, "วัตถุประสงค์:"), bk.Objective), bk.notes && /*#__PURE__*/React.createElement("p", {
+      className: "text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-100/60 mt-1 whitespace-pre-wrap"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-bold text-amber-800 mr-1"
+    }, "หมายเหตุ:"), bk.notes), bk.equipment && /*#__PURE__*/React.createElement("p", {
+      className: "text-[9px] text-indigo-700 font-mono bg-indigo-50 border border-indigo-100/60 px-1.5 py-0.5 rounded w-fit mt-1"
+    }, bk.equipment, bk.matCode ? ` [${bk.matCode}]` : '')), /*#__PURE__*/React.createElement("div", {
+      className: "text-right space-y-1.5 font-mono text-[9px] shrink-0"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 text-[9px] inline-block leading-tight text-right"
+    }, formatDateDisplay(bk.date), " ", bk.startTime), /*#__PURE__*/React.createElement("div", {
+      className: "flex flex-col gap-1 mt-2"
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => openExtendModal(bk),
+      className: "block w-full text-right text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer font-bold uppercase tracking-wide text-[8px]"
+    }, "[ ต่อเวลา ]"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => handleDeleteBooking(bk.id, bk.userEmail),
+      className: "block w-full text-right text-rose-600 hover:text-rose-700 hover:underline cursor-pointer font-bold uppercase tracking-wide text-[8px]"
+    }, "[ ยกเลิกคิว ]"))));
+  })))))), isModalOpen && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden flex flex-col animate-fade-in-up"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: " font-bold text-slate-800 text-sm flex items-center gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "w-2.5 h-2.5 bg-emerald-500 rounded-sm"
+  }), /*#__PURE__*/React.createElement("span", null, "โต๊ะ #", targetDeskId, " — ", formatDateDisplay(selectedDate))), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-400 mt-0.5"
+  }, targetBooking ? 'ดูรายละเอียดการจอง' : 'สร้างการจองใหม่')), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setIsModalOpen(false),
+    className: "text-slate-400 hover:text-slate-700 font-bold p-1 text-lg leading-none cursor-pointer"
+  }, "✕")), /*#__PURE__*/React.createElement("div", {
+    className: "p-6 overflow-y-auto max-h-[85vh]"
+  }, targetBooking ? /*#__PURE__*/React.createElement("div", {
+    className: "space-y-4 text-xs font-sans"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-rose-50/75 border border-rose-100 rounded-xl p-4 space-y-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[8px]  font-bold uppercase tracking-wider text-rose-600 bg-rose-100/80 px-1.5 py-0.5 rounded border border-rose-200"
+  }, "กำลังใช้งาน"), /*#__PURE__*/React.createElement("h5", {
+    className: " font-bold text-base text-slate-800 mt-2"
+  }, targetBooking.systemName)), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3 pt-2 border-t border-rose-200/40"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 block font-semibold"
+  }, "ผู้จอง"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-700"
+  }, targetBooking.teamName)), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 block font-semibold"
+  }, "อีเมล"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold  text-slate-700 text-[10px] break-all"
+  }, targetBooking.userEmail))), /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-rose-200/40"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 block font-semibold"
+  }, "ช่วงเวลา"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold  text-slate-700 text-[11px]"
+  }, timeRangeLabel(targetBooking))), targetBooking.equipment && /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-rose-200/40"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 block font-semibold"
+  }, "อุปกรณ์ที่ใช้ทดสอบ"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-rose-800 bg-rose-50 px-2 py-1 rounded border border-rose-200/70 block mt-1  text-[10px] w-fit"
+  }, "🔌 ", targetBooking.equipment, targetBooking.matCode ? ` [${targetBooking.matCode}]` : '')), targetBooking.notes && /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-rose-200/40"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 block font-semibold"
+  }, "หมายเหตุ"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-600 italic bg-white p-2.5 border border-slate-100 rounded-lg mt-1 whitespace-pre-wrap"
+  }, targetBooking.notes)), targetBooking.createdAt && /*#__PURE__*/React.createElement("div", {
+    className: "pt-2 border-t border-rose-200/40"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-slate-400 block font-semibold"
+  }, "สร้างเมื่อ"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px]  text-slate-500"
+  }, formatDateTimeDisplay(targetBooking.createdAt)))), /*#__PURE__*/React.createElement("button", {
+    onClick: () => handleDeleteBooking(targetBooking.id, targetBooking.userEmail),
+    className: "w-full text-center py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-rose-600 font-bold transition-all cursor-pointer text-xs"
+  }, "ยกเลิกคิวนี้")) :
+  /*#__PURE__*/
+  /* ── New booking form ── */
+  React.createElement("form", {
+    onSubmit: handleSaveBooking,
+    className: "space-y-4 text-xs"
+  }, modalError && /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 font-semibold flex items-start gap-1.5"
+  }, /*#__PURE__*/React.createElement(AlertTriangleIcon, {
+    className: "w-4 h-4 shrink-0 text-rose-500 mt-0.5"
+  }), /*#__PURE__*/React.createElement("span", null, modalError)), /*#__PURE__*/React.createElement("div", {
+    className: "bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px] text-emerald-800 block font-semibold"
+  }, "เข้าสู่ระบบโดย"), /*#__PURE__*/React.createElement("span", {
+    className: "font-bold text-slate-800 text-xs"
+  }, currentUser?.name)), /*#__PURE__*/React.createElement("span", {
+    className: "text-[9px]  bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded font-bold border border-emerald-300 uppercase"
+  }, currentUser?.team?.split(' / ')[0])), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1"
+  }, "เลือกโครงการที่ต้องการทดสอบ ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("select", {
+    required: bookingProject !== 'OTHER',
+    value: bookingProject,
+    onChange: e => {
+      setBookingProject(e.target.value);
+      if (e.target.value !== 'OTHER') setCustomProject(''); // เคลียร์ค่าที่พิมพ์ค้างไว้ถ้าเปลี่ยนกลับไปเลือกโปรเจกต์ปกติ
+    },
+    className: "w-full text-xs border border-slate-200 rounded-xl px-4 py-2.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "-- เลือกโครงการ --"), (currentUser?.allowedProjects || []).map(p => /*#__PURE__*/React.createElement("option", {
+    key: p,
+    value: p
+  }, p)), /*#__PURE__*/React.createElement("option", {
+    value: "OTHER"
+  }, "➕ โครงการอื่นๆ (ระบุเอง)...")), bookingProject === 'OTHER' && /*#__PURE__*/React.createElement("div", {
+    className: "animate-fade-in-up mt-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    required: true,
+    placeholder: "พิมพ์ชื่อโครงการที่ต้องการ...",
+    value: customProject,
+    onChange: e => setCustomProject(e.target.value),
+    className: "w-full text-xs border border-emerald-300 bg-emerald-50/50 rounded-xl px-4 py-2.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "mb-4"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-medium text-slate-700 mb-1"
+  }, "วัตถุประสงค์การใช้งาน ", /*#__PURE__*/React.createElement("span", {
+    className: "text-red-500"
+  }, "*")), /*#__PURE__*/React.createElement("textarea", {
+    required: true,
+    value: bookingObjective,
+    onChange: e => setBookingObjective(e.target.value),
+    className: "w-full rounded-lg border border-slate-200 p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none",
+    rows: "2",
+    placeholder: "โปรดระบุวัตถุประสงค์การใช้งาน... "
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[9px]  font-bold text-indigo-600 uppercase tracking-wide"
+  }, "🔌 อุปกรณ์ที่ใช้ทดสอบ (DUT)"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: addDeviceRow,
+    className: "text-[9px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold hover:bg-indigo-200 transition-colors"
+  }, "+ เพิ่มอุปกรณ์")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-1"
+  }, bookingDevices.map((dev, idx) => /*#__PURE__*/React.createElement("div", {
+    key: idx,
+    className: "flex items-start gap-2 bg-white p-2 rounded-lg border border-indigo-100/50 relative"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2 flex-1"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "text-[9px] font-bold text-slate-500 block mb-0.5"
+  }, "ชื่ออุปกรณ์ ", idx + 1, " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    required: true,
+    placeholder: "เช่น SCADA PLC...",
+    value: dev.equipment,
+    onChange: e => updateDeviceField(idx, 'equipment', e.target.value),
+    className: "w-full text-[10px] border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "text-[9px] font-bold text-slate-500 block mb-0.5"
+  }, "Mat.Code ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    required: true,
+    placeholder: "เช่น MAT-001...",
+    value: dev.matCode,
+    onChange: e => updateDeviceField(idx, 'matCode', e.target.value),
+    className: "w-full text-[10px]  border border-slate-200 rounded px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+  }))), bookingDevices.length > 1 && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => removeDeviceRow(idx),
+    className: "text-rose-400 hover:text-rose-600 p-1 mt-3"
+  }, "✕"))))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1"
+  }, "เวลาเริ่มต้น ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    required: true,
+    step: "900",
+    value: bookingStartTime,
+    onChange: e => setBookingStartTime(e.target.value),
+    className: "w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700  focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1"
+  }, "เวลาสิ้นสุด ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    required: true,
+    step: "900",
+    value: bookingEndTime,
+    onChange: e => setBookingEndTime(e.target.value),
+    className: "w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700  focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-sky-50/50 border border-sky-100 rounded-xl space-y-2"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[9px]  font-bold text-sky-600 uppercase tracking-wide"
+  }, "📅 จองข้ามวัน (ไม่บังคับ)"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1"
+  }, "วันสิ้นสุด"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    min: selectedDate,
+    value: bookingEndDate,
+    onChange: e => setBookingEndDate(e.target.value),
+    className: "w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700  focus:outline-none focus:ring-2 focus:ring-sky-500/15"
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "text-[9px] text-slate-400 mt-1 font-sans"
+  }, "วันเริ่มต้น: ", /*#__PURE__*/React.createElement("strong", {
+    className: "text-emerald-600"
+  }, formatDateDisplay(selectedDate)), bookingEndDate && bookingEndDate !== selectedDate && /*#__PURE__*/React.createElement(React.Fragment, null, " → วันสิ้นสุด: ", /*#__PURE__*/React.createElement("strong", {
+    className: "text-sky-600"
+  }, formatDateDisplay(bookingEndDate)), " ", /*#__PURE__*/React.createElement("span", {
+    className: "text-amber-500 font-bold"
+  }, "(จองข้ามวัน ✚)")), (!bookingEndDate || bookingEndDate === selectedDate) && /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, " (จองวันเดียว)")))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1"
+  }, "หมายเหตุ (ไม่บังคับ)"), /*#__PURE__*/React.createElement("textarea", {
+    placeholder: "พารามิเตอร์ทดสอบ, อุณหภูมิ, การตั้งค่าพิเศษ...",
+    value: bookingNotes,
+    rows: 2,
+    onChange: e => setBookingNotes(e.target.value),
+    className: "w-full text-xs border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/15"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 justify-end pt-3 border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setIsModalOpen(false),
+    className: "px-4 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 cursor-pointer text-xs"
+  }, "ยกเลิก"), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    disabled: submitting,
+    className: "px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl disabled:opacity-50 cursor-pointer shadow-md shadow-emerald-600/10 text-xs"
+  }, submitting ? 'กำลังบันทึก...' : 'ยืนยันจองคิว')))))), isEditingArea && editAreaForm && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl shadow-2xl border border-amber-200/50 max-w-lg w-full overflow-hidden animate-fade-in-up"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-6 py-4 border-b border-amber-100 bg-amber-50 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+    className: " font-bold text-amber-900 text-sm flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(PencilIcon, {
+    className: "w-4 h-4 text-amber-600"
+  }), "แก้ไขตู้อุปกรณ์: ", /*#__PURE__*/React.createElement("span", {
+    className: "text-indigo-700"
+  }, editAreaForm.name)), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-amber-700 mt-0.5"
+  }, "🔐 สิทธิ์ Super Admin เท่านั้น — การเปลี่ยนแปลงจะบันทึกลง Google Sheets")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setIsEditingArea(false),
+    className: "text-amber-500 hover:text-amber-800 cursor-pointer p-1"
+  }, /*#__PURE__*/React.createElement(XIcon, {
+    className: "w-5 h-5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "p-6 overflow-y-auto max-h-[80vh] space-y-5 text-xs"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1.5"
+  }, "🛠️ ผู้รับผิดชอบ ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    required: true,
+    value: editAreaForm.responsibleTeam,
+    onChange: e => setEditAreaForm(p => ({
+      ...p,
+      responsibleTeam: e.target.value
+    })),
+    className: "w-full border border-slate-200 rounded-xl px-4 py-2.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-sans text-xs"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block mb-1.5"
+  }, "📋 คำอธิบาย"), /*#__PURE__*/React.createElement("textarea", {
+    value: editAreaForm.info,
+    rows: 2,
+    onChange: e => setEditAreaForm(p => ({
+      ...p,
+      info: e.target.value
+    })),
+    className: "w-full border border-slate-200 rounded-xl px-4 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 text-xs"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-2"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "font-bold text-slate-700 block"
+  }, "📦 รายการอุปกรณ์ (", editAreaForm.items.length, " รายการ)"), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-1.5 max-h-[200px] overflow-y-auto custom-scrollbar pr-1"
+  }, editAreaForm.items.map((item, idx) => /*#__PURE__*/React.createElement("div", {
+    key: idx,
+    className: "flex items-center gap-2 p-2 bg-slate-50 border border-slate-100 rounded-lg"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex-1 text-slate-600 text-[11px]"
+  }, item), /*#__PURE__*/React.createElement("button", {
+    onClick: () => removeAreaItem(idx),
+    className: "text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded p-0.5 cursor-pointer transition-colors shrink-0"
+  }, /*#__PURE__*/React.createElement(XIcon, {
+    className: "w-3.5 h-3.5"
+  })))), editAreaForm.items.length === 0 && /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-slate-400 italic text-center py-3"
+  }, "ไม่มีรายการอุปกรณ์ — เพิ่มด้านล่าง")), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 pt-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "ชื่ออุปกรณ์ใหม่...",
+    value: newItemInput,
+    onChange: e => setNewItemInput(e.target.value),
+    onKeyDown: e => e.key === 'Enter' && (e.preventDefault(), addAreaItem()),
+    className: "flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20 font-sans"
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: addAreaItem,
+    className: "px-3 py-2 bg-amber-500 hover:bg-amber-400 text-white rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 transition-all shrink-0"
+  }, /*#__PURE__*/React.createElement(PlusIcon, {
+    className: "w-3.5 h-3.5"
+  }), " เพิ่ม"))), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 pt-3 border-t border-slate-100"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setIsEditingArea(false),
+    className: "px-4 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 cursor-pointer text-xs"
+  }, "ยกเลิก"), /*#__PURE__*/React.createElement("button", {
+    onClick: saveAreaEdit,
+    disabled: savingArea,
+    className: "flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer shadow-md transition-all"
+  }, savingArea ? 'กำลังบันทึก...' : '💾 บันทึกการเปลี่ยนแปลง'))))), isExtendModalOpen && extendTargetBooking && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-fade-in border border-slate-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-emerald-600 p-4 text-white"
+  }, /*#__PURE__*/React.createElement("h2", {
+    className: " font-bold text-lg flex items-center gap-2"
+  }, "⏱️ ต่อเวลาการใช้งาน"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] text-emerald-100 mt-1"
+  }, "ระบุวันที่และเวลาสิ้นสุดใหม่ สำหรับโต๊ะ ", extendTargetBooking.deskId)), /*#__PURE__*/React.createElement("form", {
+    onSubmit: handleExtendSubmit,
+    className: "p-5 space-y-4"
+  }, extendError && /*#__PURE__*/React.createElement("div", {
+    className: "p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl"
+  }, extendError), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "space-y-1.5"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-[10px] font-bold text-slate-500 uppercase tracking-wider block"
+  }, "วันที่สิ้นสุด (ใหม่)"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    required: true,
+    value: extendEndDate,
+    min: extendTargetBooking.date,
+    onChange: e => setExtendEndDate(e.target.value),
+    className: "w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-1.5"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-[10px] font-bold text-slate-500 uppercase tracking-wider block"
+  }, "เวลาสิ้นสุด (ใหม่)"), /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    required: true,
+    value: extendEndTime,
+    onChange: e => setExtendEndTime(e.target.value),
+    className: "w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-1.5 pt-1"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-[10px] font-bold text-slate-500 uppercase tracking-wider block"
+  }, "เหตุผล / วัตถุประสงค์ในการต่อเวลา ", /*#__PURE__*/React.createElement("span", {
+    className: "text-rose-500"
+  }, "*")), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    required: true,
+    value: extendReason,
+    onChange: e => setExtendReason(e.target.value),
+    placeholder: "เช่น รันทดสอบยังไม่จบ, เก็บ Log เพิ่ม...",
+    className: "w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 pt-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setIsExtendModalOpen(false),
+    className: "px-4 py-2 border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50 text-sm font-bold flex-1 transition-all"
+  }, "ยกเลิก"), /*#__PURE__*/React.createElement("button", {
+    type: "submit",
+    disabled: extendSubmitting,
+    className: "px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 flex-1 shadow-md shadow-emerald-500/20 transition-all flex justify-center items-center"
+  }, extendSubmitting ? /*#__PURE__*/React.createElement("div", {
+    className: "w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+  }) : 'บันทึกเวลาใหม่'))))), /*#__PURE__*/React.createElement("footer", {
+    className: "bg-slate-900 border-t border-slate-800 text-center py-8 text-[11px] text-slate-400 mt-12"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: " font-medium text-slate-300"
+  }, "OMA LAB ROOM by Parichat Sumrit")));
 }
-
 const root = ReactDOM.createRoot(document.getElementById('app-root'));
-root.render(<App />);
+root.render(/*#__PURE__*/React.createElement(App, null));
+
 </script>
 </body>
 </html>

@@ -10,6 +10,10 @@
 var PORTAL_MENU_ID = 'sec-labroom-dash';
 var PORTAL_ENFORCE = false;
 
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
 function doGet(e) {
   // =========================
   // 1. ถ้ามี action = ลิงก์จากอีเมล (ผู้รับไม่มี portal session เลย จึงตรวจด้วย
