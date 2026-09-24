@@ -25,18 +25,90 @@
 const PORTAL_HUB_ID = "1IZ0p4nQmN3J34BoacZnR7cZRqtsp2h2xjDJk77AZVNA";
 
 const SHEETS = {
-  USERS:    'Sheet_Users',
-  ROLES:    'Sheet_Roles',
-  PROJECTS: 'Sheet_Projects',
-  SESSIONS: 'Sheet_Sessions',
-  LOG:      'Sheet_Log'
+  USERS:     'Sheet_Users',
+  ROLES:     'Sheet_Roles',
+  PROJECTS:  'Sheet_Projects',
+  SESSIONS:  'Sheet_Sessions',
+  LOG:       'Sheet_Log',
+  PDPA:      'Sheet_PDPA',      // ความยินยอม PDPA — ใช้ร่วมกันทุกแอปลูก (ไม่ต้องมีของตัวเองอีกต่อไป)
+  APP_PAGES: 'Sheet_AppPages',  // สิทธิ์ระดับ "หน้าในแอปลูก" ต่อ role (ละเอียดกว่าระดับเมนู) — ดู APP_PAGE_DEFS
+  PREFS:     'Sheet_Prefs'      // ธีมสี/โหมดมืด-สว่าง/ภาษา — ตั้งครั้งเดียวที่ Hub ใช้ได้กับทุกแอปลูก
 };
 
-const USER_HEADERS    = ['email','password','allowedMenus','firstLogin','role','projects','name','active'];
-const ROLE_HEADERS    = ['role','label','menus','projectScope','active','sections'];
-const PROJECT_HEADERS = ['code','name','active'];
-const SESSION_HEADERS = ['token','email','role','projects','exp'];
-const LOG_HEADERS     = ['time','email','action','detail'];
+const USER_HEADERS     = ['email','password','allowedMenus','firstLogin','role','projects','name','active'];
+const ROLE_HEADERS     = ['role','label','menus','projectScope','active'];
+const PROJECT_HEADERS  = ['code','name','active'];
+const SESSION_HEADERS  = ['token','email','role','projects','exp'];
+const LOG_HEADERS      = ['time','email','action','detail'];
+const PDPA_HEADERS     = ['email','version','acceptedAt','ip'];
+const APP_PAGES_HEADERS = ['appId','role','pages'];
+const PREFS_HEADERS = ['email','colorTheme','darkMode','lang','updatedAt'];
+
+/* ค่าเริ่มต้นของทุกคนที่ยังไม่เคยตั้งเอง — ต้องตรงกับค่า default ฝั่ง Portal.html/แอปลูกทุกตัว
+   (สีแดง, โหมดสว่าง, ภาษาไทย) เผื่อในอนาคตอยากเปลี่ยนค่าเริ่มต้นทั้งระบบ แก้ที่นี่ที่เดียวพอ */
+const DEFAULT_PREFS = { colorTheme: 'red', darkMode: 'false', lang: 'th' };
+
+/* ชุดสีธีมที่เลือกได้ (5 สี) — ต้องตรงกับ hex ที่ใช้ใน Portal.html และ MA-Web ทุกตัวอักษร
+   เพื่อให้หน้าตาเหมือนกันทุกแอปเป๊ะๆ เวลาเปลี่ยนสี ไม่ใช่แค่คนละเฉดใกล้เคียงกัน */
+const COLOR_THEMES = {
+  red:    { accent: '#D5443A', deep: '#B23129', wash: '#FCE9E7' },
+  orange: { accent: '#EE7C16', deep: '#C9620B', wash: '#FCEEDF' },
+  blue:   { accent: '#1F4FD8', deep: '#1638A6', wash: '#EAF0FF' },
+  green:  { accent: '#1B9E64', deep: '#147A4C', wash: '#E6F7EF' },
+  purple: { accent: '#7C4FE0', deep: '#5F35B8', wash: '#F1EBFC' }
+};
+
+const PDPA_VERSION = '1.0'; // เพิ่มเลขเวอร์ชันเมื่อแก้นโยบายที่ต้องให้ user ยอมรับใหม่ (เดิมอยู่ใน MA-Web ย้ายมารวมที่นี่)
+
+/* ================================================================
+   APP PAGE DEFS — สิทธิ์ระดับ "หน้าในแอปลูก" ต่อ role ของ Hub
+   ================================================================
+   บาง child-app (เช่น MA-Web) มีหน้าในแอปละเอียดกว่าระดับเมนูของ Hub
+   ผูก appId = menuId ของแอปนั้นใน MASTER_MENUS เพื่อไม่ต้องมีคีย์คู่ขนาน
+   allPages = หน้าทั้งหมดที่แอปนั้นมี, defaultPages = ค่าเริ่มต้นต่อ role ของ Hub
+   (admin ได้ทุกหน้าเสมอ ไม่ต้องระบุ) — admin ปรับ override ได้ที่หน้า "ตั้งค่าสิทธิ์"
+   ซึ่งจะถูกบันทึกลง Sheet_AppPages (ทับค่า default ตรงนี้เฉพาะ role/appId ที่ตั้งไว้) */
+/* ค่าเริ่มต้น: ทุก role (ยกเว้น admin ที่ได้ทุกหน้าเสมออยู่แล้ว) เห็น "ทุกหน้า" ของแอป
+   จนกว่า admin จะเข้าไปจำกัดเองที่แท็บ "สิทธิ์ในแอปลูก (ละเอียด)" — กันไม่ให้ผู้ใช้จริง
+   ถูกล็อกออกจากหน้าที่เคยเห็นอยู่แล้วโดยไม่ตั้งใจตอนเปิดใช้ฟีเจอร์นี้ครั้งแรก */
+function _allPagesDefault_(pages) {
+  const d = {};
+  ['manager', 'head', 'engineer', 'viewer'].forEach(role => { d[role] = pages.slice(); });
+  return d;
+}
+const APP_PAGE_DEFS = {
+  'sec-assets-dash': {
+    allPages: ['dashboard', 'tree', 'warranty', 'gantt', 'service'],
+    defaultPages: _allPagesDefault_(['dashboard', 'tree', 'warranty', 'gantt', 'service'])
+  },
+  'sec-wbs-dash': {
+    allPages: ['dashboard', 'update'],
+    defaultPages: _allPagesDefault_(['dashboard', 'update'])
+  },
+  'sec-vehicles-dash': {
+    allPages: ['dashboard', 'fleet', 'bookings', 'return', 'maintenance', 'reports', 'settings',
+               'settings:vehicles', 'settings:users', 'settings:projects', 'settings:settings'],
+    defaultPages: _allPagesDefault_(['dashboard', 'fleet', 'bookings', 'return', 'maintenance', 'reports', 'settings',
+               'settings:vehicles', 'settings:users', 'settings:projects', 'settings:settings'])
+  },
+  'sec-finance-dash': {
+    allPages: ['billing', 'bond', 'action', 'closed'],
+    defaultPages: _allPagesDefault_(['billing', 'bond', 'action', 'closed'])
+  },
+  'sec-projects-dash': {
+    allPages: ['overview', 'frontlog', 'action', 'closure', 'trends'],
+    defaultPages: _allPagesDefault_(['overview', 'frontlog', 'action', 'closure', 'trends'])
+  },
+  'sec-employee-dash': {
+    allPages: ['ov', 'org', 'dir', 'ins', 'tb'],
+    defaultPages: _allPagesDefault_(['ov', 'org', 'dir', 'ins', 'tb'])
+  },
+  'sec-kpi-dash': {
+    allPages: ['ov', 'dept', 'proj', 'entry'],
+    defaultPages: _allPagesDefault_(['ov', 'dept', 'proj', 'entry'])
+  }
+  // Solar และ Lab Room ไม่มีแถบ/หน้าย่อยที่คุมแยกได้จริง จึงไม่ต้องมี entry ที่นี่
+};
 
 const TOKEN_TTL   = 8 * 60 * 60 * 1000;   // อายุ session 8 ชั่วโมง
 const PW_SALT     = 'OMA_PORTAL_2024';
@@ -75,75 +147,15 @@ const MASTER_MENUS = [
   { id: 'sec-settings',      label: 'ตั้งค่าสิทธิ์',           icon: 'bi-shield-lock',             isIframe: false, scoped: false, adminOnly: true }
 ];
 
-/* เมนูย่อย (แถบ/แท็บ) ภายในแต่ละแอปลูก — เฉพาะแอปที่มีแถบย่อยจริงและคุ้มที่จะคุมละเอียด
-   ขนาดนี้ (ดูผลสำรวจ: Solar/LabRoom ไม่มีแถบย่อยให้คุม, ที่เหลือทำเพิ่มได้ทีหลังโดย
-   เติม key ใหม่ที่นี่ตัวเดียว ไม่ต้องแก้ที่อื่นในไฟล์นี้)
-   ไม่มี key ของเมนูไหนอยู่ในนี้ = แอปนั้นไม่ถูกจำกัดแถบย่อยเลย (ทุกคนเห็นทุกแถบ) */
-const MASTER_SECTIONS = {
-  'sec-assets-dash': [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'tree',      label: 'Asset Structure' },
-    { id: 'warranty',  label: 'Warranty Tracker' },
-    { id: 'gantt',     label: 'Warranty Gantt' },
-    { id: 'service',   label: 'Service Agreement' }
-  ],
-  'sec-wbs-dash': [
-    { id: 'dashboard', label: 'Overview (Current Status)' },
-    { id: 'update',    label: 'Update %Actual' }
-  ],
-  'sec-vehicles-dash': [
-    { id: 'dashboard',         label: 'Dashboard' },
-    { id: 'fleet',             label: 'Fleet' },
-    { id: 'bookings',          label: 'Bookings' },
-    { id: 'return',            label: 'Return' },
-    { id: 'maintenance',       label: 'Maintenance' },
-    { id: 'reports',           label: 'Reports' },
-    { id: 'settings',          label: 'Settings' },
-    { id: 'settings:vehicles', label: 'Settings › Vehicles',        parent: 'settings' },
-    { id: 'settings:users',    label: 'Settings › Users',           parent: 'settings' },
-    { id: 'settings:projects', label: 'Settings › Projects',        parent: 'settings' },
-    { id: 'settings:settings', label: 'Settings › System Settings', parent: 'settings' }
-  ],
-  'sec-finance-dash': [
-    { id: 'billing', label: 'Billing & Collection' },
-    { id: 'bond',    label: 'Bond & Retention' },
-    { id: 'action',  label: 'Action Center' },
-    { id: 'closed',  label: 'History' }
-  ],
-  'sec-projects-dash': [
-    { id: 'overview', label: 'Overview' },
-    { id: 'frontlog', label: 'Frontlog' },
-    { id: 'action',   label: 'Action Center' },
-    { id: 'closure',  label: 'Closure Tracking' },
-    { id: 'trends',   label: 'History' }
-  ],
-  'sec-employee-dash': [
-    { id: 'ov',  label: 'Overview' },
-    { id: 'org', label: 'Team Structure' },
-    { id: 'dir', label: 'Employee Directory' },
-    { id: 'ins', label: 'Workforce Analysis' },
-    { id: 'tb',  label: 'All Employees' }
-  ],
-  'sec-kpi-dash': [
-    { id: 'ov',    label: 'Overview' },
-    { id: 'dept',  label: 'KPI Detail' },
-    { id: 'proj',  label: 'Projects' },
-    { id: 'entry', label: 'Data Entry' }
-  ]
-};
-
 /* ค่าเริ่มต้นของแต่ละ role — แก้ได้ภายหลังจากหน้า "ตั้งค่าสิทธิ์"
    menus: 'All' = ทุกหน้า | 'AllExceptSettings' = ทุกหน้ายกเว้นหน้าตั้งค่า | รายการ id คั่นด้วย ,
-   projectScope: 'all' = ทุกโครงการ | 'own' = เฉพาะโครงการที่ผูกไว้กับผู้ใช้
-   sections: JSON string {menuId: [sectionId,...]} — ไม่ใส่ key ของเมนูไหน = เมนูนั้น
-   ไม่ถูกจำกัดแถบย่อย (ค่าเริ่มต้นตอนเพิ่งเปิดใช้ฟีเจอร์นี้: ไม่มีใครถูกจำกัดจนกว่า
-   admin จะตั้งค่าเอง — กันไม่ให้ใครถูกล็อกออกจากแถบที่เคยเห็นอยู่แล้วโดยไม่ตั้งใจ) */
+   projectScope: 'all' = ทุกโครงการ | 'own' = เฉพาะโครงการที่ผูกไว้กับผู้ใช้ */
 const DEFAULT_ROLES = [
-  { role: 'admin',    label: 'Admin (ผู้ดูแลระบบ)',       menus: 'All',               projectScope: 'all', active: 'true', sections: '' },
-  { role: 'manager',  label: 'Manager (ผู้บริหาร)',        menus: 'AllExceptSettings', projectScope: 'all', active: 'true', sections: '' },
-  { role: 'head',     label: 'หัวหน้าโครงการ',              menus: 'sec-projects-dash,sec-finance-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash,sec-kpi-dash', projectScope: 'own', active: 'true', sections: '' },
-  { role: 'engineer', label: 'Engineer / Tech',           menus: 'sec-projects-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash',                                projectScope: 'own', active: 'true', sections: '' },
-  { role: 'viewer',   label: 'Viewer (ดูอย่างเดียว)',       menus: 'sec-projects-dash,sec-wbs-dash',                                                              projectScope: 'own', active: 'true', sections: '' }
+  { role: 'admin',    label: 'Admin (ผู้ดูแลระบบ)',       menus: 'All',               projectScope: 'all', active: 'true' },
+  { role: 'manager',  label: 'Manager (ผู้บริหาร)',        menus: 'AllExceptSettings', projectScope: 'all', active: 'true' },
+  { role: 'head',     label: 'หัวหน้าโครงการ',              menus: 'sec-projects-dash,sec-finance-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash,sec-kpi-dash', projectScope: 'own', active: 'true' },
+  { role: 'engineer', label: 'Engineer / Tech',           menus: 'sec-projects-dash,sec-solar-dash,sec-wbs-dash,sec-assets-dash',                                projectScope: 'own', active: 'true' },
+  { role: 'viewer',   label: 'Viewer (ดูอย่างเดียว)',       menus: 'sec-projects-dash,sec-wbs-dash',                                                              projectScope: 'own', active: 'true' }
 ];
 
 /* ================================================================
@@ -190,12 +202,19 @@ function route(action, data) {
     case 'changePassword': return apiChangePassword(data);
     case 'ping':           return { success: true, message: 'Portal auth service is ready.' };
 
+    // --- ต้อง login แล้ว (session ใช้ได้) แต่ไม่ต้องเป็น admin — ใช้ได้กับทุกแอปลูก ---
+    case 'getPdpaStatus': return guardSession(data, apiGetPdpaStatus);
+    case 'acceptPdpa':    return guardSession(data, apiAcceptPdpa);
+    case 'getPrefs':      return guardSession(data, apiGetPrefs);
+    case 'savePrefs':     return guardSession(data, apiSavePrefs);
+
     // --- เฉพาะ admin (หน้าตั้งค่าสิทธิ์) ---
     case 'getSettings':  return guardAdmin(data, apiGetSettings);
     case 'saveUser':     return guardAdmin(data, apiSaveUser);
     case 'deleteUser':   return guardAdmin(data, apiDeleteUser);
     case 'saveRoles':    return guardAdmin(data, apiSaveRoles);
     case 'saveProjects': return guardAdmin(data, apiSaveProjects);
+    case 'saveAppPages': return guardAdmin(data, apiSaveAppPages);
 
     default:
       return { success: false, message: 'ไม่รู้จัก action: ' + action };
@@ -296,21 +315,25 @@ function apiVerify(data) {
       isAdmin:      access.role === 'admin',
       menus:        access.menus,
       menuIds:      access.menus.map(m => m.id),
-      projectList:  listVisibleProjects(access),
-      sections:     access.sections
+      projectList:  listVisibleProjects(access)
     };
     try { cache.put(cacheKey, JSON.stringify(result), VERIFY_CACHE_TTL); } catch (e) { /* cache ล้มเหลวไม่ควรทำให้ verify ล่ม */ }
   }
 
   if (data.menuId) {
-    // ไม่มี key ของเมนูนี้ใน sections = ไม่ถูกจำกัดแถบย่อยเลย → ส่ง null (แอปลูกอ่านว่า "ทุกแถบ")
-    const restricted = result.sections && Object.prototype.hasOwnProperty.call(result.sections, data.menuId)
-      ? result.sections[data.menuId] : null;
-    result = Object.assign({}, result, {
-      menuAllowed: result.menuIds.indexOf(data.menuId) !== -1,
-      allowedSections: restricted
-    });
+    result = Object.assign({}, result, { menuAllowed: result.menuIds.indexOf(data.menuId) !== -1 });
   }
+
+  // แอปลูกที่มีสิทธิ์ระดับ "หน้าในแอป" ของตัวเอง (ดู APP_PAGE_DEFS) ส่ง appId มาด้วย
+  // (ปกติจะส่งเป็นค่าเดียวกับ menuId ของตัวเอง) จะได้ appPages กลับมาในคำขอเดียวกันเลย
+  const appId = data.appId || data.menuId;
+  if (appId && APP_PAGE_DEFS[appId]) {
+    result = Object.assign({}, result, { appPages: resolveAppPages(appId, result.role) });
+  }
+
+  // ธีมสี/โหมดมืด-สว่าง/ภาษา — ส่งไปพร้อมกันเลย ไม่ต้องให้แอปลูกยิงถามแยกอีกรอบ
+  result = Object.assign({}, result, { prefs: getUserPrefs(result.email) });
+
   return result;
 }
 
@@ -363,44 +386,13 @@ function resolveAccess(user) {
   const projectScope = roleCfg.projectScope === 'all' ? 'all' : 'own';
   const projects     = splitList(user.projects);
 
-  // 3) สิทธิ์ระดับแถบย่อยในแต่ละแอป (ไม่มี key ของเมนูไหน = เมนูนั้นไม่ถูกจำกัด)
-  const sections = role === 'admin' ? {} : parseSectionsSpec(roleCfg.sections);
-
   return {
     role: role,
     roleLabel: roleCfg.label || role,
     menus: menus,
     projectScope: projectScope,
-    projects: projectScope === 'all' ? [] : projects,
-    sections: sections
+    projects: projectScope === 'all' ? [] : projects
   };
-}
-
-/* แปลง JSON string ('{"sec-assets-dash":["dashboard","warranty"]}') เป็น object
-   คืน {} เสมอถ้าพัง/ว่าง — ไม่ใช่ error เพราะ "ไม่มี key" แปลว่า "ไม่ถูกจำกัด" อยู่แล้ว */
-function parseSectionsSpec(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return {};
-  try {
-    const obj = JSON.parse(s);
-    return (obj && typeof obj === 'object') ? obj : {};
-  } catch (e) { return {}; }
-}
-
-/* ตรวจข้อมูลที่หน้าตั้งค่าส่งมาก่อนเก็บลงชีต: ตัด id ที่ไม่รู้จักทิ้ง, และถ้า role
-   เลือกครบทุกแถบของเมนูนั้น (=ไม่ได้ตัดอะไรออกเลย) ให้ไม่เก็บ key นั้น (เท่ากับ
-   "ไม่ถูกจำกัด" — สถานะเดียวกับตอนยังไม่เคยตั้งค่าเลย) คืนเป็น JSON string เก็บลงชีต */
-function sanitizeSectionAccess(input) {
-  const src = (input && typeof input === 'object') ? input : {};
-  const out = {};
-  Object.keys(MASTER_SECTIONS).forEach(menuId => {
-    if (!Object.prototype.hasOwnProperty.call(src, menuId)) return; // ไม่ส่งมา = ไม่ถูกจำกัด
-    const validIds = MASTER_SECTIONS[menuId].map(s => s.id);
-    const chosen = (Array.isArray(src[menuId]) ? src[menuId] : []).filter(id => validIds.indexOf(id) !== -1);
-    if (chosen.length === validIds.length) return; // เลือกครบทุกแถบ = ไม่ถูกจำกัด ไม่ต้องเก็บ
-    out[menuId] = chosen;
-  });
-  return Object.keys(out).length ? JSON.stringify(out) : '';
 }
 
 function expandMenuSpec(spec) {
@@ -420,13 +412,12 @@ function getRoleConfig(role) {
       role: role,
       label: rec.label || role,
       menus: rec.menus || '',
-      projectScope: String(rec.projectScope || 'own').toLowerCase(),
-      sections: rec.sections || ''
+      projectScope: String(rec.projectScope || 'own').toLowerCase()
     };
   }
   const def = DEFAULT_ROLES.find(r => r.role === role);
-  return def ? { role: role, label: def.label, menus: def.menus, projectScope: def.projectScope, sections: def.sections || '' }
-             : { role: role, label: role, menus: '', projectScope: 'own', sections: '' };
+  return def ? { role: role, label: def.label, menus: def.menus, projectScope: def.projectScope }
+             : { role: role, label: role, menus: '', projectScope: 'own' };
 }
 
 /* รายชื่อโครงการที่ผู้ใช้คนนี้เห็นได้ — admin/manager เห็นทุกโครงการ, ที่เหลือเห็นเฉพาะของตัวเอง */
@@ -512,6 +503,20 @@ function guardAdmin(data, fn) {
   return fn(data, { email: user.email, role: 'admin' });
 }
 
+/* เหมือน guardAdmin แต่ผ่านให้ทุก role ที่ login อยู่ — ใช้กับ action ที่ทุกคนเรียกได้
+   เช่น PDPA (ทุกคนต้องยอมรับ/เช็คสถานะของตัวเองได้ ไม่ใช่แค่ admin) */
+function guardSession(data, fn) {
+  const session = getSession(data.token);
+  if (!session) return { success: false, code: 'INVALID_TOKEN', message: 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่' };
+
+  const user = findUser(session.email);
+  if (!user || String(user.active).toLowerCase() === 'false') {
+    apiLogout(data);
+    return { success: false, code: 'INVALID_TOKEN', message: 'บัญชีนี้ใช้งานไม่ได้แล้ว กรุณาเข้าสู่ระบบใหม่' };
+  }
+  return fn(data, { email: user.email, role: String(user.role || 'viewer').toLowerCase() });
+}
+
 function apiGetSettings() {
   ensureSetup();
   const users = readObjects(SHEETS.USERS, USER_HEADERS).map(u => ({
@@ -530,13 +535,21 @@ function apiGetSettings() {
     menus:        String(r.menus || ''),
     menuIds:      expandMenuSpec(r.menus).map(m => m.id),
     projectScope: String(r.projectScope || 'own').toLowerCase(),
-    active:       String(r.active).toLowerCase() !== 'false',
-    sectionAccess: parseSectionsSpec(r.sections)
+    active:       String(r.active).toLowerCase() !== 'false'
   }));
 
   const projects = readObjects(SHEETS.PROJECTS, PROJECT_HEADERS)
     .filter(p => p.code)
     .map(p => ({ code: String(p.code).trim(), name: p.name || p.code, active: String(p.active).toLowerCase() !== 'false' }));
+
+  // สิทธิ์ระดับ "หน้าในแอปลูก" (เช่น MA-Web) — ให้หน้าตั้งค่าสิทธิ์แก้ไขได้ในที่เดียวกัน
+  const appPages = {};
+  Object.keys(APP_PAGE_DEFS).forEach(appId => {
+    const def = APP_PAGE_DEFS[appId];
+    const current = {};
+    Object.keys(def.defaultPages).forEach(role => { current[role] = resolveAppPages(appId, role); });
+    appPages[appId] = { allPages: def.allPages, perRole: current };
+  });
 
   return {
     success: true,
@@ -544,7 +557,7 @@ function apiGetSettings() {
     roles: roles,
     projects: projects,
     menus: MASTER_MENUS.map(m => ({ id: m.id, label: m.label, icon: m.icon, adminOnly: !!m.adminOnly, scoped: !!m.scoped })),
-    sections: MASTER_SECTIONS
+    appPages: appPages
   };
 }
 
@@ -622,14 +635,13 @@ function apiSaveRoles(data, session) {
 
   const values = roles.map(r => {
     const role  = String(r.role).toLowerCase().trim();
-    // admin ถูกล็อกไว้ที่ All + ทุกโครงการ + ทุกแถบย่อยเสมอ กันแอดมินเผลอตัดสิทธิ์ตัวเองจนเข้าหน้าตั้งค่าไม่ได้
-    if (role === 'admin') return ['admin', r.label || 'Admin (ผู้ดูแลระบบ)', 'All', 'all', 'true', ''];
+    // admin ถูกล็อกไว้ที่ All + ทุกโครงการเสมอ กันแอดมินเผลอตัดสิทธิ์ตัวเองจนเข้าหน้าตั้งค่าไม่ได้
+    if (role === 'admin') return ['admin', r.label || 'Admin (ผู้ดูแลระบบ)', 'All', 'all', 'true'];
     let menus = Array.isArray(r.menuIds) ? r.menuIds.filter(id => {
       const m = MASTER_MENUS.find(x => x.id === id);
       return m && !m.adminOnly;              // role อื่นใส่หน้าตั้งค่าไม่ได้
     }).join(',') : String(r.menus || '');
-    const sections = sanitizeSectionAccess(r.sectionAccess);
-    return [role, r.label || role, menus, String(r.projectScope || 'own').toLowerCase() === 'all' ? 'all' : 'own', r.active === false ? 'false' : 'true', sections];
+    return [role, r.label || role, menus, String(r.projectScope || 'own').toLowerCase() === 'all' ? 'all' : 'own', r.active === false ? 'false' : 'true'];
   });
   sh.getRange(2, 1, values.length, ROLE_HEADERS.length).setValues(values);
 
@@ -654,6 +666,105 @@ function apiSaveProjects(data, session) {
 }
 
 /* ================================================================
+   APP PAGES — สิทธิ์ระดับ "หน้าในแอปลูก" (ดูคำอธิบายที่ APP_PAGE_DEFS ด้านบน)
+   ================================================================ */
+function resolveAppPages(appId, role) {
+  const def = APP_PAGE_DEFS[appId];
+  if (!def) return [];
+  if (role === 'admin') return def.allPages.slice();
+
+  const rows = cachedReadObjects('appPages|' + appId, SHEETS.APP_PAGES, APP_PAGES_HEADERS);
+  const rec  = rows.find(r => String(r.appId) === appId && String(r.role).toLowerCase() === role);
+  if (rec && rec.pages) return splitList(rec.pages).filter(p => def.allPages.indexOf(p) !== -1);
+
+  return (def.defaultPages[role] || []).slice();
+}
+
+function apiSaveAppPages(data, session) {
+  const appId = String(data.appId || '');
+  const def   = APP_PAGE_DEFS[appId];
+  if (!def) return { success: false, message: 'ไม่รู้จักแอป: ' + appId };
+
+  const perms = data.perms || {}; // { role: [pageId, ...] }
+  const sh    = sheet(SHEETS.APP_PAGES, APP_PAGES_HEADERS);
+  const rows  = sh.getDataRange().getValues();
+  // ลบแถวเดิมของ appId นี้ทั้งหมดก่อน แล้วเขียนใหม่ทั้งชุด (เหมือน apiSaveRoles)
+  for (let i = rows.length - 1; i >= 1; i--) {
+    if (String(rows[i][0]) === appId) sh.deleteRow(i + 1);
+  }
+  Object.keys(perms).forEach(role => {
+    const roleKey = String(role).toLowerCase().trim();
+    if (roleKey === 'admin') return; // admin ได้ทุกหน้าเสมอ ไม่ต้องเก็บ override
+    const pages = Array.isArray(perms[role]) ? perms[role].filter(p => def.allPages.indexOf(p) !== -1) : [];
+    sh.appendRow([appId, roleKey, pages.join(',')]);
+  });
+
+  bumpPermVersion();
+  writeLog(session.email, 'saveAppPages', appId);
+  return { success: true };
+}
+
+/* ================================================================
+   PREFS — ธีมสี/โหมดมืด-สว่าง/ภาษา ใช้ร่วมกันทุกแอปในเครือ (Portal + แอปลูกทุกตัว)
+   ตั้งที่ Hub ที่เดียว ส่งไปให้ทุกแอปลูกพร้อมกับ portalToken (ดู apiVerify ด้านล่าง
+   และ frameSrc() ใน Portal.html ที่แนบพารามิเตอร์เหล่านี้ต่อท้าย src ของทุก iframe)
+   ================================================================ */
+function getUserPrefs(email) {
+  const sh   = sheet(SHEETS.PREFS, PREFS_HEADERS);
+  const rows = sh.getDataRange().getValues().slice(1);
+  const hit  = rows.find(r => String(r[0]).toLowerCase().trim() === email.toLowerCase());
+  if (!hit) return Object.assign({}, DEFAULT_PREFS);
+  return {
+    colorTheme: hit[1] || DEFAULT_PREFS.colorTheme,
+    darkMode:   String(hit[2] || DEFAULT_PREFS.darkMode),
+    lang:       hit[3] || DEFAULT_PREFS.lang
+  };
+}
+
+function apiGetPrefs(data, session) {
+  return { success: true, prefs: getUserPrefs(session.email) };
+}
+
+function apiSavePrefs(data, session) {
+  const p = data.prefs || {};
+  const colorTheme = COLOR_THEMES[p.colorTheme] ? p.colorTheme : DEFAULT_PREFS.colorTheme;
+  const darkMode   = p.darkMode === true || p.darkMode === 'true' ? 'true' : 'false';
+  const lang       = p.lang === 'en' ? 'en' : 'th';
+
+  const sh   = sheet(SHEETS.PREFS, PREFS_HEADERS);
+  const rows = sh.getDataRange().getValues();
+  let rowIdx = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]).toLowerCase().trim() === session.email.toLowerCase()) { rowIdx = i + 1; break; }
+  }
+  const record = [session.email, colorTheme, darkMode, lang, new Date().toISOString()];
+  if (rowIdx === -1) sh.appendRow(record);
+  else sh.getRange(rowIdx, 1, 1, record.length).setValues([record]);
+
+  return { success: true, prefs: { colorTheme: colorTheme, darkMode: darkMode, lang: lang } };
+}
+
+/* ================================================================
+   PDPA — ย้ายขึ้นมารวมที่ Hub จากเดิมที่ MA-Web ทำแยกของตัวเอง
+   ทุกแอปลูกใช้ความยินยอมชุดเดียวกัน ผูกกับ email ไม่ใช่แยกตามแอป
+   ================================================================ */
+function apiGetPdpaStatus(data, session) {
+  const version = data.version || PDPA_VERSION;
+  const sh   = sheet(SHEETS.PDPA, PDPA_HEADERS);
+  const rows = sh.getDataRange().getValues().slice(1);
+  const hit  = rows.some(r => String(r[0]).toLowerCase().trim() === session.email.toLowerCase() && String(r[1]) === version);
+  return { success: true, accepted: hit, version: version };
+}
+
+function apiAcceptPdpa(data, session) {
+  const version = data.version || PDPA_VERSION;
+  const sh = sheet(SHEETS.PDPA, PDPA_HEADERS);
+  sh.appendRow([session.email, version, new Date().toISOString(), (data.ctx && data.ctx.ip) || '']);
+  writeLog(session.email, 'acceptPdpa', version);
+  return { success: true };
+}
+
+/* ================================================================
    SETUP & SHEET HELPERS
    ================================================================ */
 function setupPortal() {
@@ -665,10 +776,13 @@ function ensureSetup(force) {
   const usersSh = sheet(SHEETS.USERS, USER_HEADERS);
   sheet(SHEETS.SESSIONS, SESSION_HEADERS);
   sheet(SHEETS.LOG, LOG_HEADERS);
+  sheet(SHEETS.PDPA, PDPA_HEADERS);
+  sheet(SHEETS.APP_PAGES, APP_PAGES_HEADERS);
+  sheet(SHEETS.PREFS, PREFS_HEADERS);
 
   const rolesSh = sheet(SHEETS.ROLES, ROLE_HEADERS);
   if (rolesSh.getLastRow() <= 1) {
-    const values = DEFAULT_ROLES.map(r => [r.role, r.label, r.menus, r.projectScope, r.active, r.sections || '']);
+    const values = DEFAULT_ROLES.map(r => [r.role, r.label, r.menus, r.projectScope, r.active]);
     rolesSh.getRange(2, 1, values.length, ROLE_HEADERS.length).setValues(values);
   }
 

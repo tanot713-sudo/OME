@@ -86,8 +86,9 @@ function portalAccessFromToken(token, menuId) {
           projectScope: json.projectScope, projects: json.projects || [],
           menuIds: json.menuIds || [], isAdmin: !!json.isAdmin,
           menuAllowed: json.menuAllowed,
-          // null = ไม่ถูกจำกัดแถบย่อยเลย (ทุกแถบ) — ต่างจาก [] ที่แปลว่า "ไม่เห็นแถบไหนเลย"
-          allowedSections: (menuId && json.allowedSections !== undefined) ? json.allowedSections : null }
+          // null = ไม่ถูกจำกัดแถบ/หน้าย่อยเลย (ทุกแอปที่ไม่ได้ลงทะเบียนใน APP_PAGE_DEFS
+          // ของ Hub จะได้ค่านี้เสมอ) — json.appPages มาจาก resolveAppPages() ฝั่ง Hub
+          allowedSections: (menuId && json.appPages !== undefined) ? json.appPages : null }
       : { ok: false, message: json.message || 'ไม่มีสิทธิ์เข้าใช้งาน', code: json.code };
   } catch (err) {
     result = { ok: false, message: 'ตรวจสอบสิทธิ์ไม่สำเร็จ: ' + err.message };
@@ -180,11 +181,12 @@ function canSeeMenu(access, menuId) {
   return requireMenu(access, menuId);
 }
 
-/* true ถ้าผู้ใช้คนนี้เห็น "แถบย่อย" นี้ได้ภายในแอป — ใช้ทั้งซ่อนปุ่มฝั่ง client และ
+/* true ถ้าผู้ใช้คนนี้เห็น "แถบ/หน้าย่อย" นี้ได้ภายในแอป — ใช้ทั้งซ่อนปุ่มฝั่ง client และ
    กันการเรียก endpoint เขียนข้อมูลของแถบนั้นตรง ๆ ฝั่งเซิร์ฟเวอร์ (เหมือน requireMenu
-   แต่อยู่ลึกลงไปอีกชั้นในแอปเดียว) access.allowedSections ต้องมาจากการยิง verify ที่
-   ใส่ menuId ของแอปนี้ไปด้วย (ผ่าน portalAccess(e, menuId) หรือ
-   portalAccessForCall(token, menuId)) ไม่งั้นจะเป็น undefined เสมอ (ตีความว่าไม่ถูกจำกัด) */
+   แต่อยู่ลึกลงไปอีกชั้นในแอปเดียว) access.allowedSections มาจาก appPages ที่ Hub คำนวณ
+   ให้ (APP_PAGE_DEFS ใน Auth.gs) ต้องยิง verify พร้อม menuId ของแอปนี้ไปด้วยเสมอ
+   (ผ่าน portalAccess(e, menuId) หรือ portalAccessForCall(token, menuId)) ไม่งั้นจะเป็น
+   null เสมอ (ตีความว่าไม่ถูกจำกัด) */
 function requireSection(access, sectionId) {
   if (!access || !access.ok) return false;
   var allowed = access.allowedSections;
