@@ -439,6 +439,9 @@ table.ktb tbody tr:hover td{background:#FAFBFE}
 .kv2:last-child{border-bottom:0}
 .kv2 span{color:var(--ink3);font-weight:500}
 .kv2 b{font-weight:600;text-align:right}
+#load{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:90}
+.spin{width:34px;height:34px;border:3px solid #E3E8F0;border-top-color:var(--red);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -472,7 +475,7 @@ table.ktb tbody tr:hover td{background:#FAFBFE}
 </div></div>
 
 <div id="tip"></div>
-<div id="load"><div style="display:flex;flex-direction:column;align-items:center;gap:12px"><div class="spin"></div><div style="font-size:12.5px;color:var(--muted,#8D97A5)">กำลังโหลดข้อมูล...</div></div></div>
+<div id="load"><div class="spin"></div></div>
 
 <?!= include('Kit') ?>
 
