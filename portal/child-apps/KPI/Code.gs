@@ -317,7 +317,19 @@ function _cycleStatus_(frequency, entry) {
 
   if (f.indexOf('half') === 0) {                     /* Half-year */
     var ratio = (cov && cov.inScope) ? cov.measured / cov.inScope : 0;
-    return ratio >= ROUND_COMPLETE_AT
+    var enough = ratio >= ROUND_COMPLETE_AT;
+
+    /* the year figure is not a round: it is every project averaged across
+       the rounds it answered, so it reads as a year to date result */
+    if (entry.period.indexOf('YTD') > -1) {
+      if (!enough) return { status: 'pending', graded: false,
+                            label: 'Awaiting coverage' };
+      return _yearClosed_()
+        ? { status: 'final', graded: true, label: 'Final' }
+        : { status: 'final', graded: true, label: 'Year To Date' };
+    }
+
+    return enough
       ? { status: 'final', graded: true, label: 'Round Complete' }
       : { status: 'tracking', graded: false, label: 'Round In Progress' };
   }
@@ -539,8 +551,19 @@ function _monthFromText_(v) {
 function _calcMA03_(bands, scope) {
   if (!_sheetExists_(SH.responses)) return _calcMA03Legacy_(bands, scope);
 
-  var QCOLS = ['Q1_Channel','Q2_Responsiveness','Q3_Punctuality','Q4_Manner','Q5_Advice',
-               'Q6_Expertise','Q7_Attentiveness','Q8_Tools','Q9_Care'];
+  /* the nine questions as they appear on the form, so the detail table can
+     show what was actually rated rather than one blended number */
+  var QCOLS = [
+    ['Q1_Channel',        'ช่องทางในการติดต่อ หรือแจ้งปัญหาข้อขัดข้อง'],
+    ['Q2_Responsiveness', 'ความกระตือรือร้นในการตอบกลับลูกค้า'],
+    ['Q3_Punctuality',    'ความตรงต่อเวลาตามที่นัดหมาย'],
+    ['Q4_Manner',         'การแต่งกาย การพูดจาสุภาพ อัธยาศัยดี วางตัวเหมาะสม'],
+    ['Q5_Advice',         'สื่อสารแนะนำ ให้คำปรึกษา ตอบคำถามได้ชัดเจน'],
+    ['Q6_Expertise',      'ความรู้ความชำนาญในการให้บริการ และการแก้ไขปัญหา'],
+    ['Q7_Attentiveness',  'ความกระตือรือร้น เอาใจใส่ในการให้บริการ'],
+    ['Q8_Tools',          'ความพร้อมด้านเครื่องมือและอุปกรณ์ในการทำงาน'],
+    ['Q9_Care',           'ให้บริการด้วยความเอาใจใส่ และเต็มใจให้บริการ']
+  ];
 
   /* the survey plan decides which round a reply belongs to, so a late
      reply still counts towards the round it was asked for */
@@ -573,13 +596,15 @@ function _calcMA03_(bands, scope) {
     var ex = _s_(r['Exclude']).toUpperCase();
     if (ex === 'Y' || ex === 'TRUE' || ex === 'YES') return;
 
+    var answers = [], vals = [];
+    QCOLS.forEach(function (q) {
+      var v = _num_(r[q[0]]);
+      answers.push({ question: q[1], score: v });
+      if (v !== null) vals.push(v);
+    });
+
     var score = _num_(r['Score_%']);
     if (score === null) {
-      var vals = [];
-      QCOLS.forEach(function (q) {
-        var v = _num_(r[q]);
-        if (v !== null) vals.push(v);
-      });
       if (!vals.length) return;
       score = _avg_(vals) / 5 * 100;
     }
@@ -600,6 +625,7 @@ function _calcMA03_(bands, scope) {
       respondent: _s_(r['Respondent']),
       position: _s_(r['Position']),
       score: _round_(score, 1),
+      answers: answers,
       comment: notes,
       strengths: good,
       improvements: fix,
@@ -609,6 +635,40 @@ function _calcMA03_(bands, scope) {
   });
 
   if (!replies.length) return _calcMA03Legacy_(bands, scope);
+
+  /* the survey plan itself, so the app can show who is still outstanding
+     rather than only how many */
+  var planRows = {};
+  _readSheet_(SH.survey).forEach(function (r) {
+    var ref = _s_(r['RefCode']), rnd = _num_(r['Round']);
+    if (!ref || !rnd) return;
+    planRows[ref] = planRows[ref] || { refCode: ref };
+    planRows[ref]['planMonth' + rnd] = _monthFromText_(r['Plan_Month']);
+  });
+
+  var got = {}, when = {};
+  replies.forEach(function (x) {
+    var k = x.refCode + '|' + x.half;
+    (got[k] = got[k] || []).push(x.score);
+    /* the month the answer actually came back, which can differ from plan */
+    var m = _s_(x.completedOn).slice(0, 7);
+    if (m && (!when[k] || m > when[k])) when[k] = m;
+  });
+
+  var thisMonth = _num_(Utilities.formatDate(new Date(), TZ, 'M'));
+  var planTable = Object.keys(planRows).map(function (ref) {
+    var p = planRows[ref], row = { refCode: ref };
+    [1, 2].forEach(function (rnd) {
+      var pm = p['planMonth' + rnd] || 0;
+      var scores = got[ref + '|' + rnd];
+      row['plan' + rnd]  = pm ? MONTH_NAMES[pm - 1] : '';
+      row['score' + rnd] = scores ? _round_(_avg_(scores), 1) : null;
+      row['got' + rnd]   = when[ref + '|' + rnd] || '';
+      row['state' + rnd] = scores ? 'Received'
+        : (pm && pm < thisMonth ? 'Overdue' : 'Planned');
+    });
+    return row;
+  }).sort(function (a, b) { return a.refCode < b.refCode ? -1 : 1; });
 
   var inScope = scope['MA-03'] || 0;
   var out = [];
@@ -641,9 +701,60 @@ function _calcMA03_(bands, scope) {
       basis: 'Average of ' + detail.length + ' projects from ' + mine.length + ' replies',
       progress: detail.length + ' of ' + full + ' surveyed',
       coverage: { measured: detail.length, inScope: full, unitLabel: 'projects surveyed' },
+      plan: planTable,
       detail: detail
     });
   });
+
+  /* The year figure: each project is averaged across the rounds it answered,
+     then those project averages are averaged together. Every project carries
+     the same weight whether one person replied or five, and a project that
+     only has one round still counts. It is only settled once enough of the
+     portfolio has answered. */
+  var byRefYear = {};
+  replies.forEach(function (x) {
+    var r = byRefYear[x.refCode] = byRefYear[x.refCode] || { rounds: {} };
+    (r.rounds[x.half] = r.rounds[x.half] || []).push(x.score);
+  });
+
+  var yearDetail = Object.keys(byRefYear).map(function (ref) {
+    var r = byRefYear[ref], per = [];
+    [1, 2].forEach(function (n) {
+      if (r.rounds[n] && r.rounds[n].length) per.push(_round_(_avg_(r.rounds[n]), 1));
+    });
+    var avg = _round_(_avg_(per), 1);
+    return {
+      refCode: ref,
+      round1: r.rounds[1] ? _round_(_avg_(r.rounds[1]), 1) : null,
+      round2: r.rounds[2] ? _round_(_avg_(r.rounds[2]), 1) : null,
+      rounds: per.length,
+      responses: (r.rounds[1] || []).length + (r.rounds[2] || []).length,
+      average: avg,
+      grade: gradeOf(bands, 'MA-03', avg)
+    };
+  }).sort(function (a, b) { return a.average - b.average; });
+
+  if (yearDetail.length) {
+    var fullY = inScope || yearDetail.length;
+    var ytd = _avg_(yearDetail.map(function (x) { return x.average; }));
+    var covered = yearDetail.length / fullY;
+    var enough = covered >= ROUND_COMPLETE_AT;
+    var bothDone = yearDetail.filter(function (x) { return x.rounds > 1; }).length;
+
+    out.push({
+      kpiId: 'MA-03', period: YEAR + '-YTD', actual: _round_(ytd, 2),
+      grade: enough ? gradeOf(bands, 'MA-03', ytd) : null,
+      graded: enough,
+      statusLabel: enough ? 'Year To Date' : 'Awaiting coverage',
+      basis: 'Each project averaged across its rounds, then averaged together',
+      progress: yearDetail.length + ' of ' + fullY + ' surveyed',
+      provisional: bothDone < yearDetail.length,
+      coverage: { measured: yearDetail.length, inScope: fullY,
+                  unitLabel: 'projects surveyed' },
+      plan: planTable,
+      detail: yearDetail
+    });
+  }
 
   /* and one row per month, so the chart sits on the same axis as the rest */
   var byMonth = {};
@@ -655,6 +766,10 @@ function _calcMA03_(bands, scope) {
     var list = byMonth[mk];
     var avg = _avg_(list.map(function (x) { return x.score; }));
     out.push({
+      /* the survey is judged by round, not by calendar month: a reply is a
+         complete fact the day it comes back, so these rows never wait for
+         month end the way the monthly measures do */
+      monthClosed: true,
       kpiId: 'MA-03', period: mk, actual: _round_(avg, 2),
       grade: gradeOf(bands, 'MA-03', avg),
       basis: list.length + ' repl' + (list.length > 1 ? 'ies' : 'y') + ' returned this month',
@@ -663,7 +778,7 @@ function _calcMA03_(bands, scope) {
       detail: list.map(function (x) {
         return { refCode: x.refCode, round: x.half, completedOn: x.completedOn,
                  respondent: x.respondent, position: x.position, score: x.score,
-                 comment: x.comment, strengths: x.strengths,
+                 answers: x.answers, comment: x.comment, strengths: x.strengths,
                  improvements: x.improvements, feedback: x.feedback,
                  grade: x.grade };
       })
@@ -727,52 +842,111 @@ function _calcMA03Legacy_(bands, scope) {
 }
 
 /* MA-04 — days taken to close a warranty after it expires */
+/* MA-04 — days taken to close a warranty, worked out from the dates rather
+   than from a typed number, so a corrected date is always reflected.
+
+   A warranty can only be closed once the cover has actually ended, so the
+   clock starts at the later of the warranty end and the date the work was
+   finished. Work is finished when the bank guarantee comes back, or when
+   the letter goes out if there is no guarantee. One that is past its
+   warranty end and still open counts as running late, otherwise the slowest
+   cases would quietly leave the measure. */
 function _calcMA04_(bands, scope) {
   var rows = _readSheet_(SH.warranty).filter(function (r) { return _s_(r['RefCode']); });
-  var days = [], detail = [];
+  if (!rows.length) return [];
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  var days = [], detail = [], open = 0;
 
   rows.forEach(function (r) {
-    var dd = _num_(r['Closure_Days']);
-    var counted = _s_(r['Count_In_KPI']).toUpperCase() === 'Y' && dd !== null;
-    if (counted) days.push(dd);
+    var end   = _date_(r['WarrantyEnd']);
+    var hasBG = _s_(r['HasBG']).toUpperCase() === 'Y';
+    var done  = hasBG ? _date_(r['BGReturnDate']) : _date_(r['NoticeSentDate']);
+    var counts = _s_(r['Count_In_KPI']).toUpperCase() !== 'N';
+
+    var closedOn = null, dd = null, status = _s_(r['Status']), late = false;
+
+    if (end && done) {
+      closedOn = (done > end) ? done : end;
+      dd = Math.round((closedOn - end) / 86400000);
+      status = 'Closed';
+    } else if (end && today > end) {
+      /* cover has ended, nothing has come back yet */
+      dd = Math.round((today - end) / 86400000);
+      late = true;
+      open++;
+      status = 'Open past warranty';
+    } else {
+      status = status || 'In warranty';
+    }
+
+    if (counts && dd !== null) days.push(dd);
+
     detail.push({
       refCode: _s_(r['RefCode']),
-      warrantyEnd: _iso_(_date_(r['WarrantyEnd'])),
-      closedOn: _iso_(_date_(r['ClosedWarrantyDate'])),
+      warrantyEnd: _iso_(end),
+      hasBG: hasBG ? 'Yes' : 'No',
+      finishedOn: _iso_(done),
+      closedOn: _iso_(closedOn),
       days: dd,
-      status: _s_(r['Status']),
-      grade: counted ? gradeOf(bands, 'MA-04', dd) : null
+      status: status,
+      grade: (counts && dd !== null) ? gradeOf(bands, 'MA-04', dd) : null
     });
   });
 
-  if (!rows.length) return [];
   var avg = days.length ? _avg_(days) : null;
+
   return [{
     kpiId: 'MA-04', period: YEAR + '-YTD', actual: avg === null ? null : _round_(avg, 2),
     grade: avg === null ? null : gradeOf(bands, 'MA-04', avg),
-    basis: 'Average of ' + days.length + ' warranties already closed',
-    progress: days.length + ' of ' + rows.length + ' closed',
-    coverage: { measured: days.length, inScope: rows.length, unitLabel: 'warranties closed' },
+    basis: 'Average of ' + days.length + ' warranties' +
+           (open ? ', ' + open + ' of them still open' : ''),
+    progress: days.length + ' of ' + rows.length + ' measured',
+    openItems: open,
+    coverage: { measured: days.length, inScope: rows.length,
+                unitLabel: 'warranties measured' },
     detail: detail
   }];
 }
 
-/* MA-05 — days between the planned and the actual collection date */
+/* MA-05 — days between the planned and the actual collection date.
+   An instalment that is past due and still unpaid counts as late by the
+   number of days it has run over, otherwise the measure would quietly drop
+   exactly the cases it exists to catch. One that is not due yet is left
+   out, because nothing has gone wrong there. */
 function _calcMA05_(bands, scope) {
-  var byPeriod = {};
+  var byPeriod = {}, today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   _readSheet_(SH.cashin).forEach(function (r) {
-    var v = _num_(r['Variance_Payment']);
     var period = _monthOf_(r['Plan_Receive_Date']);
-    if (v === null || period.indexOf(YEAR) !== 0) return;
+    if (period.indexOf(YEAR) !== 0) return;
     if (!_inScope_(scope, 'MA-05', _s_(r['RefCode']))) return;
+
+    var due  = _date_(r['Plan_Receive_Date']);
+    var paid = _date_(r['Actual_Receive_Date']);
+    var v = _num_(r['Variance_Payment']);
+    var status = 'Received';
+
+    if (!paid) {
+      if (!due) return;
+      var overdue = Math.floor((today - due) / 86400000);
+      if (overdue <= 0) return;          /* not due yet, nothing to judge */
+      v = overdue;
+      status = 'Overdue';
+    } else if (v === null) {
+      v = Math.round((paid - due) / 86400000);
+    }
 
     (byPeriod[period] = byPeriod[period] || []).push({
       refCode: _s_(r['RefCode']),
       installment: _num_(r['Installment_No']),
       amount: _num_(r['Amount_ExVat']),
-      dueOn: _iso_(_date_(r['Plan_Receive_Date'])),
-      receivedOn: _iso_(_date_(r['Actual_Receive_Date'])),
+      dueOn: _iso_(due),
+      receivedOn: _iso_(paid),
+      status: status,
       daysEarlyLate: v,
       grade: gradeOf(bands, 'MA-05', v)
     });
@@ -782,32 +956,84 @@ function _calcMA05_(bands, scope) {
     return _uniq_(l.map(function (x) { return x.refCode; })); });
   var out = [], monthly = [];
 
+  /* A month is averaged the same way the year is: by project first, so the
+     chart and the headline can never tell different stories. */
   Object.keys(byPeriod).sort().forEach(function (period) {
-    var list = byPeriod[period],
-        avg = _avg_(list.map(function (x) { return x.daysEarlyLate; }));
-    if (cmp.months.indexOf(period) > -1 && _monthClosed_(period)) monthly.push(avg);
+    var list = byPeriod[period];
+    var perRef = {};
+    list.forEach(function (x) {
+      (perRef[x.refCode] = perRef[x.refCode] || []).push(x.daysEarlyLate);
+    });
+    var refAvgs = Object.keys(perRef).map(function (r) { return _avg_(perRef[r]); });
+    var avg = _avg_(refAvgs);
+    var owing = list.filter(function (x) { return x.status === 'Overdue'; }).length;
+
+    monthly.push(avg);
     out.push({
+      /* an instalment is judged on its own due date, so this measure has no
+         month-end rule and every period it produces is already final */
+      monthClosed: true,
       kpiId: 'MA-05', period: period, actual: _round_(avg, 2),
       grade: gradeOf(bands, 'MA-05', avg),
-      basis: list.length + ' instalments due this month',
-      partialMonth: cmp.months.indexOf(period) < 0,
-      coverage: { measured: _uniq_(list.map(function (x) { return x.refCode; })).length,
-                  inScope: cmp.expected[period] || 0, unitLabel: 'projects billing' },
+      basis: refAvgs.length + ' project' + (refAvgs.length === 1 ? '' : 's') +
+             ' billing · ' + list.length + ' instalment' +
+             (list.length === 1 ? '' : 's') +
+             (owing ? ' · ' + owing + ' still unpaid' : ''),
+      openItems: owing,
+      projectsBilling: refAvgs.length,
+      coverage: { measured: refAvgs.length,
+                  inScope: cmp.expected[period] || refAvgs.length,
+                  unitLabel: 'projects billing' },
       detail: list
     });
   });
 
-  if (monthly.length) {
-    var ytd = _avg_(monthly);
+  /* The year figure follows the approved worksheet: each project is averaged
+     across its own instalments first, then those project averages are
+     averaged together. Weighting by instalment would let a contract that
+     bills ten times speak ten times louder than one that bills once, which
+     is a term of the contract rather than a measure of performance. */
+  /* Every instalment carries its own due date, so a settled one is a complete
+     fact the day the money lands: there is nothing to wait for. The month-end
+     rule that the monthly measures need would only hide recent collections. */
+  var byRef = {};
+  Object.keys(byPeriod).forEach(function (p) {
+    byPeriod[p].forEach(function (x) {
+      (byRef[x.refCode] = byRef[x.refCode] || []).push(x);
+    });
+  });
+
+  var refs = Object.keys(byRef);
+  if (refs.length) {
+    var perRef = refs.map(function (ref) {
+      var list = byRef[ref];
+      var avg = _avg_(list.map(function (x) { return x.daysEarlyLate; }));
+      var owing = list.filter(function (x) { return x.status === 'Overdue'; }).length;
+      return {
+        refCode: ref,
+        installments: list.length,
+        amount: list.reduce(function (a, b) { return a + (b.amount || 0); }, 0),
+        openItems: owing,
+        daysEarlyLate: _round_(avg, 2),
+        grade: gradeOf(bands, 'MA-05', avg)
+      };
+    }).sort(function (a, b) { return b.daysEarlyLate - a.daysEarlyLate; });
+
+    var ytd = _avg_(perRef.map(function (x) { return x.daysEarlyLate; }));
+    var stillOwing = perRef.reduce(function (a, b) { return a + b.openItems; }, 0);
+
     out.push({
       kpiId: 'MA-05', period: YEAR + '-YTD', actual: _round_(ytd, 2),
       grade: gradeOf(bands, 'MA-05', ytd),
-      basis: 'Average of ' + monthly.length + ' complete months',
-      progress: monthly.length + ' months',
+      provisional: stillOwing > 0,
+      basis: 'Each project averaged across its instalments, then averaged together',
+      progress: perRef.length + ' projects' +
+                (stillOwing ? ' · ' + stillOwing + ' instalment' +
+                 (stillOwing === 1 ? '' : 's') + ' still unpaid' : ''),
       asOf: cmp.asOf, partial: cmp.partial,
-      coverage: { measured: cmp.counts[cmp.asOf] || 0, inScope: cmp.full,
+      coverage: { measured: perRef.length, inScope: perRef.length,
                   unitLabel: 'projects billing' },
-      detail: byPeriod[cmp.asOf]
+      detail: perRef
     });
   }
   return out;
