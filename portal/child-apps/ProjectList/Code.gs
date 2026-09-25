@@ -14,7 +14,7 @@
 // ===== CONFIG =====
 var SHEET_NAME = 'Project List OMA';   // <-- change if your tab is named differently
 var BOND_SHEET_NAME = 'Bond Data';     // <-- separate tab for bonds (one row per bond; a project can have many)
-var EXCLUDED_ITEMS = [172, 173];       // Green Line / Gold Line outliers — never shown or counted
+var EXCLUDED_REFS = ['ITS160324.0', 'ITS150425.0'];  // old Green Line / Gold Line outliers — matched by Ref. Code (never renumbered)
 var GAP_THRESHOLD_DAYS = 120;          // > this gap between MA renewals = a "loss period"
 var TREND_START_YEAR = 2016;           // year-based charts (Value Trend, Loss line) start here
 // Column header text as it appears in row 1 of the sheet (trimmed match).
@@ -173,10 +173,8 @@ function getDashboardData(portalToken) {
     var itemRaw = row[idx.item];
     if (itemRaw === '' || itemRaw === null || itemRaw === undefined) continue;
     var item = Number(itemRaw);
-    if (EXCLUDED_ITEMS.indexOf(item) !== -1) continue;   // drop outliers by item number
-    // also drop by name pattern (robust even if items get renumbered)
-    var nm = String(row[idx.name] || '');
-    if (/gold\s*line/i.test(nm) || /green\s*line/i.test(nm)) continue;
+    var _ref = String(row[idx.ref] || '').trim();
+    if (EXCLUDED_REFS.indexOf(_ref) !== -1) continue;   // drop the two old outliers by Ref. Code
     var startISO = toISO_(row[idx.start]);
     var endISO   = toISO_(row[idx.end]);
     var closedISO = toISO_(row[idx.closed]);
@@ -309,6 +307,8 @@ function readFrontlog_(ss, handoverByRef) {
     if (!eventDate && fi.eventDate >= 0) eventDate = toISO_(row[fi.eventDate]);
     var name = fi.name >= 0 ? String(row[fi.name] || '').trim() : '';
     if (!eventDate || !name) continue;       // both are required to be useful
+    var _fref = fi.ref >= 0 ? String(row[fi.ref] || '').trim() : '';
+    if (EXCLUDED_REFS.indexOf(_fref) !== -1) continue;   // same two outliers, kept out of the pipeline too
     var ref = fi.ref >= 0 ? String(row[fi.ref] || '').trim() : '';
     // Broken formula results (#REF!, #NAME?, ...) are treated as blank.
     var handover = fi.handover >= 0 ? String(row[fi.handover] || '').trim() : '';
