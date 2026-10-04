@@ -77,3 +77,28 @@
 **Filename:** `settings`
 **Pages:** notifications, data, credits, area, soon
 **Prompt:** minimal abstract soft geometric shapes, gentle overlapping circles and rounded rectangles, calm and quiet
+
+---
+
+# ไอคอนแอป (คอม + มือถือ)
+
+กลุ่มที่มี `**Type:** icon` สคริปต์จะสร้างภาพจัตุรัส 1024×1024 ตามจำนวน `Variants` (ไม่แยกสว่าง/มืด) ไว้ใน `assets/icons/`
+เลือกรูปที่ชอบแล้วรัน `python gen_backgrounds.py --make-icons assets/icons/<ไฟล์ที่เลือก>` จะได้ไอคอนครบทุกขนาดที่เว็บต้องใช้
+
+## icon-areas
+**Filename:** `icon-areas`
+**Type:** icon
+**Variants:** 3
+**Prompt:** four soft rounded shapes arranged in a 2 by 2 grid forming one balanced emblem, each shape a slightly different shade of teal, representing four areas of life
+
+## icon-sunrise
+**Filename:** `icon-sunrise`
+**Type:** icon
+**Variants:** 3
+**Prompt:** simple sun rising over a single smooth horizon line, geometric and minimal, warm sun on a deep teal background
+
+## icon-leaf
+**Filename:** `icon-leaf`
+**Type:** icon
+**Variants:** 3
+**Prompt:** single stylized leaf combined with a small upward arrow, clean geometric mark, white symbol on a solid teal background
