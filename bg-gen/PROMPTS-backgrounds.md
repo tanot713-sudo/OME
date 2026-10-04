@@ -1,0 +1,79 @@
+# พื้นหลังหน้าเว็บ Tanot
+
+ทุก prompt ต่อท้ายด้วย STYLE_LIGHT หรือ STYLE_DARK อัตโนมัติจากสคริปต์ (ไม่ต้องพิมพ์ซ้ำ)
+แต่ละกลุ่มจะได้ 2 ไฟล์: `<ชื่อ>-light.jpg` และ `<ชื่อ>-dark.jpg`
+
+## today
+**Filename:** `today`
+**Pages:** index (วันนี้)
+**Prompt:** calm morning workspace seen from above, a cup of coffee, a small plant and a notebook placed near the right edge, soft window light
+
+## documents
+**Filename:** `documents`
+**Pages:** word, excel, slides, extract-text, doc-check, doc-check-file, compare
+**Prompt:** neat stacks of blank paper sheets, folders and a fountain pen arranged along the right side, clean office desk surface
+
+## engineering
+**Filename:** `engineering`
+**Pages:** cad, electrical, maintenance, run (est-cost)
+**Prompt:** electrical substation equipment silhouettes, transformers and insulators, thin blueprint grid lines, technical drawing atmosphere
+
+## report
+**Filename:** `report`
+**Pages:** report-dashboard
+**Prompt:** abstract soft data visualization shapes, gentle bar and line chart forms fading into the background, very subtle
+
+## law
+**Filename:** `law`
+**Pages:** legal, classroom-law
+**Prompt:** classic scales of justice and a row of thick law books on a wooden shelf near the right edge, quiet library mood
+
+## money
+**Filename:** `money`
+**Pages:** budget, tax, insurance, receipts
+**Prompt:** small neat stacks of coins, a paper receipt and a calculator arranged at the right side of a clean desk
+
+## invest
+**Filename:** `invest`
+**Pages:** invest, invest-stock, invest-fund, invest-gold, invest-bitcoin, invest-gov-bond, invest-lottery, invest-trade-journal, invest-news, invest-business
+**Prompt:** abstract rising market line drawn softly across the horizon, small gold bars and a few coins in the lower right corner
+
+## health
+**Filename:** `health`
+**Pages:** health
+**Prompt:** fresh green leaves, an apple and a glass of water with a soft heartbeat line drawn across the background
+
+## car
+**Filename:** `car`
+**Pages:** car
+**Prompt:** quiet empty countryside road curving into the distance, road markings, soft morning haze, no vehicles
+
+## education
+**Filename:** `education`
+**Pages:** review, classroom-business, classroom-engineering, books, languages
+**Prompt:** open notebooks, index cards and a pencil scattered near the right edge, cozy study desk, warm lamp light
+
+## music
+**Filename:** `music`
+**Pages:** music
+**Prompt:** acoustic guitar and piano keys partially visible at the right edge, a few loose sheet music pages, soft stage light
+
+## sports
+**Filename:** `sports`
+**Pages:** sports
+**Prompt:** empty running track lanes and white field lines seen from above, a football and badminton shuttlecock resting near the right edge
+
+## cooking
+**Filename:** `cooking`
+**Pages:** cooking
+**Prompt:** flat lay of fresh Thai cooking ingredients, chili, garlic, lemongrass, basil leaves and a mortar arranged along the right side of a wooden board
+
+## coding
+**Filename:** `coding`
+**Pages:** coding, typing
+**Prompt:** mechanical keyboard and a coffee mug at the right edge of a dark desk, faint abstract code-like glowing lines in the background, no readable characters
+
+## settings
+**Filename:** `settings`
+**Pages:** notifications, data, credits, area, soon
+**Prompt:** minimal abstract soft geometric shapes, gentle overlapping circles and rounded rectangles, calm and quiet
