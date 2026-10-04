@@ -1,10 +1,17 @@
-"""สร้างรูปพื้นหลังหน้าเว็บ Tanot จาก PROMPTS-backgrounds.md ด้วย Pollinations
+"""สร้างรูปพื้นหลังหน้าเว็บ Tanot จาก PROMPTS-backgrounds.md ด้วย Pollinations (gen.pollinations.ai)
+
+ต้องมีคีย์ (ตั้งแต่ปี 2026 ไม่มีคีย์จะได้ HTTP 402 ทุกรูป):
+  1. สมัคร/ล็อกอินที่ https://enter.pollinations.ai/keys แล้วสร้าง Secret key (ขึ้นต้นด้วย sk_)
+  2. สร้างไฟล์ pollinations_key.txt ไว้โฟลเดอร์เดียวกับสคริปต์ ใส่คีย์บรรทัดเดียว
+     (หรือตั้ง environment variable POLLINATIONS_KEY แทนก็ได้)
+  ห้ามใส่คีย์ลงในสคริปต์นี้ และห้าม commit ไฟล์คีย์ขึ้น GitHub
 
 ใช้: วางไฟล์นี้กับ PROMPTS-backgrounds.md ในโฟลเดอร์เดียวกัน แล้วรัน  python gen_backgrounds.py
   พื้นหลัง → assets/backgrounds/  (<ชื่อ>-light.jpg และ <ชื่อ>-dark.jpg)
   ไอคอน   → assets/icons/        (<ชื่อ>-1.jpg, -2.jpg, ... ตาม Variants)
 ถ้ามี Pillow (pip install pillow) จะสร้าง .webp ขนาดเล็กของพื้นหลังให้ด้วย
 รูปไหนไม่ชอบ ลบไฟล์นั้นทิ้งแล้วรันใหม่ สคริปต์จะสร้างเฉพาะไฟล์ที่ไม่มี (ใช้ seed ใหม่ทุกครั้ง)
+เปลี่ยนโมเดล: ตั้ง POLLINATIONS_MODEL เช่น black-forest-labs/flux.1-schnell
 
 ทำไอคอนครบชุดจากรูปที่เลือก (ต้องมี Pillow):
   python gen_backgrounds.py --make-icons assets/icons/icon-sunrise-2.jpg
@@ -22,7 +29,7 @@ import urllib.request
 OUT_DIR = "assets/backgrounds"
 ICON_DIR = "assets/icons"
 PROMPTS_FILE = "PROMPTS-backgrounds.md"
-WIDTH, HEIGHT = 1600, 900
+WIDTH, HEIGHT = 1280, 720
 
 # สไตล์เดียวกันทุกรูป ให้ดูเป็นชุดเดียวกัน · พื้นที่ว่างด้านซ้าย/กลางไว้วางเนื้อหา
 STYLE_COMMON = (
@@ -49,6 +56,25 @@ NEGATIVE_ICON = (
 )
 RETRY_CODES = {429, 500, 502, 503, 504}
 MAX_RETRIES = 4
+WAIT_BETWEEN = 3  # วินาที เว้นระยะระหว่างรูป
+API_BASE = "https://gen.pollinations.ai/image/"
+MODEL = os.environ.get("POLLINATIONS_MODEL", "tongyi-mai/z-image-turbo").strip()
+KEY_FILE = "pollinations_key.txt"
+
+
+class StopRun(Exception):
+    """คีย์ผิดหรือเครดิตหมด — รันต่อไปก็ล้มทุกรูป"""
+
+
+def load_key():
+    key = os.environ.get("POLLINATIONS_KEY", "").strip()
+    if not key and os.path.exists(KEY_FILE):
+        with open(KEY_FILE, "r", encoding="utf-8-sig") as f:
+            key = f.read().strip()
+    return key
+
+
+KEY = load_key()
 
 
 def read_prompts(path):
@@ -70,21 +96,21 @@ def read_prompts(path):
 
 
 def build_url(prompt, seed, width=WIDTH, height=HEIGHT, negative=NEGATIVE):
-    q = urllib.parse.urlencode({
-        "width": width, "height": height, "nologo": "true", "seed": seed,
-        "negative_prompt": negative,
-    })
-    return "https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt) + "?" + q
+    # API ใหม่ไม่มี negative_prompt → ต่อท้ายเป็นข้อความ "avoid: ..." แทน
+    full = f"{prompt}. Avoid: {negative}" if negative else prompt
+    q = urllib.parse.urlencode({"model": MODEL, "width": width, "height": height, "seed": seed})
+    return API_BASE + urllib.parse.quote(full, safe="") + "?" + q
 
 
 def download(url, path):
-    req = urllib.request.Request(url, headers={"User-Agent": "tanot-bg-gen/1.0"})
+    headers = {"User-Agent": "tanot-bg-gen/2.0", "Authorization": "Bearer " + KEY}
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=180) as r:
         ctype = r.headers.get("Content-Type", "")
         data = r.read()
     # บางครั้งบริการตอบเป็นหน้า error แทนรูป — เช็กก่อนบันทึก
     if not ctype.startswith("image/") or len(data) < 10_000:
-        raise ValueError(f"ไม่ใช่รูป (Content-Type: {ctype or '-'}, {len(data)} ไบต์)")
+        raise ValueError(f"not an image (Content-Type: {ctype or '-'}, {len(data)} bytes)")
     with open(path, "wb") as f:
         f.write(data)
 
@@ -107,10 +133,10 @@ def make_icons(src):
     try:
         from PIL import Image
     except ImportError:
-        print("ต้องติดตั้ง Pillow ก่อน: pip install pillow")
+        print("Pillow is required: pip install pillow")
         return
     if not os.path.exists(src):
-        print(f"ไม่พบไฟล์ {src}")
+        print(f"file not found: {src}")
         return
     out = os.path.join(ICON_DIR, "app")
     os.makedirs(out, exist_ok=True)
@@ -127,32 +153,40 @@ def make_icons(src):
         inner = im.resize((410, 410), Image.LANCZOS)
         canvas.paste(inner, (51, 51))
         canvas.save(os.path.join(out, "icon-maskable-512.png"), optimize=True)
-    print(f"สร้างไอคอนแล้วใน {out}: icon-512, icon-192, icon-maskable-512, apple-touch-icon, favicon-32")
+    print(f"icons written to {out}: icon-512, icon-192, icon-maskable-512, apple-touch-icon, favicon-32")
 
 
 def generate(path, prompt, width, height, negative, after=None):
-    """สร้าง 1 รูป ลองใหม่เมื่อเซิร์ฟเวอร์ไม่ว่าง · คืน True ถ้าสำเร็จ"""
+    """สร้าง 1 รูป · คืน True ถ้าสำเร็จ · คีย์ผิด/เครดิตหมด → StopRun"""
     for attempt in range(1, MAX_RETRIES + 1):
-        seed = random.randint(1, 10_000_000)
+        seed = random.randint(1, 2_000_000_000)
         try:
             download(build_url(prompt, seed, width, height, negative), path)
             extra = after(path) if after else None
-            print(f"   บันทึกแล้ว (seed {seed})" + (f" + {os.path.basename(extra)}" if extra else ""))
+            print(f"   saved {width}x{height} seed {seed}" + (f" + {os.path.basename(extra)}" if extra else ""))
             return True
         except urllib.error.HTTPError as e:
+            try:
+                body = e.read(400).decode("utf-8", "replace").replace("\n", " ")
+            except Exception:
+                body = ""
+            if e.code == 401:
+                raise StopRun("HTTP 401: key missing or invalid - check pollinations_key.txt (should start with sk_)")
+            if e.code == 402:
+                raise StopRun(f"HTTP 402: out of pollen (credit) on this key/account. Server: {body[:200]}")
             if e.code in RETRY_CODES and attempt < MAX_RETRIES:
-                wait = 5 * attempt
-                print(f"   HTTP {e.code} รอ {wait} วินาทีแล้วลองใหม่ ({attempt}/{MAX_RETRIES})")
+                wait = 10 * attempt
+                print(f"   HTTP {e.code}, waiting {wait}s then retry ({attempt}/{MAX_RETRIES})")
                 time.sleep(wait)
                 continue
-            print(f"   ล้ม: HTTP {e.code}")
+            print(f"   failed: HTTP {e.code} {body[:200]}")
             return False
         except Exception as e:
             if attempt < MAX_RETRIES:
-                print(f"   {e} — ลองใหม่ ({attempt}/{MAX_RETRIES})")
-                time.sleep(5 * attempt)
+                print(f"   {e} - retry ({attempt}/{MAX_RETRIES})")
+                time.sleep(10 * attempt)
                 continue
-            print(f"   ล้ม: {e}")
+            print(f"   failed: {e}")
             return False
     return False
 
@@ -162,7 +196,11 @@ def main():
         make_icons(sys.argv[2])
         return
     if not os.path.exists(PROMPTS_FILE):
-        print(f"ไม่พบ {PROMPTS_FILE} — วางไฟล์นี้ไว้โฟลเดอร์เดียวกับสคริปต์")
+        print(f"{PROMPTS_FILE} not found - put it in the same folder as this script")
+        return
+    if not KEY:
+        print("No API key. Get a Secret key (sk_...) at https://enter.pollinations.ai/keys")
+        print(f"then save it in {KEY_FILE} next to this script (one line), and run again.")
         return
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(ICON_DIR, exist_ok=True)
@@ -177,25 +215,30 @@ def main():
                 style = STYLE_LIGHT if mode == "light" else STYLE_DARK
                 jobs.append((os.path.join(OUT_DIR, f"{name}-{mode}.jpg"), f"{prompt}, {STYLE_COMMON}, {style}", WIDTH, HEIGHT, NEGATIVE, to_webp))
     n_bg = sum(1 for j in jobs if j[0].startswith(OUT_DIR))
-    print(f"เจอ {len(items)} กลุ่ม = พื้นหลัง {n_bg} รูป + ไอคอน {len(jobs) - n_bg} รูป")
+    print(f"{len(items)} groups = {n_bg} backgrounds + {len(jobs) - n_bg} icons · model {MODEL}")
 
     ok, skipped, failed = 0, 0, []
     for i, (path, full, w, h, neg, after) in enumerate(jobs, 1):
         label = os.path.basename(path)
         if os.path.exists(path):
             skipped += 1
-            print(f"[{i}/{len(jobs)}] มีแล้ว ข้าม: {label}")
+            print(f"[{i}/{len(jobs)}] exists, skip: {label}")
             continue
-        print(f"[{i}/{len(jobs)}] กำลังสร้าง: {label}")
-        if generate(path, full, w, h, neg, after):
-            ok += 1
-        else:
+        print(f"[{i}/{len(jobs)}] generating: {label}")
+        try:
+            if generate(path, full, w, h, neg, after):
+                ok += 1
+            else:
+                failed.append(label)
+        except StopRun as e:
+            print(f"   STOP: {e}")
             failed.append(label)
-        time.sleep(2)  # เว้นระยะ กันโดนจำกัดจำนวนครั้ง
+            break
+        time.sleep(WAIT_BETWEEN)  # เว้นระยะตามข้อจำกัดจำนวนครั้ง
 
-    print(f"\nเสร็จ: สร้างใหม่ {ok} · ข้าม {skipped} · ล้ม {len(failed)}")
+    print(f"\nDone: new {ok} | skipped {skipped} | failed {len(failed)}")
     if failed:
-        print("รูปที่ล้ม (รันสคริปต์ซ้ำเพื่อลองใหม่):", ", ".join(failed))
+        print("Failed (run again to retry):", ", ".join(failed))
 
 
 if __name__ == "__main__":
