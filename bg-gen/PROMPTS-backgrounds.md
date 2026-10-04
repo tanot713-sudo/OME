@@ -31,12 +31,12 @@
 ## money
 **Filename:** `money`
 **Pages:** budget, tax, insurance, receipts
-**Prompt:** small neat stacks of coins, a paper receipt and a calculator arranged at the right side of a clean desk
+**Prompt:** still life of small neat stacks of coins, a folded paper receipt and a calculator lying untouched on the right side of an empty clean desk, nobody in the scene
 
 ## invest
 **Filename:** `invest`
 **Pages:** invest, invest-stock, invest-fund, invest-gold, invest-bitcoin, invest-gov-bond, invest-lottery, invest-trade-journal, invest-news, invest-business
-**Prompt:** abstract rising market line drawn softly across the horizon, small gold bars and a few coins in the lower right corner
+**Prompt:** abstract upward trending market line climbing from the lower left to the upper right, growth chart going up, small gold bars and a few coins in the lower right corner
 
 ## health
 **Filename:** `health`
@@ -51,7 +51,7 @@
 ## education
 **Filename:** `education`
 **Pages:** review, classroom-business, classroom-engineering, books, languages
-**Prompt:** open notebooks, index cards and a pencil scattered near the right edge, cozy study desk, warm lamp light
+**Prompt:** still life of open notebooks, index cards and a pencil lying untouched near the right edge of an empty cozy study desk, warm lamp light, nobody in the scene
 
 ## music
 **Filename:** `music`

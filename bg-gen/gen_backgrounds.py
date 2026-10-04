@@ -148,10 +148,13 @@ def make_icons(src):
         bg = im.getpixel((4, 4))
         for name, size in (("icon-512.png", 512), ("icon-192.png", 192), ("apple-touch-icon.png", 180), ("favicon-32.png", 32)):
             im.resize((size, size), Image.LANCZOS).save(os.path.join(out, name), optimize=True)
-        # maskable: ให้สัญลักษณ์อยู่ในวงกลมปลอดภัย 80% กลางภาพ
-        canvas = Image.new("RGB", (512, 512), bg)
-        inner = im.resize((410, 410), Image.LANCZOS)
-        canvas.paste(inner, (51, 51))
+        # maskable: สัญลักษณ์ต้องอยู่ในวงกลมปลอดภัย 80% กลางภาพ — prompt ไอคอนสั่งให้สัญลักษณ์อยู่กลางและเว้นขอบไว้แล้ว
+        # จึงใช้รูปเดิมทั้งภาพ (เติมขอบด้วยสีเดียวจะเห็นรอยต่อเมื่อพื้นเป็นไล่สี) · --pad = ย่อแล้วเติมขอบสีมุมซ้ายบน
+        if "--pad" in sys.argv:
+            canvas = Image.new("RGB", (512, 512), bg)
+            canvas.paste(im.resize((410, 410), Image.LANCZOS), (51, 51))
+        else:
+            canvas = im.resize((512, 512), Image.LANCZOS)
         canvas.save(os.path.join(out, "icon-maskable-512.png"), optimize=True)
     print(f"icons written to {out}: icon-512, icon-192, icon-maskable-512, apple-touch-icon, favicon-32")
 
